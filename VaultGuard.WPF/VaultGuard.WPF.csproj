@@ -30,9 +30,12 @@
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
-		<Version>1.0.0</Version>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
-		<FileVersion>1.0.0.0</FileVersion>
+		<!-- No hardcoded Version/AssemblyVersion/FileVersion here on purpose: the SDK auto-derives all
+		     three from "-p:Version=" (build-wpf.yml passes the CI-computed release version); an explicit
+		     AssemblyVersion/FileVersion in the csproj would win over that CLI value and freeze the About
+		     page (PopulateAboutInfo reads Assembly.GetName().Version) at whatever was hardcoded here,
+		     regardless of the actual release tag. Absent -p:Version (local dev builds), the SDK's own
+		     default is "1.0.0.0" anyway, so this is a no-op for that case. -->
 	</PropertyGroup>
 
 	<!-- WinForms is referenced only for the system-tray NotifyIcon. Remove its implicit

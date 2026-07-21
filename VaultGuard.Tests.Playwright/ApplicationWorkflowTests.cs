@@ -52,9 +52,17 @@ public class ApplicationWorkflowTests : BlazorWebTestBase
     [TestMethod]
     public async Task Dashboard_AppBar_HasBrandName()
     {
-        // MainLayout.razor renders the app bar title as "🔐 Vault Guard" (a space between "Vault"
-        // and "Guard") - "VaultGuard" (no space) is not a substring of that.
-        await Expect(Page.GetByText("Vault Guard")).ToBeVisibleAsync();
+        // MainLayout.razor renders the app bar title as an <h6> "🔐 Vault Guard" (a space between
+        // "Vault" and "Guard") - "VaultGuard" (no space) is not a substring of that. Scoped to Level=6
+        // (like DashboardHeading above scopes to the Heading role) because a bare GetByText("Vault
+        // Guard") also matches the login page's own "Vault Guard" <h1> logo and "Sign in to Vault
+        // Guard" <h2> - while sign-in is still completing (SignInAsync's post-login redirect can take
+        // a few seconds, worse on whichever test runs first against a cold circuit - see
+        // BlazorWebTestBase's WarmUpLoginPageAsync comment), both of those are still on screen, so an
+        // unscoped locator resolves to 2 elements and Playwright throws a strict-mode violation instead
+        // of retrying. Level=6 never matches either login-page heading, so this keeps polling through
+        // the sign-in redirect exactly like every other test in this class already does.
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Vault Guard", Level = 6 })).ToBeVisibleAsync();
     }
 
     // ── Navigation ───────────────────────────────────────────────────────────
