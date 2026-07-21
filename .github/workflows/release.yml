@@ -74,6 +74,9 @@ jobs:
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
+          body: |
+            - **VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip** is the self-hosted Blazor web site (`VaultGuard.Web`) - unzip and run/deploy it to use VaultGuard in a browser. It is not the browser extension.
+            - **VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip** is the REST API backend (`VaultGuard.API`) that the Web site, desktop, and mobile apps talk to.
           generate_release_notes: true
           files: |
             VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip

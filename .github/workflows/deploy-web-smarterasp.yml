@@ -150,6 +150,8 @@ jobs:
         with:
           tag_name: web-v${{ steps.ver.outputs.VERSION }}
           name: VaultGuard Web v${{ steps.ver.outputs.VERSION }}
+          body: |
+            **VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip** is the self-hosted Blazor web site (`VaultGuard.Web`) - unzip and run/deploy it to use VaultGuard in a browser. It is not the browser extension or the API.
           generate_release_notes: true
           files: VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip
         env:
