@@ -70,6 +70,22 @@ jobs:
           echo "Next version: $next"
           echo "VERSION=$next" >> "$GITHUB_OUTPUT"
 
+      # Same shared combined-release identity as build-wpf.yml (see its comment) - keeps this on the
+      # same GitHub Release as WPF/Android/API for a PR-merge, without touching the web-vX.Y.Z tag
+      # scheme above (still used for the release branch and this app's own version history). Falls
+      # back to the run ID for a manual workflow_dispatch run, which has no PR number.
+      - name: Combined release identity
+        id: combined
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
+            id="pr${{ github.event.pull_request.number }}"
+          else
+            id="run${{ github.run_id }}"
+          fi
+          echo "TAG=release-$id" >> "$GITHUB_OUTPUT"
+          echo "NAME=VaultGuard Release ($id)" >> "$GITHUB_OUTPUT"
+
       - name: Restore web tests
         run: dotnet restore ${{ env.TEST_PROJECT }}
 
@@ -148,9 +164,12 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: web-v${{ steps.ver.outputs.VERSION }}
-          name: VaultGuard Web v${{ steps.ver.outputs.VERSION }}
-          generate_release_notes: true
+          tag_name: ${{ steps.combined.outputs.TAG }}
+          name: ${{ steps.combined.outputs.NAME }}
+          append_body: true
+          body: |
+            ### Web (Blazor Server) — v${{ steps.ver.outputs.VERSION }}
+            - `VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip` — self-contained win-x64 publish output
           files: VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -70,6 +70,26 @@ jobs:
           echo "TAG=$tag" >> "$GITHUB_OUTPUT"
           echo "Resolved version: $ver (tag: $tag)"
 
+      # ── Combined-release identity: every app (WPF/Android/Web/API) targets the SAME tag_name for a
+      # PR-merge release, so they land on one shared GitHub Release instead of four separate ones -
+      # softprops/action-gh-release additively merges files/body across repeat calls to the same
+      # tag_name (already relied on for the manual-tag path below), so this needs no cross-workflow
+      # coordination. Keyed on the PR number (known identically to all four concurrent jobs from the
+      # same triggering event) rather than a computed version, so there's no race to compute/tag a
+      # shared "next version" across four independent workflow files. The manual vX.Y.Z tag path is
+      # untouched - COMBINED_TAG there is just the tag itself, exactly as before this change.
+      - name: Combined release identity
+        id: combined
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
+            echo "TAG=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "NAME=VaultGuard ${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "TAG=release-pr${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+            echo "NAME=VaultGuard Release (PR #${{ github.event.pull_request.number }})" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Restore
         run: dotnet restore ${{ env.PROJECT }}
 
@@ -168,9 +188,14 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ steps.ver.outputs.TAG }}
-          name: VaultGuard ${{ steps.ver.outputs.VERSION }}
+          tag_name: ${{ steps.combined.outputs.TAG }}
+          name: ${{ steps.combined.outputs.NAME }}
           generate_release_notes: true
+          append_body: true
+          body: |
+            ### Windows Desktop (WPF) — v${{ steps.ver.outputs.VERSION }}
+            - `VaultGuardSetup-${{ steps.ver.outputs.VERSION }}.exe` — EXE installer (Inno Setup)
+            - `VaultGuardSetup-${{ steps.ver.outputs.VERSION }}.msi` — MSI installer (WiX)
           files: |
             installer/output/*.exe
             installer/output/*.msi

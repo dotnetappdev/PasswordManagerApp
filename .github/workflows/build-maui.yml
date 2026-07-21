@@ -78,6 +78,22 @@ jobs:
           echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
           echo "TAG=$tag" >> "$GITHUB_OUTPUT"
 
+      # Same shared combined-release identity as build-wpf.yml (see its comment) - keeps this on the
+      # same GitHub Release as WPF/Web/API for a PR-merge, without touching the android-vX.Y.Z tag
+      # scheme above (still used for the release branch and this app's own version history).
+      - name: Combined release identity
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
+        id: combined
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
+            echo "TAG=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "NAME=VaultGuard ${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "TAG=release-pr${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+            echo "NAME=VaultGuard Release (PR #${{ github.event.pull_request.number }})" >> "$GITHUB_OUTPUT"
+          fi
+
       # No signing key is configured (see VaultGuard.App.csproj) - the SDK auto-generates a debug
       # keystore, so this APK installs fine sideloaded ("install unknown apps") but isn't Play-Store
       # signed. -f net10.0-android only (no -r/-p:RuntimeIdentifier) keeps this from leaking a Windows
@@ -107,9 +123,12 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ steps.ver.outputs.TAG }}
-          name: VaultGuard Android v${{ steps.ver.outputs.VERSION }}
-          generate_release_notes: true
+          tag_name: ${{ steps.combined.outputs.TAG }}
+          name: ${{ steps.combined.outputs.NAME }}
+          append_body: true
+          body: |
+            ### Android — v${{ steps.ver.outputs.VERSION }}
+            - `com.companyname.passwordmanager.app-Signed.apk` — sideload APK (unsigned/debug key, not Play-Store signed)
           files: publish/android/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
