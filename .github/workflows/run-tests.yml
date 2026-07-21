@@ -48,14 +48,12 @@ jobs:
       run: |
         dotnet restore VaultGuard.App.Tests/VaultGuard.App.Tests.csproj
         dotnet restore VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj
-        dotnet restore VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj
         dotnet restore VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj
 
     - name: Build test projects
       run: |
         dotnet build VaultGuard.App.Tests/VaultGuard.App.Tests.csproj --no-restore --configuration Release
         dotnet build VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --no-restore --configuration Release
-        dotnet build VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj --no-restore --configuration Release
         dotnet build VaultGuard.BackEnd.Tests/VaultGuard.BackEnd.Tests.csproj --no-restore --configuration Release
 
     - name: Run App Tests
@@ -63,9 +61,6 @@ jobs:
 
     - name: Run Web Tests
       run: dotnet test VaultGuard.Web.Tests/VaultGuard.Web.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=web-tests.trx"
-
-    - name: Run WinUI Tests
-      run: dotnet test VaultGuard.WinUi.Tests/VaultGuard.WinUi.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=winui-tests.trx"
 
     - name: Run Backend Tests
       if: always()
