@@ -16,33 +16,40 @@
            Language="1033"
            Codepage="1252"
            InstallerVersion="500"
-           Scope="perUser">
+           Scope="perUserOrMachine">
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of VaultGuard is already installed." />
 
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
-    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <!-- WixUI_Advanced adds the standard "Install for all users / Install just for me" page
+         (InstallScopeDlg) ahead of the directory picker. Windows Installer elevates msiexec
+         itself via UAC when the all-users (perMachine) option is chosen - no extra manifest
+         work needed for that; MSI handles it natively. -->
+    <ui:WixUI Id="WixUI_Advanced" />
 
-    <StandardDirectory Id="LocalAppDataFolder">
-      <Directory Id="INSTALLFOLDER" Name="VaultGuard" />
+    <Property Id="ApplicationFolderName" Value="Vault Guard" />
+    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+
+    <StandardDirectory Id="TARGETDIR">
+      <Directory Id="APPLICATIONFOLDER" />
     </StandardDirectory>
 
-    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="AppFiles" Directory="APPLICATIONFOLDER">
       <Component Id="MainExecutable">
         <File Id="MainExe"
               Source="$(var.PublishDir)\VaultGuard.WPF.exe"
               KeyPath="yes">
           <Shortcut Id="DesktopShortcut"
                     Directory="DesktopFolder"
-                    Name="VaultGuard"
+                    Name="Vault Guard"
                     Advertise="no"
-                    WorkingDirectory="INSTALLFOLDER" />
+                    WorkingDirectory="APPLICATIONFOLDER" />
           <Shortcut Id="StartMenuShortcut"
                     Directory="ProgramMenuFolder"
-                    Name="VaultGuard"
+                    Name="Vault Guard"
                     Advertise="no"
-                    WorkingDirectory="INSTALLFOLDER" />
+                    WorkingDirectory="APPLICATIONFOLDER" />
         </File>
       </Component>
       <!-- Harvest remaining publish output files via heat / build tooling.
