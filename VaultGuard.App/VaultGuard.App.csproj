@@ -31,7 +31,7 @@
         <ApplicationTitle>VaultGuard.App</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.companyname.passwordmanager.app</ApplicationId>
+        <ApplicationId>com.dotnetappdevni.passwordmanager.app</ApplicationId>
 
         <!-- Versions -->
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

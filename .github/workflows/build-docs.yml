@@ -13,6 +13,11 @@ on:
       - '.github/workflows/build-docs.yml'
   workflow_dispatch: {}
 
+# See run-tests.yml's concurrency comment - cancels a stale in-flight run instead of piling up behind it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 

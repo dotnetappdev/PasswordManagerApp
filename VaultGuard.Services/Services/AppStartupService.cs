@@ -488,10 +488,45 @@ public class AppStartupService : IAppStartupService
         }
     }
 
+    // Reads the "SeedDemoData" flag the desktop installer writes to settings.json (see
+    // installer/setup.iss's WriteBackendSettings), so a user who opted out of demo/sample content at
+    // install time doesn't get fake accounts or sample password items on first launch. Defaults to
+    // true (existing behavior) when the file/key is absent - covers upgrades from before this flag
+    // existed, MSI installs (setup.wxs writes no settings.json at all), and MAUI, which has no
+    // installer wizard and already seeds unconditionally today.
+    private static bool IsSeedDemoDataEnabled()
+    {
+        try
+        {
+            var path = System.IO.Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+                "VaultGuard", "settings.json");
+            if (!System.IO.File.Exists(path)) return true;
+
+            using var doc = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllText(path));
+            if (doc.RootElement.TryGetProperty("SeedDemoData", out var el))
+            {
+                if (el.ValueKind == System.Text.Json.JsonValueKind.False) return false;
+                if (el.ValueKind == System.Text.Json.JsonValueKind.True) return true;
+                if (el.ValueKind == System.Text.Json.JsonValueKind.String &&
+                    bool.TryParse(el.GetString(), out var parsed))
+                    return parsed;
+            }
+        }
+        catch { /* best-effort; default to existing (seed-enabled) behavior */ }
+        return true;
+    }
+
     private async Task SeedTestDataIfNeeded(VaultGuardDbContext dbContext)
     {
         try
         {
+            if (!IsSeedDemoDataEnabled())
+            {
+                _logger.LogInformation("Demo/sample data seeding disabled via installer setting - skipping");
+                return;
+            }
+
             var markerPath = GetSeedMarkerPath(dbContext);
 
             // Already populated: record that this database has been seeded (so a later manual
@@ -588,8 +623,13 @@ public class AppStartupService : IAppStartupService
 
         try
         {
-            _logger.LogInformation("Seeding Identity data (roles and default users)");
-            await identitySeeder.SeedAsync();
+            // Roles are always seeded (the app needs them regardless); the demo accounts
+            // (admin/parent/user/child@passwordmanager.local) are the "install demo accounts" toggle
+            // from the desktop installer - skipping them leaves a fresh install on the normal first-run
+            // "Create Master Key" flow instead of pre-created accounts.
+            var includeDefaultUsers = IsSeedDemoDataEnabled();
+            _logger.LogInformation("Seeding Identity data (roles{Users})", includeDefaultUsers ? " and default users" : " only - default users disabled via installer setting");
+            await identitySeeder.SeedAsync(includeDefaultUsers);
             _logger.LogInformation("Identity data seeding completed successfully");
         }
         catch (Exception ex)

@@ -15,6 +15,9 @@ namespace VaultGuard.WPF.Helpers
         {
             try
             {
+                if (!IsSeedDemoDataEnabled())
+                    return;
+
                 // Always use a proper scope so scoped services (DbContext) are resolved correctly.
                 using var scope = serviceProvider.CreateScope();
                 var sp = scope.ServiceProvider;
@@ -112,6 +115,32 @@ namespace VaultGuard.WPF.Helpers
             {
                 VaultGuard.Services.Logging.AppLogger.Error("[SampleDataSeeder] Failed to remove duplicate categories", ex);
             }
+        }
+
+        // Mirrors AppStartupService.IsSeedDemoDataEnabled() - reads the same installer-written
+        // "SeedDemoData" key from settings.json so this secondary (page-load-triggered) seeding path
+        // respects the same opt-out as the startup one, instead of quietly re-adding sample data.
+        private static bool IsSeedDemoDataEnabled()
+        {
+            try
+            {
+                var path = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "VaultGuard", "settings.json");
+                if (!System.IO.File.Exists(path)) return true;
+
+                using var doc = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllText(path));
+                if (doc.RootElement.TryGetProperty("SeedDemoData", out var el))
+                {
+                    if (el.ValueKind == System.Text.Json.JsonValueKind.False) return false;
+                    if (el.ValueKind == System.Text.Json.JsonValueKind.True) return true;
+                    if (el.ValueKind == System.Text.Json.JsonValueKind.String &&
+                        bool.TryParse(el.GetString(), out var parsed))
+                        return parsed;
+                }
+            }
+            catch { /* best-effort; default to existing (seed-enabled) behavior */ }
+            return true;
         }
 
         // True when a "<db>.seeded" marker exists next to the SQLite database, meaning demo data has
