@@ -72,6 +72,66 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: no
 
 [Code]
 // ─────────────────────────────────────────────────────────────────────────────
+//  .NET Desktop Runtime check - the app is now published framework-dependent (not
+//  self-contained), so it needs a matching runtime already on the machine to run at all.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const
+  DotNetDesktopRuntimeDownloadUrl =
+    'https://dotnet.microsoft.com/download/dotnet/10.0/runtime?cid=getdotnetcore&os=windows&framework=netdesktop';
+
+// "dotnet --list-runtimes" prints one line per installed shared runtime, e.g.
+// "Microsoft.WindowsDesktop.App 10.0.1 [C:\Program Files\dotnet\shared\...]" - redirecting its
+// output to a temp file (Exec doesn't capture stdout directly) and searching for the family name
+// plus major version avoids needing to parse/compare an exact patch version, and works the same
+// way regardless of which .NET 10.x patch is actually installed.
+function IsDesktopRuntimeInstalled(): Boolean;
+var
+  ResultCode: Integer;
+  TempFile: String;
+  Lines: TArrayOfString;
+  I: Integer;
+begin
+  Result := False;
+  TempFile := ExpandConstant('{tmp}\dotnet-runtimes.txt');
+  if Exec(ExpandConstant('{cmd}'), '/C dotnet --list-runtimes > "' + TempFile + '" 2>&1',
+     '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    if LoadStringsFromFile(TempFile, Lines) then
+    begin
+      for I := 0 to GetArrayLength(Lines) - 1 do
+        if Pos('Microsoft.WindowsDesktop.App 10.', Lines[I]) > 0 then
+        begin
+          Result := True;
+          Break;
+        end;
+    end;
+  end;
+end;
+
+// Runs before any wizard page is shown. Returning False here cancels Setup cleanly with no
+// half-started install to clean up - the user gets a chance to grab the runtime first and just
+// re-run Setup afterwards, or can choose to proceed anyway (the app just won't launch until the
+// runtime is installed by some other means).
+function InitializeSetup(): Boolean;
+var
+  ErrorCode: Integer;
+begin
+  Result := True;
+  if not IsDesktopRuntimeInstalled() then
+  begin
+    if MsgBox('Vault Guard requires the .NET 10 Desktop Runtime, which was not found on this computer.' + #13#10 + #13#10 +
+              'Click OK to open the download page in your browser. Once it finishes installing, run this setup again.' + #13#10 + #13#10 +
+              'Click Cancel to install Vault Guard anyway - it will not run until the runtime is installed some other way.',
+              mbConfirmation, MB_OKCANCEL) = IDOK then
+    begin
+      ShellExecAsOriginalUser('open', DotNetDesktopRuntimeDownloadUrl, '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
+      Result := False;
+    end;
+  end;
+end;
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Backend configuration: local SQLite vault vs. a Vault Guard API server
 // ─────────────────────────────────────────────────────────────────────────────
 

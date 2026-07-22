@@ -93,14 +93,19 @@ jobs:
           --no-restore
           -p:Version=${{ steps.ver.outputs.VERSION }}
 
-      - name: Publish (self-contained win-x64)
+      # Framework-dependent (not self-contained): was bundling the entire .NET runtime into every
+      # installer (~66MB for a WPF app that's a few MB of actual code), and once installer/setup.wxs
+      # got fixed to actually include every publish file (previously just 2 hardcoded ones), the MSI
+      # would have jumped to the same size. Both installers now check for/guide the user to the
+      # required runtime instead of carrying their own private copy of it - see setup.iss's
+      # InitializeSetup and setup.wxs's LaunchCondition.
+      - name: Publish (framework-dependent win-x64)
         run: >
           dotnet publish ${{ env.PROJECT }}
           --configuration Release
           --runtime win-x64
-          --self-contained true
+          --self-contained false
           --output ${{ env.PUBLISH_DIR }}
-          -p:PublishSingleFile=false
           -p:Version=${{ steps.ver.outputs.VERSION }}
 
       # ── EXE Installer (Inno Setup) ────────────────────────────────────────
