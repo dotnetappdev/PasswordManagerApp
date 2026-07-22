@@ -125,7 +125,7 @@ jobs:
           append_body: true
           body: |
             ### Android — v${{ steps.ver.outputs.VERSION }}
-            - `com.companyname.passwordmanager.app-Signed.apk` — sideload APK (unsigned/debug key, not Play-Store signed)
+            - `com.dotnetappdevni.passwordmanager.app-Signed.apk` — sideload APK (unsigned/debug key, not Play-Store signed)
           files: publish/android/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
