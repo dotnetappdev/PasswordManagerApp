@@ -124,13 +124,18 @@ jobs:
           echo "EXE_PATH=$(Get-Item installer/output/*.exe | Select-Object -ExpandProperty FullName)" >> $env:GITHUB_OUTPUT
         id: exe
 
-      # ── MSI Installer (WiX v4) ────────────────────────────────────────────
+      # ── MSI Installer (WiX v5) ────────────────────────────────────────────
+      # v5, not v4: setup.wxs's <Files Include="..."> directory-harvesting element (used to pull in
+      # the whole framework-dependent publish output, not just the exe) is a WiX v5+ feature - the v4
+      # CLI rejects it outright (WIX0005, "unexpected child element 'Files'"). WiX v5 is documented as
+      # backward compatible with v4's schema/namespace, so the rest of setup.wxs (still declaring the
+      # v4 xmlns) keeps compiling unchanged.
       - name: Install WiX toolset
         shell: pwsh
         run: |
-          dotnet tool install --global wix --version 4.*
+          dotnet tool install --global wix --version 5.*
           # Pin the extension to the same version as the CLI - an unpinned "wix extension add"
-          # grabs the latest package (e.g. a v7 build), which the v4 CLI can't load (WIX0144).
+          # grabs the latest package (e.g. a v7 build), which this CLI version can't load (WIX0144).
           $wixVersion = (wix --version).Trim()
           wix extension add "WixToolset.UI.wixext/$wixVersion"
 
