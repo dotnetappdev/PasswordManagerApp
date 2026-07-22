@@ -18,13 +18,6 @@ concurrency:
 
 permissions:
   contents: write
-  # GitHub blocks the default GITHUB_TOKEN from pushing a tag/branch that points at a commit
-  # touching .github/workflows/** unless the token also has this scope ("refusing to allow a
-  # GitHub App to create or update workflow ... without `workflows` permission") - the "Tag
-  # release and create release branch" step below tags whatever commit triggered the run, which
-  # is exactly a workflow-file change whenever this file (or a sibling one) is itself being
-  # edited in the same PR/commit.
-  workflows: write
 
 env:
   PROJECT: VaultGuard.WPF/VaultGuard.WPF.csproj
@@ -167,6 +160,15 @@ jobs:
       # above) - all four jobs try to create the same tag/branch for this merge, so this checks
       # whether a sibling job already pushed it (re-fetching tags first to see their latest push, not
       # just what this job's own checkout had) and skips instead of failing if so.
+      #
+      # GitHub unconditionally refuses to let the default GITHUB_TOKEN create/update ANY ref (tag or
+      # branch) that points at a commit touching .github/workflows/** ("refusing to allow a GitHub App
+      # to create or update workflow ... without `workflows` permission") - there is no permission that
+      # grants this to GITHUB_TOKEN (confirmed: adding `workflows: write` to this file's `permissions:`
+      # isn't a recognized scope and makes the whole workflow fail to parse). So every push below is
+      # best-effort: if it's rejected for this reason, warn and move on rather than failing the job -
+      # the GitHub Release step still runs and still gets its files attached even without this tag/
+      # branch existing (softprops/action-gh-release creates the tag itself via the Releases API).
       - name: Tag release and create release branch
         if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
         shell: bash
@@ -180,14 +182,18 @@ jobs:
             echo "$tag already exists (created by a sibling app's release job for this same merge) - skipping."
           else
             git tag "$tag" "$sha"
-            git push origin "$tag"
+            if ! git push origin "$tag"; then
+              echo "::warning::Could not push tag $tag (likely blocked because this commit touches .github/workflows/** - see this step's comment). Continuing; the release step will create it via the API instead."
+            fi
           fi
           git fetch origin "refs/heads/release/$tag" 2>/dev/null || true
           if git rev-parse "refs/remotes/origin/release/$tag" >/dev/null 2>&1; then
             echo "release/$tag branch already exists - skipping."
           else
             git branch "release/$tag" "$sha"
-            git push origin "release/$tag"
+            if ! git push origin "release/$tag"; then
+              echo "::warning::Could not push branch release/$tag (likely blocked because this commit touches .github/workflows/** - see this step's comment)."
+            fi
           fi
 
       - name: Create GitHub Release
