@@ -12,11 +12,20 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        // NOT renamed to the dotnetappdevni package prefix (unlike the MAUI app's applicationId) -
+        // com.vaultguard.app is load-bearing here: it's referenced by the passkey/App Links Digital
+        // Asset Links config (VaultGuard.Web's /.well-known/assetlinks.json, driven by
+        // AndroidPackageName in appsettings.json) and iOS's associated-domains entitlements.
+        // Renaming it would break passkey verification across platforms unless all of those are
+        // updated in lockstep - flagging this rather than doing it silently.
         applicationId = "com.vaultguard.app"
         minSdk = 33
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.0"
+        // Overridable via -PversionName=X.Y.Z (build-android-native.yml passes the same shared
+        // release-vX.Y.Z version every other app publishes under) - falls back to a fixed default
+        // for local/Android Studio builds where that property isn't set.
+        versionName = (project.findProperty("versionName") as String?) ?: "1.0.0"
         vectorDrawables { useSupportLibrary = true }
     }
 

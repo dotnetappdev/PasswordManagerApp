@@ -1,11 +1,12 @@
 name: Build MAUI
 
+# PAUSED (unloaded, not removed): the MAUI project (VaultGuard.App) is excluded from CI for now in
+# favor of the native Kotlin/Compose Android app (VaultGuard.Android, see build-android-native.yml),
+# which is what release-vX.Y.Z's Android APK now comes from. All of VaultGuard.App's files and this
+# workflow's own build/release logic are untouched below - only its automatic triggers are disabled,
+# so it can be re-enabled later just by restoring the push/pull_request block. Run it manually via
+# workflow_dispatch in the meantime if needed.
 on:
-  push:
-    branches: [ devmain, main ]
-    tags:     [ 'v*' ]
-  pull_request:
-    branches: [ devmain, main ]
   workflow_dispatch: {}
 
 # Cancels a build already in flight for the same PR/branch when a new push arrives, instead of
