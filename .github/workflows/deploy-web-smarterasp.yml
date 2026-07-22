@@ -15,10 +15,12 @@ on:
     branches: [ devmain ]
   workflow_dispatch: {}
 
-# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a deploy already in
-# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
-# succession can both check out before either has pushed its own release tag - both then compute the
-# same "next" release-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
+# Serializes runs for the same PR/branch - queues behind an in-flight run rather than racing it (two
+# pushes computing the same "next" release-vX.Y.Z and racing to tag it, the loser failing with "tag
+# already exists"). Deliberately NOT cancel-in-progress like build-wpf.yml/build-maui.yml: this job's
+# Deploy to SmarterASP.NET step live-deploys to production with target-delete: true (existing files
+# removed before the new ones land) - killing that mid-flight could leave the production site
+# half-deleted, which is worse than a queued build burning a few extra CI minutes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 

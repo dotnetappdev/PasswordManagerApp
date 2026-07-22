@@ -27,6 +27,11 @@ on:
       - 'VaultGuard.DAL.Postgres/**'
       - 'VaultGuard.DAL.SupaBase/**'
 
+# See run-tests.yml's concurrency comment - cancels a stale in-flight run instead of piling up behind it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PROJECT: VaultGuard.API/VaultGuard.API.csproj
   PUBLISH_DIR: publish/api

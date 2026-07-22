@@ -8,13 +8,17 @@ on:
     branches: [ devmain, main ]
   workflow_dispatch: {}
 
-# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a build already in
-# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
-# succession can both check out before either has pushed its own release tag/screenshot commit - both
-# then compute the same "next" release-vX.Y.Z and race to push it, and the loser fails with "tag already
-# exists". Confirmed happening in CI.
+# Cancels a build already in flight for the same PR/branch when a new push arrives, instead of
+# queuing behind it - without this, two pushes to the same open PR in quick succession can both
+# check out before either has pushed its own release tag/screenshot commit, both then compute the
+# same "next" release-vX.Y.Z and race to push it (the loser fails with "tag already exists"), and
+# every push leaves one more stale, already-superseded run still grinding away in the queue behind
+# newer ones. Killing the old run outright avoids both: there's only ever one active run per ref,
+# so it can't race itself, and CI reflects the latest push promptly instead of working through a
+# backlog of runs nobody cares about anymore.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write

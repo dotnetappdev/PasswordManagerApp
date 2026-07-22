@@ -19,13 +19,15 @@ on:
       - '.github/workflows/screenshots.yml'
   workflow_dispatch: {}
 
-# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a run already in
-# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
-# succession can both auto-commit updated screenshots and race to push - the loser's push is rejected,
-# falls back to a rebase, and that rebase conflicts on the binary PNG files (git can't 3-way-merge
-# binaries), failing the job. Confirmed happening in CI.
+# Cancels a run already in flight for the same PR/branch when a new push arrives, instead of queuing
+# behind it - a queued (not killed) older run risks two runs both auto-committing screenshots and
+# racing to push (the loser's push rejected, falling back to a rebase that conflicts on the binary
+# PNGs, since git can't 3-way-merge those - confirmed happening in CI). Killing the old run outright
+# avoids that race entirely, and its screenshots would've been stale anyway - they're for code the
+# newer push already superseded.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write

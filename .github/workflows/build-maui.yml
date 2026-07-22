@@ -8,12 +8,12 @@ on:
     branches: [ devmain, main ]
   workflow_dispatch: {}
 
-# Serializes runs for the same PR/branch (default cancel-in-progress: false, so a build already in
-# flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
-# succession can both check out before either has pushed its own release tag - both then compute the
-# same "next" release-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
+# Cancels a build already in flight for the same PR/branch when a new push arrives, instead of
+# queuing behind it - see build-wpf.yml's concurrency comment for the full reasoning (avoids both
+# the version-race and stale runs piling up behind newer pushes).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
