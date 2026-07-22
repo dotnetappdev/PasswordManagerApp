@@ -18,6 +18,13 @@ concurrency:
 
 permissions:
   contents: write
+  # GitHub blocks the default GITHUB_TOKEN from pushing a tag/branch that points at a commit
+  # touching .github/workflows/** unless the token also has this scope ("refusing to allow a
+  # GitHub App to create or update workflow ... without `workflows` permission") - the "Tag
+  # release and create release branch" step below tags whatever commit triggered the run, which
+  # is exactly a workflow-file change whenever this file (or a sibling one) is itself being
+  # edited in the same PR/commit.
+  workflows: write
 
 env:
   PROJECT: VaultGuard.WPF/VaultGuard.WPF.csproj

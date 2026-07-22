@@ -18,6 +18,9 @@ on:
 
 permissions:
   contents: write
+  # See build-wpf.yml's permissions comment - "Create Release Branch" below needs this whenever
+  # the tagged commit touches .github/workflows/**.
+  workflows: write
 
 env:
   DOTNET_VERSION: '10.0.x'

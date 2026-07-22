@@ -17,6 +17,9 @@ concurrency:
 
 permissions:
   contents: write
+  # See build-wpf.yml's permissions comment - the "Tag release and create release branch" step
+  # below needs this whenever the tagged commit touches .github/workflows/**.
+  workflows: write
 
 env:
   PROJECT: VaultGuard.App/VaultGuard.App.csproj
