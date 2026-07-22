@@ -11,7 +11,7 @@ on:
 # Serializes runs for the same PR/branch (default cancel-in-progress: false, so a build already in
 # flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
 # succession can both check out before either has pushed its own release tag/screenshot commit - both
-# then compute the same "next" wpf-vX.Y.Z and race to push it, and the loser fails with "tag already
+# then compute the same "next" release-vX.Y.Z and race to push it, and the loser fails with "tag already
 # exists". Confirmed happening in CI.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,9 +43,14 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # ── Derive version: from a git tag (v1.2.3), auto-incremented from the latest wpf-vX.Y.Z tag on
-      # a merged PR into devmain (mirrors deploy-api/web-smarterasp.yml's scheme), or 0.0.0-dev
-      # otherwise (plain branch pushes/other PRs - build validation only, no release) ───────────────
+      # ── Derive version: from a git tag (v1.2.3), auto-incremented from the latest release-vX.Y.Z tag
+      # on a merged PR into devmain, or 0.0.0-dev otherwise (plain branch pushes/other PRs - build
+      # validation only, no release). release-vX.Y.Z is the ONE shared tag/version every app
+      # (WPF/Android/Web/API) publishes under - see deploy-api/web-smarterasp.yml and build-maui.yml,
+      # which compute this identically. All four jobs read this tag family early (before any of them
+      # has pushed a new one for this same merge), so they agree on the same next version without any
+      # cross-workflow coordination - see the "Tag release" step below for how the actual tag push
+      # stays safe if two of them race anyway. ─────────────────────────────────────────────────────
       - name: Set version
         id: ver
         shell: bash
@@ -54,14 +59,14 @@ jobs:
             ver="${BASH_REMATCH[1]}"
             tag="${{ github.ref_name }}"
           elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.base.ref }}" = "devmain" ]; then
-            latest=$(git tag -l 'wpf-v*' | sed 's/^wpf-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+            latest=$(git tag -l 'release-v*' | sed 's/^release-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
             if [ -z "$latest" ]; then
               ver="1.0.0"
             else
               IFS='.' read -r major minor patch <<< "$latest"
               ver="$major.$minor.$((patch + 1))"
             fi
-            tag="wpf-v$ver"
+            tag="release-v$ver"
           else
             ver="0.0.0-dev"
             tag=""
@@ -69,26 +74,6 @@ jobs:
           echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
           echo "TAG=$tag" >> "$GITHUB_OUTPUT"
           echo "Resolved version: $ver (tag: $tag)"
-
-      # ── Combined-release identity: every app (WPF/Android/Web/API) targets the SAME tag_name for a
-      # PR-merge release, so they land on one shared GitHub Release instead of four separate ones -
-      # softprops/action-gh-release additively merges files/body across repeat calls to the same
-      # tag_name (already relied on for the manual-tag path below), so this needs no cross-workflow
-      # coordination. Keyed on the PR number (known identically to all four concurrent jobs from the
-      # same triggering event) rather than a computed version, so there's no race to compute/tag a
-      # shared "next version" across four independent workflow files. The manual vX.Y.Z tag path is
-      # untouched - COMBINED_TAG there is just the tag itself, exactly as before this change.
-      - name: Combined release identity
-        id: combined
-        shell: bash
-        run: |
-          if [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
-            echo "TAG=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "NAME=VaultGuard ${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
-          else
-            echo "TAG=release-pr${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
-            echo "NAME=VaultGuard Release (PR #${{ github.event.pull_request.number }})" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Restore
         run: dotnet restore ${{ env.PROJECT }}
@@ -171,7 +156,10 @@ jobs:
       # ── Publish to GitHub Releases: manual vX.Y.Z tag push, or a merged PR into devmain ──────────
       # Only the PR-merge case needs a new tag - a manual vX.Y.Z tag already exists (the user pushed
       # it), so there's nothing to create here; the release step below just attaches the installers to
-      # that existing tag's release.
+      # that existing tag's release. release-vX.Y.Z is shared with Android/Web/API (see "Set version"
+      # above) - all four jobs try to create the same tag/branch for this merge, so this checks
+      # whether a sibling job already pushed it (re-fetching tags first to see their latest push, not
+      # just what this job's own checkout had) and skips instead of failing if so.
       - name: Tag release and create release branch
         if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
         shell: bash
@@ -179,17 +167,28 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           sha="${{ github.event.pull_request.head.sha }}"
-          git tag "${{ steps.ver.outputs.TAG }}" "$sha"
-          git push origin "${{ steps.ver.outputs.TAG }}"
-          git branch "release/${{ steps.ver.outputs.TAG }}" "$sha"
-          git push origin "release/${{ steps.ver.outputs.TAG }}"
+          tag="${{ steps.ver.outputs.TAG }}"
+          git fetch origin "refs/tags/$tag" 2>/dev/null || true
+          if git rev-parse "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag already exists (created by a sibling app's release job for this same merge) - skipping."
+          else
+            git tag "$tag" "$sha"
+            git push origin "$tag"
+          fi
+          git fetch origin "refs/heads/release/$tag" 2>/dev/null || true
+          if git rev-parse "refs/remotes/origin/release/$tag" >/dev/null 2>&1; then
+            echo "release/$tag branch already exists - skipping."
+          else
+            git branch "release/$tag" "$sha"
+            git push origin "release/$tag"
+          fi
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ steps.combined.outputs.TAG }}
-          name: ${{ steps.combined.outputs.NAME }}
+          tag_name: ${{ steps.ver.outputs.TAG }}
+          name: VaultGuard ${{ steps.ver.outputs.VERSION }}
           generate_release_notes: true
           append_body: true
           body: |

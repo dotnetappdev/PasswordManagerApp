@@ -6,7 +6,7 @@ name: Deploy Web to SmarterASP.NET
 # file/ReadMe.md for the reasoning behind self-contained publish and the OutOfProcess hosting model.
 #
 # Runs on EVERY PR into devmain (no path filter) rather than only PRs touching Web-relevant code, so a
-# web-vX.Y.Z release+zip gets cut alongside every other release (WPF/Android already do this
+# release-vX.Y.Z release+zip gets cut alongside every other release (WPF/Android already do this
 # unconditionally - see build-wpf.yml/build-maui.yml) instead of only when Web itself changed. This also
 # means every PR into devmain now live-deploys the current devmain build of VaultGuard.Web to the
 # production SmarterASP.NET site, whether or not that PR touched Web code.
@@ -18,7 +18,7 @@ on:
 # Serializes runs for the same PR/branch (default cancel-in-progress: false, so a deploy already in
 # flight is queued behind, never killed). Without this, two pushes to the same open PR in quick
 # succession can both check out before either has pushed its own release tag - both then compute the
-# same "next" web-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
+# same "next" release-vX.Y.Z and race to push it, and the loser fails with "tag already exists".
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
@@ -55,12 +55,15 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # Next version = latest web-vX.Y.Z tag with patch+1, or 1.0.0 if none exists yet.
+      # Next version = latest release-vX.Y.Z tag with patch+1, or 1.0.0 if none exists yet. This is the
+      # ONE shared tag/version every app (WPF/Android/Web/API) publishes under - see build-wpf.yml's
+      # "Set version" comment for why all four jobs reading this tag family early is enough for them
+      # to agree without cross-workflow coordination.
       - name: Compute next version
         id: ver
         shell: bash
         run: |
-          latest=$(git tag -l 'web-v*' | sed 's/^web-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+          latest=$(git tag -l 'release-v*' | sed 's/^release-v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
           if [ -z "$latest" ]; then
             next="1.0.0"
           else
@@ -69,22 +72,6 @@ jobs:
           fi
           echo "Next version: $next"
           echo "VERSION=$next" >> "$GITHUB_OUTPUT"
-
-      # Same shared combined-release identity as build-wpf.yml (see its comment) - keeps this on the
-      # same GitHub Release as WPF/Android/API for a PR-merge, without touching the web-vX.Y.Z tag
-      # scheme above (still used for the release branch and this app's own version history). Falls
-      # back to the run ID for a manual workflow_dispatch run, which has no PR number.
-      - name: Combined release identity
-        id: combined
-        shell: bash
-        run: |
-          if [ -n "${{ github.event.pull_request.number }}" ]; then
-            id="pr${{ github.event.pull_request.number }}"
-          else
-            id="run${{ github.run_id }}"
-          fi
-          echo "TAG=release-$id" >> "$GITHUB_OUTPUT"
-          echo "NAME=VaultGuard Release ($id)" >> "$GITHUB_OUTPUT"
 
       - name: Restore web tests
         run: dotnet restore ${{ env.TEST_PROJECT }}
@@ -146,16 +133,29 @@ jobs:
       # Runs regardless of whether the deploy above succeeded (see continue-on-error note): tag the
       # commit, branch off it, zip the publish output, and turn all of that into a GitHub Release - the
       # whole tag/branch/release cycle runs here with no manual `git tag && git push` step needed.
+      # release-vX.Y.Z is shared with WPF/Android/API (see build-wpf.yml's "Tag release" step comment) -
+      # this checks whether a sibling job already pushed it and skips instead of failing if so.
       - name: Tag release and create release branch
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           sha="${{ github.event.pull_request.head.sha || github.sha }}"
-          git tag "web-v${{ steps.ver.outputs.VERSION }}" "$sha"
-          git push origin "web-v${{ steps.ver.outputs.VERSION }}"
-          git branch "release/web-v${{ steps.ver.outputs.VERSION }}" "$sha"
-          git push origin "release/web-v${{ steps.ver.outputs.VERSION }}"
+          tag="release-v${{ steps.ver.outputs.VERSION }}"
+          git fetch origin "refs/tags/$tag" 2>/dev/null || true
+          if git rev-parse "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag already exists (created by a sibling app's release job for this same merge) - skipping."
+          else
+            git tag "$tag" "$sha"
+            git push origin "$tag"
+          fi
+          git fetch origin "refs/heads/release/$tag" 2>/dev/null || true
+          if git rev-parse "refs/remotes/origin/release/$tag" >/dev/null 2>&1; then
+            echo "release/$tag branch already exists - skipping."
+          else
+            git branch "release/$tag" "$sha"
+            git push origin "release/$tag"
+          fi
 
       - name: Zip publish output
         shell: pwsh
@@ -164,8 +164,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ steps.combined.outputs.TAG }}
-          name: ${{ steps.combined.outputs.NAME }}
+          tag_name: release-v${{ steps.ver.outputs.VERSION }}
+          name: VaultGuard ${{ steps.ver.outputs.VERSION }}
           append_body: true
           body: |
             ### Web (Blazor Server) — v${{ steps.ver.outputs.VERSION }}

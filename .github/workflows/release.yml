@@ -5,11 +5,12 @@ name: Automated Release
 # publishes a GitHub Release with both zips attached.
 #
 # This is separate from the automatic per-deploy releases in deploy-api-smarterasp.yml /
-# deploy-web-smarterasp.yml (which tag as api-vX.Y.Z / web-vX.Y.Z on every successful SmarterASP.NET
-# deploy, no manual tagging needed) - use this one when you want to cut a single combined release by
-# hand. build-api.yml and build-web.yml also already build+zip+release their own project individually on
-# a v* tag push (without a release branch) - all three contribute files to the same GitHub Release for a
-# given tag rather than conflicting, but this does mean a v* tag triggers three workflow runs.
+# deploy-web-smarterasp.yml / build-wpf.yml / build-maui.yml (which all tag as the same shared
+# release-vX.Y.Z on every PR merged into devmain, no manual tagging needed - see build-wpf.yml's
+# "Set version" comment) - use this one when you want to cut a release by hand instead. build-api.yml
+# and build-web.yml also already build+zip+release their own project individually on a v* tag push
+# (without a release branch) - all three contribute files to the same GitHub Release for a given tag
+# rather than conflicting, but this does mean a v* tag triggers three workflow runs.
 on:
   push:
     tags:
