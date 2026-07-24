@@ -37,6 +37,9 @@ public static class ServiceConfiguration
         services.AddSingleton<ISecureStorageService, WpfSecureStorageService>();
         services.AddSingleton<IMasterPasswordCacheService, MasterPasswordCacheService>();
         services.AddSingleton<IWindowsHelloService, WindowsHelloService>();
+        // Same shared settings.json the Blazor apps use (see AppSettingsService's doc comment) -
+        // language preference lives in it, keyed "Language", alongside theme/accent/API settings.
+        services.AddSingleton<IAppSettingsService, AppSettingsService>();
 
         // Database services
         ConfigureDatabaseServices(services);

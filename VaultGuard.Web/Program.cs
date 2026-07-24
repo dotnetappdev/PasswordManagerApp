@@ -49,6 +49,28 @@ builder.Services.AddSentryExceptionReporting(builder.Configuration["ExceptionRep
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Localization: PO-backed catalog (see VaultGuard.Localization) instead of the default RESX-backed
+// ResourceManagerStringLocalizer - AddLocalization() still wires up IStringLocalizer<T> DI the usual
+// way; only the underlying factory implementation is swapped afterward, so @inject
+// IStringLocalizer<T> in Razor components works unchanged.
+builder.Services.AddLocalization();
+builder.Services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, VaultGuard.Localization.PoStringLocalizerFactory>();
+
+var supportedCultureCodes = VaultGuard.Localization.SupportedLanguages.All.Select(l => l.Code).ToArray();
+builder.Services.Configure<Microsoft.AspNetCore.Localization.RequestLocalizationOptions>(options =>
+{
+    options.SetDefaultCulture(VaultGuard.Localization.SupportedLanguages.English.Code)
+        .AddSupportedCultures(supportedCultureCodes)
+        .AddSupportedUICultures(supportedCultureCodes);
+    // Cookie only, no Accept-Language negotiation - a fresh browser always starts in English until
+    // the user explicitly picks a language via the AppBar selector (MainLayout.razor), which posts
+    // to the /culture/set endpoint below, rather than guessing from browser/OS locale.
+    options.RequestCultureProviders = new List<Microsoft.AspNetCore.Localization.IRequestCultureProvider>
+    {
+        new Microsoft.AspNetCore.Localization.CookieRequestCultureProvider()
+    };
+});
+
 // Add MudBlazor services
 builder.Services.AddMudServices(config =>
 {
@@ -302,6 +324,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRequestLocalization(app.Services
+    .GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Localization.RequestLocalizationOptions>>()
+    .Value);
+
 app.UseStaticFiles();
 app.UseAntiforgery();
 
@@ -313,6 +339,23 @@ app.MapRazorComponents<App>()
 
 // Health check endpoint (used by Docker health checks)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Sets the language cookie and redirects back. Blazor Interactive Server components read
+// CultureInfo.CurrentUICulture once per circuit, at connection time, so switching language needs a
+// real HTTP round-trip through RequestLocalizationMiddleware (this endpoint + a full navigation) -
+// an in-page state update alone wouldn't re-resolve the culture. See LanguageSelector.razor, which
+// links here. Results.LocalRedirect (not Results.Redirect) rejects any redirectUri that isn't a
+// same-site relative path, so this can't be used as an open redirect.
+app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext ctx) =>
+{
+    ctx.Response.Cookies.Append(
+        Microsoft.AspNetCore.Localization.CookieRequestCultureProvider.DefaultCookieName,
+        Microsoft.AspNetCore.Localization.CookieRequestCultureProvider.MakeCookieValue(
+            new Microsoft.AspNetCore.Localization.RequestCulture(culture)),
+        new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+
+    return Results.LocalRedirect(string.IsNullOrEmpty(redirectUri) ? "/" : redirectUri);
+});
 
 // ── Passkey Relying Party association files ─────────────────────────────────────────────────────────
 // Native passkeys only bind to this domain if it serves these files over valid HTTPS. Android Credential

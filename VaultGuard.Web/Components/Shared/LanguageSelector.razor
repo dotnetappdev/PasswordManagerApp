@@ -1,0 +1,29 @@
+@* AppBar language picker. Selecting a language does a full browser round-trip through
+   /culture/set (see Program.cs's endpoint comment) rather than an in-page state change - Blazor
+   Interactive Server components resolve CultureInfo.CurrentUICulture once per circuit, at
+   connection time, so there's no way to re-translate the current page in place. *@
+@using VaultGuard.Localization
+@using Microsoft.Extensions.Localization
+@inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResources> L
+
+<MudTooltip Text="@L["Language"]">
+    <MudMenu Icon="@Icons.Material.Filled.Language" Color="Color.Inherit"
+             AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+        @foreach (var language in SupportedLanguages.All)
+        {
+            <MudMenuItem OnClick="@(() => SwitchLanguage(language.Code))">@language.NativeName</MudMenuItem>
+        }
+    </MudMenu>
+</MudTooltip>
+
+@code {
+    private void SwitchLanguage(string code)
+    {
+        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var redirectUri = Uri.EscapeDataString("/" + relativePath);
+        // forceLoad: true - guarantees an actual browser navigation to the minimal API endpoint
+        // (rather than depending on Blazor's link-interception behavior for a non-component route).
+        Navigation.NavigateTo($"/culture/set?culture={code}&redirectUri={redirectUri}", forceLoad: true);
+    }
+}

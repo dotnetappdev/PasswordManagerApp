@@ -211,6 +211,8 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
             new RoutedEventHandler((s, _) => FontScaleManager.ApplyDialogWindowScale(s as Window)));
 
+        LoadSavedLanguage();
+
         m_window = new MainWindow(_host.Services);
 
         ThemeHelper.Initialize(m_window, this);
@@ -357,6 +359,30 @@ public partial class App : Application
         {
             SentrySdk.CaptureException(ex);
             ThemeHelper.SetTheme(AppTheme.System);
+        }
+    }
+
+    // Loaded synchronously (unlike LoadSavedTheme, which applies a resource dictionary after the
+    // window already exists) because every {loc:T 'Key'} binding in MainWindow.xaml evaluates the
+    // instant the window is constructed - the language has to be set on
+    // VaultGuard.WPF.Localization.LocalizationManager.Instance before that first render, or the UI
+    // would flash English and then jump to the saved language a moment later.
+    private void LoadSavedLanguage()
+    {
+        try
+        {
+            var appSettings = _host.Services.GetRequiredService<IAppSettingsService>();
+            VaultGuard.WPF.Localization.LocalizationManager.Instance.SetLanguage(appSettings.Get("Language", "en"));
+
+            VaultGuard.WPF.Localization.LocalizationManager.Instance.LanguageChanged += (_, _) =>
+            {
+                appSettings.Set("Language", VaultGuard.WPF.Localization.LocalizationManager.Instance.CurrentLanguage.Code);
+                appSettings.Save();
+            };
+        }
+        catch (Exception ex)
+        {
+            SentrySdk.CaptureException(ex);
         }
     }
 

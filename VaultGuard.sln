@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VaultGuard.App", "VaultGuar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VaultGuard.Models", "VaultGuard.Models\VaultGuard.Models.csproj", "{EE2766FE-8427-431D-B290-54CA42179E85}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VaultGuard.Localization", "VaultGuard.Localization\VaultGuard.Localization.csproj", "{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VaultGuard.ExceptionReporting", "VaultGuard.ExceptionReporting\VaultGuard.ExceptionReporting.csproj", "{28A2E98D-6281-4D80-9226-7E57CE3FE18B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VaultGuard.ExceptionReporting.Sentry", "VaultGuard.ExceptionReporting.Sentry\VaultGuard.ExceptionReporting.Sentry.csproj", "{86A288BF-093A-4E47-9CC9-585CE22D908A}"
@@ -185,6 +187,18 @@ Global
 		{EE2766FE-8427-431D-B290-54CA42179E85}.Release|x64.Build.0 = Release|Any CPU
 		{EE2766FE-8427-431D-B290-54CA42179E85}.Release|x86.ActiveCfg = Release|Any CPU
 		{EE2766FE-8427-431D-B290-54CA42179E85}.Release|x86.Build.0 = Release|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Debug|x64.Build.0 = Debug|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Debug|x86.Build.0 = Debug|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Release|x64.ActiveCfg = Release|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Release|x64.Build.0 = Release|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Release|x86.ActiveCfg = Release|Any CPU
+		{B0896E3B-DBE7-4CFD-9AEE-60D04E01B446}.Release|x86.Build.0 = Release|Any CPU
 		{D08FEC45-6CBE-446B-8957-50F493534705}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D08FEC45-6CBE-446B-8957-50F493534705}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D08FEC45-6CBE-446B-8957-50F493534705}.Debug|x64.ActiveCfg = Debug|Any CPU

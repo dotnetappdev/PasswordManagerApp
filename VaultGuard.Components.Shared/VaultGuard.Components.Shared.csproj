@@ -26,6 +26,7 @@
     <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
     <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
     <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+    <ProjectReference Include="..\VaultGuard.Localization\VaultGuard.Localization.csproj" />
   </ItemGroup>
 
 </Project>

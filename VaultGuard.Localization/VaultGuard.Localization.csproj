@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>VaultGuard.Localization</RootNamespace>
+  </PropertyGroup>
+
+  <!-- gettext .po catalogs are the actual translation source of truth (see docs/LOCALIZATION.md) -
+       embedded so both VaultGuard.WPF and VaultGuard.Web ship the same catalog without a separate
+       copy/deploy step. Adding a language is just dropping a new Resources/messages.<culture>.po
+       file here; no code changes needed beyond one line in SupportedLanguages.cs (see its comment). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.po" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- PoParser.cs is a small hand-rolled reader for the msgid/msgstr subset of the gettext .po
+         format we actually use (see that file's header comment for why - no external PO-parsing
+         package dependency). IStringLocalizer/IStringLocalizerFactory below are the stable,
+         long-standing ASP.NET Core localization abstractions - not web-specific, safe to use from
+         WPF too - so VaultGuard.Web's existing localization plumbing (RequestLocalizationOptions,
+         [Inject] IStringLocalizer<T>) works against our catalog with no other code changes. -->
+    <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>

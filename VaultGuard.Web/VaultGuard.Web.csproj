@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VaultGuard.Components.Shared\VaultGuard.Components.Shared.csproj" />
+    <ProjectReference Include="..\VaultGuard.Localization\VaultGuard.Localization.csproj" />
     <ProjectReference Include="..\VaultGuard.Models\VaultGuard.Models.csproj" />
     <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
     <ProjectReference Include="..\VaultGuard.DAL\VaultGuard.DAL.csproj" />
