@@ -57,7 +57,7 @@ builder.Services.AddLocalization();
 builder.Services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, VaultGuard.Localization.PoStringLocalizerFactory>();
 
 var supportedCultureCodes = VaultGuard.Localization.SupportedLanguages.All.Select(l => l.Code).ToArray();
-builder.Services.Configure<Microsoft.AspNetCore.Localization.RequestLocalizationOptions>(options =>
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(options =>
 {
     options.SetDefaultCulture(VaultGuard.Localization.SupportedLanguages.English.Code)
         .AddSupportedCultures(supportedCultureCodes)
@@ -325,7 +325,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseRequestLocalization(app.Services
-    .GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Localization.RequestLocalizationOptions>>()
+    .GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>>()
     .Value);
 
 app.UseStaticFiles();
