@@ -212,3 +212,54 @@ msgstr "Schlüssel löschen"
 
 msgid "No translation keys yet — add one to get started"
 msgstr "Noch keine Übersetzungsschlüssel – fügen Sie einen hinzu, um zu beginnen"
+
+msgid "Refresh"
+msgstr "Aktualisieren"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Timestamp"
+msgstr "Zeitstempel"
+
+msgid "Let external apps, including the mobile apps, authenticate to your vault"
+msgstr "Ermöglicht externen Apps, einschließlich der mobilen Apps, sich bei Ihrem Tresor zu authentifizieren"
+
+msgid "Create New API Key"
+msgstr "Neuen API-Schlüssel erstellen"
+
+msgid "Create API Key"
+msgstr "API-Schlüssel erstellen"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Created"
+msgstr "Erstellt"
+
+msgid "Last Used"
+msgstr "Zuletzt verwendet"
+
+msgid "Revoke key"
+msgstr "Schlüssel widerrufen"
+
+msgid "No API keys found. Create your first API key to get started."
+msgstr "Keine API-Schlüssel gefunden. Erstellen Sie Ihren ersten API-Schlüssel, um zu beginnen."
+
+msgid "Track all activity on your account"
+msgstr "Verfolgen Sie die gesamte Aktivität Ihres Kontos"
+
+msgid "Clear filters"
+msgstr "Filter zurücksetzen"
+
+msgid "Entity Type"
+msgstr "Entitätstyp"
+
+msgid "Item"
+msgstr "Element"
+
+msgid "View changes"
+msgstr "Änderungen anzeigen"
+
+msgid "No audit logs found"
+msgstr "Keine Prüfprotokolleinträge gefunden"

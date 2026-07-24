@@ -343,6 +343,13 @@
             <ui:NavigationView.MenuItems>
 
                 <!-- ── Quick Access ── -->
+                <ui:NavigationViewItem Content="{loc:T 'Dashboard'}" Tag="Home"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE80F;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
                 <ui:NavigationViewItem x:Name="AllItemsNavItem"
                                        Content="{loc:T 'All Items'}"
                                        Background="{DynamicResource ModernBorderBrush}"
@@ -487,6 +494,20 @@
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE8B5;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="{loc:T 'API Keys'}" Tag="ApiKeys"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE192;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="{loc:T 'Audit Logs'}" Tag="AuditLogs"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE81C;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 

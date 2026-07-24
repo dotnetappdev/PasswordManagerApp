@@ -212,3 +212,54 @@ msgstr "Supprimer la clé"
 
 msgid "No translation keys yet — add one to get started"
 msgstr "Aucune clé de traduction pour le moment — ajoutez-en une pour commencer"
+
+msgid "Refresh"
+msgstr "Actualiser"
+
+msgid "Status"
+msgstr "État"
+
+msgid "Timestamp"
+msgstr "Horodatage"
+
+msgid "Let external apps, including the mobile apps, authenticate to your vault"
+msgstr "Permet à des applications externes, y compris les applications mobiles, de s'authentifier auprès de votre coffre"
+
+msgid "Create New API Key"
+msgstr "Créer une nouvelle clé API"
+
+msgid "Create API Key"
+msgstr "Créer une clé API"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Created"
+msgstr "Créée"
+
+msgid "Last Used"
+msgstr "Dernière utilisation"
+
+msgid "Revoke key"
+msgstr "Révoquer la clé"
+
+msgid "No API keys found. Create your first API key to get started."
+msgstr "Aucune clé API trouvée. Créez votre première clé API pour commencer."
+
+msgid "Track all activity on your account"
+msgstr "Suivez toute l'activité de votre compte"
+
+msgid "Clear filters"
+msgstr "Effacer les filtres"
+
+msgid "Entity Type"
+msgstr "Type d'entité"
+
+msgid "Item"
+msgstr "Élément"
+
+msgid "View changes"
+msgstr "Voir les modifications"
+
+msgid "No audit logs found"
+msgstr "Aucun journal d'audit trouvé"
