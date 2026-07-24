@@ -20,6 +20,7 @@
 @inject ISnackbar Snackbar
 @inject IServiceProvider Services
 @inject HttpClient Http
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 <div class="auth-container">
     <div class="auth-card @(!isFirstTime && !show2fa && _selectedProfile == null && _profiles.Count > 0 ? "auth-card--wide" : "")">
@@ -167,6 +168,18 @@
                                 </div>
                             }
                         </div>
+
+                        @if (IsGoogleSsoConfigured)
+                        {
+                            @* Verifies WHO you are (your email) so this picker can jump straight to your
+                               tile - it does not and cannot unlock the vault itself; the master password
+                               below is still required either way. See SsoConfiguration.cs. A real anchor
+                               link (not an onclick/NavigateTo) so the browser does a full navigation into
+                               the OAuth challenge, same reasoning as the language/culture links elsewhere. *@
+                            <a href="/login/google" class="auth-button auth-button-outline" style="text-decoration:none;">
+                                Continue with Google
+                            </a>
+                        }
 
                         <div class="auth-footer">
                             <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
@@ -408,6 +421,30 @@
     private bool confirmKeyError = false;
     private bool loginKeyError = false;
 
+    // Only shown/reachable when a real Google OAuth client is configured (Sso:GoogleClientId/Secret) -
+    // reads config directly rather than an IOptions<SsoConfiguration> registration so this shared
+    // component doesn't require every host (MAUI, etc.) to register that type just to no-op here.
+    private bool IsGoogleSsoConfigured =>
+        !string.IsNullOrWhiteSpace(Configuration["Sso:GoogleClientId"]) &&
+        !string.IsNullOrWhiteSpace(Configuration["Sso:GoogleClientSecret"]);
+
+    // Minimal query-string reader - avoids [SupplyParameterFromQuery], which only binds correctly on
+    // the component the Router actually matched. VaultGuard.Web hosts this component as a child of
+    // its own "/login" page rather than routing to it directly (this component's own @page "/login"
+    // is for OTHER hosts, e.g. MAUI - see VaultGuard.Web/Components/Pages/Login.razor's comment), so
+    // query binding attributes here wouldn't reliably fire in the Web scenario this feature targets.
+    private string? GetQueryParam(string name)
+    {
+        var query = new Uri(Navigation.Uri).Query.TrimStart('?');
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            if (parts.Length == 2 && Uri.UnescapeDataString(parts[0]) == name)
+                return Uri.UnescapeDataString(parts[1]);
+        }
+        return null;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         // Check if this is first time setup
@@ -417,6 +454,28 @@
         {
             storedHint = await AuthService.GetMasterPasswordHintAsync();
             await LoadProfilesAsync();
+        }
+
+        // Returning from the /login/google-callback redirect (see Program.cs) - Google only verified
+        // an email, so this just pre-selects the matching profile (identical to clicking its tile) and
+        // still requires the master password below; it never signs the user in by itself.
+        var ssoEmail = GetQueryParam("ssoEmail");
+        if (!string.IsNullOrEmpty(ssoEmail))
+        {
+            var match = _profiles.FirstOrDefault(p => string.Equals(p.Email, ssoEmail, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+            {
+                SelectProfile(match);
+                Snackbar.Add($"Verified as {match.Email} via Google — enter your master password to unlock your vault.", Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add($"No VaultGuard account found for {ssoEmail} yet.", Severity.Warning);
+            }
+        }
+        else if (GetQueryParam("ssoError") != null)
+        {
+            Snackbar.Add("Google sign-in failed. Please try again or use your master password.", Severity.Error);
         }
     }
 

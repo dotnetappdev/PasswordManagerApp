@@ -264,6 +264,18 @@
                             </Button.Template>
                         </Button>
 
+                        <!-- "Continue with Google" - identity hint only, speeds up picking your
+                             profile; hidden until a Desktop OAuth client is configured (see
+                             appsettings.json's Sso section). Still requires the master password
+                             afterwards, since only that can derive the vault encryption key. -->
+                        <Button Content="Continue with Google"
+                                Style="{StaticResource ModernSecondaryButtonStyle}"
+                                HorizontalAlignment="Center"
+                                FontSize="13"
+                                Margin="0,12,0,0"
+                                Click="ContinueWithGoogleButton_Click"
+                                Visibility="{Binding IsGoogleSsoConfigured, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
                         <!-- Recovery: create the built-in default accounts when you can't get in -->
                         <Button x:Name="SeedAccountsProfileButton"
                                 Content="Create default accounts"

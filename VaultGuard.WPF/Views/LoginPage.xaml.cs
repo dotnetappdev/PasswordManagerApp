@@ -621,6 +621,38 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    // Opens the system browser for Google sign-in; on a verified email match it jumps straight to
+    // the master-password step for that profile (see LoginViewModel.SignInWithGoogleAsync).
+    private async void ContinueWithGoogleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+
+        var button = sender as Button;
+        var originalContent = button?.Content;
+        try
+        {
+            if (button != null)
+            {
+                button.IsEnabled = false;
+                button.Content = "Waiting for Google sign-in…";
+            }
+
+            var success = await _viewModel.SignInWithGoogleAsync();
+            if (!success && !string.IsNullOrEmpty(_viewModel.ErrorMessage))
+            {
+                await ShowLoginMessageAsync("Google sign-in", _viewModel.ErrorMessage);
+            }
+        }
+        finally
+        {
+            if (button != null)
+            {
+                button.IsEnabled = true;
+                button.Content = originalContent ?? "Continue with Google";
+            }
+        }
+    }
+
     private void BackToProfilesButton_Click(object sender, RoutedEventArgs e)
     {
         _viewModel?.GoBackToProfileSelection();

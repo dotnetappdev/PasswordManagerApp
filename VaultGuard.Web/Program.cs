@@ -1,5 +1,6 @@
 using VaultGuard.Web.Components;
 using VaultGuard.Web.Middleware;
+using Microsoft.AspNetCore.Authentication; // HttpContext.AuthenticateAsync/SignOutAsync extensions (Google SSO callback)
 using Microsoft.EntityFrameworkCore;
 using VaultGuard.DAL;
 using VaultGuard.DAL.SqlServer;
@@ -182,6 +183,25 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 })
 .AddEntityFrameworkStores<VaultGuardDbContext>()
 .AddDefaultTokenProviders();
+
+// "Sign in with Google" - additive only, see SsoConfiguration.cs's doc comment for why this can never
+// replace the master password. AddIdentity above already called AddAuthentication(...) with its own
+// cookie scheme as the default; calling AddAuthentication() again here (no args) just adds the Google
+// scheme alongside it without disturbing that default.
+var ssoConfig = builder.Configuration.GetSection("Sso").Get<SsoConfiguration>() ?? new SsoConfiguration();
+builder.Services.Configure<SsoConfiguration>(builder.Configuration.GetSection("Sso"));
+if (ssoConfig.IsGoogleConfigured)
+{
+    builder.Services.AddAuthentication()
+        .AddGoogle(options =>
+        {
+            options.ClientId = ssoConfig.GoogleClientId!;
+            options.ClientSecret = ssoConfig.GoogleClientSecret!;
+            // Held in the external cookie only - never signs the user into the app's own auth state.
+            // See the /login/google-callback endpoint below for what happens with the verified email.
+            options.SignInScheme = Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme;
+        });
+}
 
 // Register application services
 builder.Services.AddScoped<IPasswordItemService, VaultGuard.Services.PasswordItemService>();
@@ -366,6 +386,39 @@ app.MapGet("/translations/export", (string culture) =>
     var bytes = System.Text.Encoding.UTF8.GetBytes(VaultGuard.Localization.TranslationRepository.ExportPo(culture));
     return Results.File(bytes, "text/plain; charset=utf-8", $"messages.{culture}.po");
 });
+
+// ── "Sign in with Google" (see SsoConfiguration.cs) ─────────────────────────────────────────────────
+// Only registered when a real ClientId/ClientSecret is configured, matching LanguageSelector-style
+// hidden-until-configured features elsewhere in this file.
+if (ssoConfig.IsGoogleConfigured)
+{
+    // Kicks off the Google OAuth challenge. Redirecting the browser here (a plain <a href>, not
+    // Blazor's NavigateTo) is required because Interactive Server components can't issue an auth
+    // challenge themselves - same reason /culture/set above is a plain endpoint rather than
+    // in-component code.
+    app.MapGet("/login/google", () =>
+        Results.Challenge(
+            new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/login/google-callback" },
+            new[] { Microsoft.AspNetCore.Authentication.Google.GoogleDefaults.AuthenticationScheme }));
+
+    // Reads the verified email Google returned and hands it to the existing login page's profile
+    // picker via a query string - it does NOT sign the user into the app itself (no cookie, no
+    // session, no vault unlock). The external-scheme cookie this handshake used is signed out
+    // immediately so nothing lingers past this one redirect. See Login.razor's ssoEmail handling.
+    app.MapGet("/login/google-callback", async (HttpContext ctx) =>
+    {
+        var result = await ctx.AuthenticateAsync(Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme);
+        await ctx.SignOutAsync(Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme);
+
+        var email = result.Succeeded
+            ? result.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            : null;
+
+        return string.IsNullOrWhiteSpace(email)
+            ? Results.LocalRedirect("/login?ssoError=1")
+            : Results.LocalRedirect($"/login?ssoEmail={Uri.EscapeDataString(email)}");
+    });
+}
 
 // ── Passkey Relying Party association files ─────────────────────────────────────────────────────────
 // Native passkeys only bind to this domain if it serves these files over valid HTTPS. Android Credential

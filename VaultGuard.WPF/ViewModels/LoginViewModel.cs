@@ -19,6 +19,7 @@ public class LoginViewModel : BaseViewModel
     private readonly ITwoFactorService? _twoFactorService;
     private readonly IMasterPasswordCacheService? _masterPasswordCacheService;
     private readonly IWindowsHelloService? _helloService;
+    private readonly IGoogleSsoService? _googleSsoService;
     private string _masterPassword = string.Empty;
     private string _confirmMasterPassword = string.Empty;
     private string _passwordHint = string.Empty;
@@ -52,6 +53,7 @@ public class LoginViewModel : BaseViewModel
         _twoFactorService = serviceProvider.GetService<ITwoFactorService>();
         _masterPasswordCacheService = serviceProvider.GetService<IMasterPasswordCacheService>();
         _helloService = serviceProvider.GetService<IWindowsHelloService>();
+        _googleSsoService = serviceProvider.GetService<IGoogleSsoService>();
 
         // Initialize with default state and then asynchronously update
         UpdateUIForSetupMode(); // Set initial UI state
@@ -300,6 +302,9 @@ public class LoginViewModel : BaseViewModel
         get => _showProfileSelection;
         set => SetProperty(ref _showProfileSelection, value);
     }
+
+    /// <summary>True once a Google "Desktop app" OAuth client is configured (see appsettings.json's Sso section) - drives visibility of the "Continue with Google" button on the profile picker.</summary>
+    public bool IsGoogleSsoConfigured => _googleSsoService?.IsConfigured ?? false;
 
     public bool ShowPasswordEntry => !ShowProfileSelection;
 
@@ -666,6 +671,56 @@ public class LoginViewModel : BaseViewModel
         // the user AND we must already have a cached master password for them on this device.
         _ = EvaluateTwoFactorQuickUnlockAsync(user);
         _ = EvaluateWindowsHelloQuickUnlockAsync(user);
+    }
+
+    /// <summary>
+    /// Opens the system browser for Google sign-in, then - on a verified email - selects the
+    /// matching local profile exactly as clicking its tile would (<see cref="SelectUserProfile"/>).
+    /// This never authenticates the user: it only jumps to the master-password step for whichever
+    /// profile matches the Google account, since only the master password can derive the vault key.
+    /// Returns true if a matching profile was found and selected.
+    /// </summary>
+    public async Task<bool> SignInWithGoogleAsync()
+    {
+        if (_googleSsoService == null || !_googleSsoService.IsConfigured)
+        {
+            ErrorMessage = "Google sign-in is not configured.";
+            return false;
+        }
+
+        try
+        {
+            IsLoading = true;
+            var result = await _googleSsoService.SignInAsync();
+            if (!result.Success || string.IsNullOrWhiteSpace(result.Email))
+            {
+                ErrorMessage = result.ErrorMessage ?? "Google sign-in failed.";
+                return false;
+            }
+
+            var users = await _userProfileService.GetAllUsersAsync();
+            var match = users?.FirstOrDefault(u =>
+                u?.IsActive == true && string.Equals(u.Email, result.Email, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
+            {
+                ErrorMessage = $"No local profile matches the Google account {result.Email}.";
+                return false;
+            }
+
+            SelectUserProfile(match);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Google sign-in failed: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            OnPropertyChanged(nameof(HasError));
+        }
     }
 
     /// <summary>
