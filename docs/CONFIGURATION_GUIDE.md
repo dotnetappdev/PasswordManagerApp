@@ -556,6 +556,7 @@ Benefits:
 
 ## Related Documentation
 
+- [Single Sign-On (Google) setup](SSO.md) - what a deploying organization needs to do in Google Cloud Console for "Continue with Google" on Web and WPF
 - [Browser Extension README](../VaultGuard.BrowserExtension/README.md)
 - [Native Host README](../VaultGuard.BrowserExtension.NativeHost/README.md)
 - [Web UI README](../VaultGuard.Web/README.md)
