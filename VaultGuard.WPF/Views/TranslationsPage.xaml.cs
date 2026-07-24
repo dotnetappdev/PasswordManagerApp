@@ -135,7 +135,7 @@ public sealed partial class TranslationsPage : Page
     private async void AddKeyButton_Click(object sender, RoutedEventArgs e)
     {
         var textBox = new TextBox { MinWidth = 340, Style = (Style)Application.Current.Resources["ModernTextBoxStyle"] };
-        ModernWpf.Controls.ControlHelper.SetPlaceholderText(textBox, "e.g. \"Export Vault\"");
+        ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(textBox, "e.g. \"Export Vault\"");
 
         var panel = new StackPanel();
         panel.Children.Add(new TextBlock
@@ -170,13 +170,13 @@ public sealed partial class TranslationsPage : Page
         var textBoxStyle = (Style)Application.Current.Resources["ModernTextBoxStyle"];
 
         var codeBox = new TextBox { MinWidth = 340, Style = textBoxStyle };
-        ModernWpf.Controls.ControlHelper.SetPlaceholderText(codeBox, "Code, e.g. \"it\"");
+        ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(codeBox, "Code, e.g. \"it\"");
 
         var nativeBox = new TextBox { MinWidth = 340, Style = textBoxStyle, Margin = new Thickness(0, 8, 0, 0) };
-        ModernWpf.Controls.ControlHelper.SetPlaceholderText(nativeBox, "Native name, e.g. \"Italiano\"");
+        ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(nativeBox, "Native name, e.g. \"Italiano\"");
 
         var englishBox = new TextBox { MinWidth = 340, Style = textBoxStyle, Margin = new Thickness(0, 8, 0, 0) };
-        ModernWpf.Controls.ControlHelper.SetPlaceholderText(englishBox, "English name, e.g. \"Italian\"");
+        ModernWpf.Controls.Primitives.ControlHelper.SetPlaceholderText(englishBox, "English name, e.g. \"Italian\"");
 
         var panel = new StackPanel();
         panel.Children.Add(codeBox);
