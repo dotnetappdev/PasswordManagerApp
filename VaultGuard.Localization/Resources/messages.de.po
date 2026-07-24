@@ -176,3 +176,39 @@ msgstr "Prüfprotokolle"
 
 msgid "All Settings"
 msgstr "Alle Einstellungen"
+
+msgid "Translations"
+msgstr "Übersetzungen"
+
+msgid "Manage languages and translation strings, or import/export .po files"
+msgstr "Sprachen und Übersetzungstexte verwalten oder .po-Dateien importieren/exportieren"
+
+msgid "Import .po"
+msgstr ".po importieren"
+
+msgid "Export .po"
+msgstr ".po exportieren"
+
+msgid "Add Key"
+msgstr "Schlüssel hinzufügen"
+
+msgid "Remove Language"
+msgstr "Sprache entfernen"
+
+msgid "Add Language"
+msgstr "Sprache hinzufügen"
+
+msgid "Search Keys"
+msgstr "Schlüssel suchen"
+
+msgid "Key (English)"
+msgstr "Schlüssel (Englisch)"
+
+msgid "Translation"
+msgstr "Übersetzung"
+
+msgid "Delete key"
+msgstr "Schlüssel löschen"
+
+msgid "No translation keys yet — add one to get started"
+msgstr "Noch keine Übersetzungsschlüssel – fügen Sie einen hinzu, um zu beginnen"

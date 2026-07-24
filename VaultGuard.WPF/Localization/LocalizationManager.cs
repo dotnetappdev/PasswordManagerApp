@@ -45,7 +45,15 @@ public sealed class LocalizationManager : INotifyPropertyChanged
     /// <summary>Indexer the `{loc:T 'Key'}` binding reads. The English literal passed as the key IS
     /// the gettext msgid (see docs/LOCALIZATION.md) - falls back to returning it unchanged when the
     /// current language has no translation for it yet.</summary>
-    public string this[string key] => PoCatalogStore.GetTranslation(_currentLanguage.Code, key) ?? key;
+    public string this[string key] => TranslationRepository.GetTranslation(_currentLanguage.Code, key) ?? key;
 
     public void SetLanguage(string code) => CurrentLanguage = SupportedLanguages.FromCode(code);
+
+    /// <summary>Call after languages are added/removed (e.g. from the Translations management
+    /// page) so the ComboBox in the top bar picks up the change without restarting the app.</summary>
+    public void RefreshLanguages() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AvailableLanguages)));
+
+    /// <summary>Call after any translation value changes (add/edit/delete a key, import a .po file)
+    /// so every {loc:T 'Key'} binding currently on screen re-evaluates immediately.</summary>
+    public void RefreshTranslations() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(System.Windows.Data.Binding.IndexerName));
 }

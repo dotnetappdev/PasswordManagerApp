@@ -176,3 +176,39 @@ msgstr "Registros de auditoría"
 
 msgid "All Settings"
 msgstr "Toda la configuración"
+
+msgid "Translations"
+msgstr "Traducciones"
+
+msgid "Manage languages and translation strings, or import/export .po files"
+msgstr "Administra idiomas y cadenas de traducción, o importa/exporta archivos .po"
+
+msgid "Import .po"
+msgstr "Importar .po"
+
+msgid "Export .po"
+msgstr "Exportar .po"
+
+msgid "Add Key"
+msgstr "Agregar clave"
+
+msgid "Remove Language"
+msgstr "Quitar idioma"
+
+msgid "Add Language"
+msgstr "Agregar idioma"
+
+msgid "Search Keys"
+msgstr "Buscar claves"
+
+msgid "Key (English)"
+msgstr "Clave (inglés)"
+
+msgid "Translation"
+msgstr "Traducción"
+
+msgid "Delete key"
+msgstr "Eliminar clave"
+
+msgid "No translation keys yet — add one to get started"
+msgstr "Aún no hay claves de traducción; agrega una para empezar"

@@ -176,3 +176,39 @@ msgstr "Journaux d'audit"
 
 msgid "All Settings"
 msgstr "Tous les paramètres"
+
+msgid "Translations"
+msgstr "Traductions"
+
+msgid "Manage languages and translation strings, or import/export .po files"
+msgstr "Gérer les langues et les chaînes de traduction, ou importer/exporter des fichiers .po"
+
+msgid "Import .po"
+msgstr "Importer .po"
+
+msgid "Export .po"
+msgstr "Exporter .po"
+
+msgid "Add Key"
+msgstr "Ajouter une clé"
+
+msgid "Remove Language"
+msgstr "Supprimer la langue"
+
+msgid "Add Language"
+msgstr "Ajouter une langue"
+
+msgid "Search Keys"
+msgstr "Rechercher des clés"
+
+msgid "Key (English)"
+msgstr "Clé (anglais)"
+
+msgid "Translation"
+msgstr "Traduction"
+
+msgid "Delete key"
+msgstr "Supprimer la clé"
+
+msgid "No translation keys yet — add one to get started"
+msgstr "Aucune clé de traduction pour le moment — ajoutez-en une pour commencer"

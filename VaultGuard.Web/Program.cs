@@ -357,6 +357,16 @@ app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext ctx)
     return Results.LocalRedirect(string.IsNullOrEmpty(redirectUri) ? "/" : redirectUri);
 });
 
+// Downloads one language's current catalog as a .po file - the "Export .po" button on
+// /translations (TranslationsAdmin.razor). Results.File with a fileDownloadName sends a
+// Content-Disposition: attachment header, so a plain <MudButton Href=...> triggers a real browser
+// download instead of navigating to the raw text.
+app.MapGet("/translations/export", (string culture) =>
+{
+    var bytes = System.Text.Encoding.UTF8.GetBytes(VaultGuard.Localization.TranslationRepository.ExportPo(culture));
+    return Results.File(bytes, "text/plain; charset=utf-8", $"messages.{culture}.po");
+});
+
 // ── Passkey Relying Party association files ─────────────────────────────────────────────────────────
 // Native passkeys only bind to this domain if it serves these files over valid HTTPS. Android Credential
 // Manager reads /.well-known/assetlinks.json; iOS AutoFill reads /apple-app-site-association. This host is

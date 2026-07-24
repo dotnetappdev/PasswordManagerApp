@@ -490,6 +490,13 @@
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
+                <ui:NavigationViewItem Content="{loc:T 'Translations'}" Tag="Translations"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE775;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
                 <!-- ── More (moved from pinned footer so everything scrolls together) ── -->
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
                 <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="{loc:T 'More'}"/>

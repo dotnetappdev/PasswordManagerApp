@@ -27,6 +27,12 @@ public static class PoCatalogStore
             : null;
     }
 
+    /// <summary>Exposes the built-in embedded catalog (bypassing culture-code guards like the "en"
+    /// short-circuit in <see cref="GetTranslation"/>) - used by <see cref="TranslationRepository"/>
+    /// to seed its editable on-disk copy the first time a language is loaded.</summary>
+    internal static IReadOnlyDictionary<string, string> LoadEmbeddedCatalog(string cultureCode)
+        => _catalogs.GetOrAdd(cultureCode, LoadCatalog);
+
     private static IReadOnlyDictionary<string, string> LoadCatalog(string cultureCode)
     {
         var assembly = typeof(PoCatalogStore).Assembly;

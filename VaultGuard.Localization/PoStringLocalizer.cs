@@ -3,12 +3,12 @@ using Microsoft.Extensions.Localization;
 namespace VaultGuard.Localization;
 
 /// <summary>
-/// IStringLocalizer backed by <see cref="PoCatalogStore"/>. One shared catalog for the whole app
-/// (not per-class the way RESX/IStringLocalizer&lt;T&gt; usually implies) - VaultGuard.Web,
-/// VaultGuard.Components.Shared and VaultGuard.WPF all translate against the same .po files, and
-/// since msgid IS the English source text (see docs/LOCALIZATION.md), <c>Localizer["Sign in"]</c>
-/// just returns "Sign in" verbatim when no translation exists yet, rather than an empty string or a
-/// resource-key placeholder.
+/// IStringLocalizer backed by <see cref="TranslationRepository"/> (the editable, file-backed
+/// catalog - see that class's doc comment). One shared catalog for the whole app (not per-class the
+/// way RESX/IStringLocalizer&lt;T&gt; usually implies) - VaultGuard.Web, VaultGuard.Components.Shared
+/// and VaultGuard.WPF all translate against the same catalog, and since msgid IS the English source
+/// text (see docs/LOCALIZATION.md), <c>Localizer["Sign in"]</c> just returns "Sign in" verbatim when
+/// no translation exists yet, rather than an empty string or a resource-key placeholder.
 /// </summary>
 public sealed class PoStringLocalizer : IStringLocalizer
 {
@@ -24,7 +24,7 @@ public sealed class PoStringLocalizer : IStringLocalizer
     {
         get
         {
-            var translated = PoCatalogStore.GetTranslation(_cultureAccessor(), name);
+            var translated = TranslationRepository.GetTranslation(_cultureAccessor(), name);
             return new LocalizedString(name, translated ?? name, resourceNotFound: translated is null);
         }
     }

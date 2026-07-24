@@ -7,15 +7,30 @@ adding a language or a new translatable string works the same way in both apps.
 ## How it works
 
 - **`VaultGuard.Localization`** is a small shared class library containing:
-  - `Resources/messages.<code>.po` — one catalog file per language (currently `es`, `fr`, `de`),
-    embedded into the assembly.
-  - `PoParser` / `PoCatalogStore` — a minimal, dependency-free reader for the `msgid`/`msgstr`
-    subset of the `.po` format VaultGuard uses, and a cache that loads each catalog on first use.
+  - `Resources/messages.<code>.po` — one built-in catalog file per language VaultGuard ships
+    translations for out of the box (currently `es`, `fr`, `de`), embedded into the assembly as the
+    *default* content for a language - see `TranslationRepository` below for where the live,
+    editable copies actually live.
+  - `PoParser` / `PoWriter` — a minimal, dependency-free reader and writer for the `msgid`/`msgstr`
+    subset of the `.po` format VaultGuard uses (no external PO-parsing package).
+  - `PoCatalogStore` — reads the embedded (build-time) catalogs; only used to seed
+    `TranslationRepository` the first time a language is loaded.
+  - `TranslationRepository` — the mutable, file-backed store both apps actually read/write through.
+    On first use it copies the embedded catalogs out to
+    `%LocalAppData%\VaultGuard\Localization\messages.<code>.po` (the same machine-shared directory
+    convention as `IAppSettingsService`'s settings.json) so they're immediately editable; from then
+    on that directory is the source of truth. It also tracks the set of known translation keys
+    (`keys.json`) and the list of languages (`languages.json`) independently of any one language's
+    catalog, and exposes the add/edit/delete/import/export operations behind the Translations
+    management page (see "Managing translations" below).
   - `PoStringLocalizer` / `PoStringLocalizerFactory` — implement the standard
-    `Microsoft.Extensions.Localization` abstractions (`IStringLocalizer`/`IStringLocalizerFactory`),
-    so both a plain .NET app (WPF) and ASP.NET Core's built-in localization pipeline (Blazor) can
-    use the same catalog without either one depending on ASP.NET Core.
-  - `SupportedLanguages` — the list of languages shown in both language pickers.
+    `Microsoft.Extensions.Localization` abstractions (`IStringLocalizer`/`IStringLocalizerFactory`)
+    on top of `TranslationRepository`, so both a plain .NET app (WPF) and ASP.NET Core's built-in
+    localization pipeline (Blazor) can use the same catalog without either one depending on
+    ASP.NET Core.
+  - `SupportedLanguages.All` — the live list of languages shown in both language pickers; delegates
+    to `TranslationRepository.GetLanguages()`, so languages added/removed via the management page
+    show up immediately without a code change or restart.
 
 - **English is the source language, not a catalog file.** Every `msgid` in the `.po` files - and
   every key passed to a translation lookup in code - IS the literal English UI text
@@ -48,22 +63,32 @@ adding a language or a new translatable string works the same way in both apps.
   round-trip is required here (not just an in-page state change) because Blazor Interactive Server
   components resolve `CultureInfo.CurrentUICulture` once per circuit, at connection time.
 
-## Adding a new language
+## Managing translations (Translations page)
 
-1. Copy an existing catalog, e.g. `VaultGuard.Localization/Resources/messages.es.po`, to
-   `messages.<code>.po` (use the language's two-letter ISO code, e.g. `it`, `pt`, `ja`).
-2. Translate every `msgstr "..."` line — leave `msgid` lines untouched (they're the lookup key,
-   not something to translate).
-3. Add one line to `SupportedLanguages.All` in `VaultGuard.Localization/LanguageInfo.cs`:
-   ```csharp
-   new LanguageInfo("it", "Italiano", "Italian"),
-   ```
-   That's it — both language pickers (WPF's `ComboBox`, Blazor's `LanguageSelector`) read this
-   same list, so the new language appears in both automatically.
+Both apps ship a CRUD page over `TranslationRepository` - no file editing required for day-to-day
+translation work:
 
-No project needs rebuilding logic changes, no `.resx`/satellite-assembly step, and no code outside
-that one file — the `.po` file is picked up as an embedded resource automatically (see the
-`<EmbeddedResource Include="Resources\*.po" />` glob in `VaultGuard.Localization.csproj`).
+- **WPF:** `Views/TranslationsPage.xaml`, reachable from the sidebar (Manage → Translations).
+  Pick a language, edit values inline (saved on focus-out), add/delete keys, add/remove languages,
+  and import/export a `.po` file for the selected language via standard Windows file dialogs.
+- **Blazor:** `Components/Pages/TranslationsAdmin.razor`, reachable from the drawer (Manage →
+  Translations) at `/translations`. Same operations, laid out as a grid with one column per
+  language; import via a plain file picker, export via a download link
+  (`/translations/export?culture=<code>` - see `Program.cs`).
+
+Edits take effect immediately in the running app (no rebuild, no restart) because the live
+`IStringLocalizer`/`LocalizationManager` read through the same `TranslationRepository` the CRUD
+pages write to.
+
+**Adding a language** without the UI (e.g. to ship a new one built-in): add a
+`messages.<code>.po` file under `VaultGuard.Localization/Resources/` and a matching line to
+`SupportedLanguages.Defaults` in `LanguageInfo.cs` - this only affects what a *fresh* install seeds
+its language registry with; an already-running install should just use the "Add Language" button
+on the Translations page instead.
+
+**Import/export semantics:** exporting always reflects the live, currently-edited catalog (not the
+original embedded defaults). Importing offers merge (imported values win on key collisions, existing
+untouched keys are kept) or replace (imported file becomes the whole catalog for that language).
 
 ## Adding a new translatable string
 
@@ -72,17 +97,19 @@ that one file — the `.po` file is picked up as an embedded resource automatica
   `{loc:T '_File'}`) so translators can place the accelerator on an appropriate letter in their
   language.
 - **Blazor:** wrap the literal with the injected localizer: `@L["Some English text"]`.
-- Then add a `msgid "Some English text"` / `msgstr "..."` pair to each `.po` file. Until a
-  translation is added, the string just displays in English for that language (see "English is the
-  source language" above) — it will never show a blank string or a raw resource key.
+- Either add the key via the Translations page ("Add Key") and fill in translations there, or add a
+  `msgid "Some English text"` / `msgstr "..."` pair directly to each `.po` file (only affects fresh
+  installs - see above). Until a translation exists, the string just displays in English (see
+  "English is the source language" above) — it never shows a blank string or a raw resource key.
 
 ## Current coverage
 
 This first pass wires up the full pipeline (catalog, live language switching, persisted
-preference, pickers in both top bars) and converts the navigation chrome that's visible on every
-screen: WPF's `File`/`View`/`Help` menu and `NavigationView` sidebar, and Blazor's `AppBar` and
-navigation drawer. Individual page content (Login, Settings, Dashboard forms, etc.) has **not**
-been converted yet — do that incrementally, screen by screen, following the pattern above. Plural
-forms (`msgid_plural`) aren't supported by `PoParser` — VaultGuard's UI strings are all simple,
+preference, pickers in both top bars, a CRUD management page with import/export in both apps) and
+converts the navigation chrome that's visible on every screen: WPF's `File`/`View`/`Help` menu and
+`NavigationView` sidebar, and Blazor's `AppBar` and navigation drawer. Individual page content
+(Login, Settings, Dashboard forms, etc.) has **not** been converted yet — do that incrementally,
+screen by screen, following the "Adding a new translatable string" pattern above. Plural forms
+(`msgid_plural`) aren't supported by `PoParser` — VaultGuard's UI strings are all simple,
 non-pluralized labels; if that's ever needed, replace `PoParser.cs` with a full gettext library
 instead of extending it.
