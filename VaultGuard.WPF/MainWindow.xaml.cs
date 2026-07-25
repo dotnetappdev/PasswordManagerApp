@@ -501,6 +501,9 @@ public sealed partial class MainWindow : Window
                 "SecurityDashboard" => new Views.DashboardPage(),
                 "Security"          => new Views.SecurityPage(),
                 "Import"            => new Views.ImportPage(),
+                "ApiKeys"           => new Views.ApiKeysPage(),
+                "AuditLogs"         => new Views.AuditLogsPage(),
+                "Translations"      => new Views.TranslationsPage(),
                 "Settings"          => new Views.SettingsPage(),
                 "Home"              => new Views.DashboardPage(),
                 "Login"             => new Views.LoginPage(),
@@ -796,6 +799,9 @@ public sealed partial class MainWindow : Window
             case Views.VaultsPage p:         p.OnNavigatedTo(e);      break;
             case Views.PasskeysPage p:       p.OnNavigatedTo(e);      break;
             case Views.SecurityPage p:       p.OnNavigatedTo(e);      break;
+            case Views.TranslationsPage p:   p.OnNavigatedTo(e);      break;
+            case Views.ApiKeysPage p:        p.OnNavigatedTo(e);      break;
+            case Views.AuditLogsPage p:      p.OnNavigatedTo(e);      break;
         }
     }
 

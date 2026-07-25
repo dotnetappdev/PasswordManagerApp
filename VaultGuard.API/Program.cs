@@ -277,6 +277,13 @@ builder.Services.Configure<VaultGuard.Models.Configuration.SmsConfiguration>(
 builder.Services.Configure<SentryConfiguration>(
     builder.Configuration.GetSection("Sentry"));
 
+// SSO - see SsoConfiguration.cs's doc comment. The API doesn't run the OIDC challenge/callback
+// itself (clients that can open a system browser, like WPF/mobile, run that loopback flow
+// themselves); it just needs the configured provider list (SsoController's GET /api/sso/providers)
+// and the AspNetUserLogins link-management endpoints (POST/DELETE /api/sso/link, GET /api/sso/links).
+builder.Services.Configure<SsoConfiguration>(
+    builder.Configuration.GetSection("Sso"));
+
 // Exception reporting (Sentry-backed, swappable via IExceptionReporter)
 builder.Services.AddSentryExceptionReporting(builder.Configuration["ExceptionReporting:SentryDsn"], "API");
 

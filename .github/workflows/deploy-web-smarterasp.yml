@@ -174,7 +174,7 @@ jobs:
           name: VaultGuard ${{ steps.ver.outputs.VERSION }}
           append_body: true
           body: |
-            ### Web (Blazor Server) — v${{ steps.ver.outputs.VERSION }}
+            ### Web (Blazor Web App) — v${{ steps.ver.outputs.VERSION }}
             - `VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip` — self-contained win-x64 publish output
           files: VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip
         env:

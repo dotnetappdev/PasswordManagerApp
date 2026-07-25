@@ -93,21 +93,36 @@ jobs:
           --no-restore
           -p:Version=${{ steps.ver.outputs.VERSION }}
 
-      - name: Publish (self-contained win-x64)
+      # Framework-dependent (not self-contained): was bundling the entire .NET runtime into every
+      # installer (~66MB for a WPF app that's a few MB of actual code), and once installer/setup.wxs
+      # got fixed to actually include every publish file (previously just 2 hardcoded ones), the MSI
+      # would have jumped to the same size. Both installers now check for/guide the user to the
+      # required runtime instead of carrying their own private copy of it - see setup.iss's
+      # InitializeSetup and setup.wxs's LaunchCondition.
+      - name: Publish (framework-dependent win-x64)
         run: >
           dotnet publish ${{ env.PROJECT }}
           --configuration Release
           --runtime win-x64
-          --self-contained true
+          --self-contained false
           --output ${{ env.PUBLISH_DIR }}
-          -p:PublishSingleFile=false
           -p:Version=${{ steps.ver.outputs.VERSION }}
 
       # ── EXE Installer (Inno Setup) ────────────────────────────────────────
+      # !cancelled() on this and the MSI track below: without it, these are plain sequential steps, so
+      # a failure in EITHER installer track skips every step after it in the job - including the OTHER
+      # track's already-built output, which then never gets uploaded/released even though it's fine.
+      # (This is exactly how release-v1.0.4 shipped with neither the EXE nor the MSI: the MSI step
+      # failed on a WiX syntax error, which silently skipped the EXE upload too, even though the EXE
+      # had already built successfully earlier in the same job.) Each track now stands on its own; the
+      # upload/release steps further down check each track's own steps.*.outcome so only what actually
+      # built gets attached, instead of an all-or-nothing job.
       - name: Install Inno Setup
+        if: "!cancelled()"
         run: choco install innosetup --no-progress -y
 
       - name: Build EXE installer
+        if: "!cancelled()"
         shell: pwsh
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
@@ -119,17 +134,24 @@ jobs:
           echo "EXE_PATH=$(Get-Item installer/output/*.exe | Select-Object -ExpandProperty FullName)" >> $env:GITHUB_OUTPUT
         id: exe
 
-      # ── MSI Installer (WiX v4) ────────────────────────────────────────────
+      # ── MSI Installer (WiX v5) ────────────────────────────────────────────
+      # v5, not v4: setup.wxs's <Files Include="..."> directory-harvesting element (used to pull in
+      # the whole framework-dependent publish output, not just the exe) is a WiX v5+ feature - the v4
+      # CLI rejects it outright (WIX0005, "unexpected child element 'Files'"). WiX v5 is documented as
+      # backward compatible with v4's schema/namespace, so the rest of setup.wxs (still declaring the
+      # v4 xmlns) keeps compiling unchanged.
       - name: Install WiX toolset
+        if: "!cancelled()"
         shell: pwsh
         run: |
-          dotnet tool install --global wix --version 4.*
+          dotnet tool install --global wix --version 5.*
           # Pin the extension to the same version as the CLI - an unpinned "wix extension add"
-          # grabs the latest package (e.g. a v7 build), which the v4 CLI can't load (WIX0144).
+          # grabs the latest package (e.g. a v7 build), which this CLI version can't load (WIX0144).
           $wixVersion = (wix --version).Trim()
           wix extension add "WixToolset.UI.wixext/$wixVersion"
 
       - name: Build MSI
+        if: "!cancelled()"
         shell: pwsh
         run: |
           $ver = "${{ steps.ver.outputs.VERSION }}"
@@ -145,13 +167,17 @@ jobs:
         id: msi
 
       # ── Upload artifacts for PRs / branch builds ─────────────────────────
+      # Gated on each track's own outcome (not just "!cancelled()") since upload-artifact fails outright
+      # if its path glob matches nothing - which it would for the track that didn't build.
       - name: Upload EXE artifact
+        if: "!cancelled() && steps.exe.outcome == 'success'"
         uses: actions/upload-artifact@v7
         with:
           name: VaultGuard-EXE-${{ steps.ver.outputs.VERSION }}
           path: installer/output/*.exe
 
       - name: Upload MSI artifact
+        if: "!cancelled() && steps.msi.outcome == 'success'"
         uses: actions/upload-artifact@v7
         with:
           name: VaultGuard-MSI-${{ steps.ver.outputs.VERSION }}
@@ -174,7 +200,7 @@ jobs:
       # the GitHub Release step still runs and still gets its files attached even without this tag/
       # branch existing (softprops/action-gh-release creates the tag itself via the Releases API).
       - name: Tag release and create release branch
-        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'
+        if: "!cancelled() && github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'"
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -201,7 +227,11 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain')
+        # !cancelled(): runs even if the EXE or MSI build failed, so whichever installer DID build
+        # still reaches the release instead of both being skipped by the other's failure - see the
+        # "EXE Installer"/"MSI Installer" section comments above. action-gh-release's file globs simply
+        # match nothing for whichever installer didn't build (fail_on_unmatched_files defaults false).
+        if: "!cancelled() && (startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'devmain'))"
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.ver.outputs.TAG }}

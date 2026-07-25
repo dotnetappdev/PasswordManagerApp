@@ -19,6 +19,9 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageReference Include="Blazored.FluentValidation" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
+    <!-- ConfigurationBinder.Get<T>() used by Login.razor to read Sso:Providers - a Razor class
+         library (unlike an SDK.Web app) doesn't pull this in transitively. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +29,7 @@
     <ProjectReference Include="..\VaultGuard.Services\VaultGuard.Services.csproj" />
     <ProjectReference Include="..\VaultGuard.Crypto\VaultGuard.Crypto.csproj" />
     <ProjectReference Include="..\VaultGuard.Imports\VaultGuard.Imports.csproj" />
+    <ProjectReference Include="..\VaultGuard.Localization\VaultGuard.Localization.csproj" />
   </ItemGroup>
 
 </Project>

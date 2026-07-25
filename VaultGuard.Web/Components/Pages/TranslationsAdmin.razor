@@ -1,0 +1,240 @@
+@page "/translations"
+@using VaultGuard.Localization
+@using Microsoft.AspNetCore.Components.Forms
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+@* Translations CRUD page: one row per known key, one editable column per language, plus
+   add/remove-language and .po import/export controls. See docs/LOCALIZATION.md for how the
+   underlying VaultGuard.Localization.TranslationRepository store works - edits here take effect
+   immediately (no rebuild) because the app's live IStringLocalizer reads through the same store. *@
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-weight:700">Translations</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Manage languages and translation strings, or import/export .po files</MudText>
+        </div>
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => _addingKey = !_addingKey)">Add Key</MudButton>
+    </MudStack>
+
+    @if (_addingKey)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudTextField T="string" @bind-Value="_newKeyText" Label="New key (the literal English text shown in the app)" Style="flex:1;" Immediate="true" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveNewKey">Add</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="@(() => _addingKey = false)">Cancel</MudButton>
+            </MudStack>
+        </MudPaper>
+    }
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Spacing="4">
+            <MudSelect T="string" Label="Import / Export language" @bind-Value="_activeLanguageCode" Style="min-width:220px;">
+                @foreach (var lang in _languages)
+                {
+                    <MudSelectItem T="string" Value="@lang.Code">@lang.NativeName</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" OnClick="@(() => _addingLanguage = !_addingLanguage)">Add Language</MudButton>
+
+            <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" Variant="Variant.Outlined"
+                       OnClick="RemoveActiveLanguage" Disabled="@(_activeLanguageCode is null)">Remove Language</MudButton>
+
+            <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Outlined"
+                       Href="@ExportUrl" Target="_blank" Disabled="@(_activeLanguageCode is null)">Export .po</MudButton>
+
+            <div style="min-width:260px;">
+                <MudText Typo="Typo.caption" Class="mb-1">Import .po (merges with existing translations)</MudText>
+                <InputFile OnChange="OnImportFileSelected" accept=".po" />
+            </div>
+        </MudStack>
+
+        @if (_addingLanguage)
+        {
+            <MudDivider Class="my-4" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Spacing="3">
+                <MudTextField T="string" @bind-Value="_newLanguageCode" Label="Code (e.g. &quot;it&quot;)" Style="max-width:160px;" Immediate="true" />
+                <MudTextField T="string" @bind-Value="_newLanguageNativeName" Label="Native name (e.g. &quot;Italiano&quot;)" Style="max-width:220px;" Immediate="true" />
+                <MudTextField T="string" @bind-Value="_newLanguageEnglishName" Label="English name (e.g. &quot;Italian&quot;)" Style="max-width:220px;" Immediate="true" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveNewLanguage">Add</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="@(() => _addingLanguage = false)">Cancel</MudButton>
+            </MudStack>
+        }
+    </MudPaper>
+
+    <MudTextField T="string" @bind-Value="_search" Label="Search Keys" Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" Immediate="true" />
+
+    <MudDataGrid T="TranslationRow" Items="@FilteredRows" Hover="true" Elevation="2" Dense="true">
+        <Columns>
+            <PropertyColumn Property="x => x.Key" Title="Key (English)" Sortable="true" />
+            @foreach (var lang in _languages)
+            {
+                var code = lang.Code;
+                <TemplateColumn Title="@lang.NativeName" Sortable="false">
+                    <CellTemplate>
+                        <MudTextField T="string" Value="@GetValue(context.Item, code)"
+                                      ValueChanged="@(v => SetValue(context.Item, code, v))"
+                                      Immediate="false" DebounceInterval="500" />
+                    </CellTemplate>
+                </TemplateColumn>
+            }
+            <TemplateColumn Title="" CellStyle="width:56px;" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                   OnClick="@(() => DeleteKey(context.Item.Key))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudStack AlignItems="AlignItems.Center" Class="pa-6" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Translate" Style="font-size:3rem; opacity:0.3;" />
+                <MudText>No translation keys yet — add one to get started</MudText>
+            </MudStack>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudContainer>
+
+@code {
+    private sealed class TranslationRow
+    {
+        public string Key { get; set; } = string.Empty;
+        public Dictionary<string, string> Values { get; set; } = new();
+    }
+
+    private List<LanguageInfo> _languages = new();
+    private List<TranslationRow> _rows = new();
+    private string? _activeLanguageCode;
+    private string _search = string.Empty;
+
+    private bool _addingKey;
+    private string _newKeyText = string.Empty;
+
+    private bool _addingLanguage;
+    private string _newLanguageCode = string.Empty;
+    private string _newLanguageNativeName = string.Empty;
+    private string _newLanguageEnglishName = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        LoadLanguages();
+        LoadRows();
+    }
+
+    private void LoadLanguages()
+    {
+        _languages = SupportedLanguages.All.Where(l => l.Code != "en").ToList();
+        if (_activeLanguageCode is null || !_languages.Any(l => l.Code == _activeLanguageCode))
+            _activeLanguageCode = _languages.FirstOrDefault()?.Code;
+    }
+
+    private void LoadRows()
+    {
+        var catalogs = _languages.ToDictionary(l => l.Code, l => TranslationRepository.GetCatalog(l.Code));
+
+        _rows = TranslationRepository.GetAllKeys().Select(k => new TranslationRow
+        {
+            Key = k,
+            Values = _languages.ToDictionary(l => l.Code, l => catalogs[l.Code].TryGetValue(k, out var v) ? v : string.Empty)
+        }).ToList();
+    }
+
+    private IEnumerable<TranslationRow> FilteredRows =>
+        string.IsNullOrWhiteSpace(_search)
+            ? _rows
+            : _rows.Where(r => r.Key.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                || r.Values.Values.Any(v => v.Contains(_search, StringComparison.OrdinalIgnoreCase)));
+
+    private string ExportUrl => _activeLanguageCode is null
+        ? "#"
+        : $"/translations/export?culture={Uri.EscapeDataString(_activeLanguageCode)}";
+
+    private static string GetValue(TranslationRow row, string code) => row.Values.TryGetValue(code, out var v) ? v : string.Empty;
+
+    private void SetValue(TranslationRow row, string code, string value)
+    {
+        row.Values[code] = value;
+        TranslationRepository.SetTranslation(code, row.Key, value);
+    }
+
+    private void DeleteKey(string key)
+    {
+        TranslationRepository.DeleteKey(key);
+        LoadRows();
+        Snackbar.Add($"Deleted \"{key}\"", Severity.Success);
+    }
+
+    private void SaveNewKey()
+    {
+        var key = _newKeyText?.Trim();
+        if (string.IsNullOrEmpty(key))
+        {
+            Snackbar.Add("Enter a key first", Severity.Warning);
+            return;
+        }
+
+        TranslationRepository.AddKey(key);
+        _newKeyText = string.Empty;
+        _addingKey = false;
+        LoadRows();
+        Snackbar.Add("Key added", Severity.Success);
+    }
+
+    private void SaveNewLanguage()
+    {
+        try
+        {
+            TranslationRepository.AddLanguage(
+                (_newLanguageCode ?? string.Empty).Trim(),
+                (_newLanguageNativeName ?? string.Empty).Trim(),
+                (_newLanguageEnglishName ?? string.Empty).Trim());
+
+            _newLanguageCode = string.Empty;
+            _newLanguageNativeName = string.Empty;
+            _newLanguageEnglishName = string.Empty;
+            _addingLanguage = false;
+
+            LoadLanguages();
+            LoadRows();
+            Snackbar.Add("Language added", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private void RemoveActiveLanguage()
+    {
+        if (_activeLanguageCode is null) return;
+
+        TranslationRepository.RemoveLanguage(_activeLanguageCode);
+        Snackbar.Add("Language removed", Severity.Success);
+
+        _activeLanguageCode = null;
+        LoadLanguages();
+        LoadRows();
+    }
+
+    private async Task OnImportFileSelected(InputFileChangeEventArgs e)
+    {
+        if (_activeLanguageCode is null || e.File is null) return;
+
+        try
+        {
+            using var reader = new StreamReader(e.File.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024));
+            var text = await reader.ReadToEndAsync();
+
+            TranslationRepository.ImportPo(_activeLanguageCode, text, replace: false);
+            LoadRows();
+            Snackbar.Add("Imported — merged with existing translations", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Import failed: {ex.Message}", Severity.Error);
+        }
+    }
+}

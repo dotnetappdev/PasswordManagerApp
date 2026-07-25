@@ -149,3 +149,36 @@ public class DeleteAccountRequestDto
     [Required]
     public string Password { get; set; } = string.Empty;
 }
+
+// SSO / external login DTOs - see VaultGuard.Models.Configuration.SsoConfiguration's doc comment.
+// These describe identity-provider links (AspNetUserLogins), never credentials or tokens.
+
+/// <summary>A configured SSO provider as surfaced to a client - just enough to render a "Continue with X" button.</summary>
+public class SsoProviderSummaryDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+/// <summary>One external identity linked to a local account (a row of AspNetUserLogins).</summary>
+public class ExternalLoginDto
+{
+    public string LoginProvider { get; set; } = string.Empty;
+    public string ProviderDisplayName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request to persist that the current (already master-password-authenticated) user is the same
+/// person as the given external identity. Never accepted before the caller has proven they hold
+/// the master password - see IUserProfileService.LinkExternalLoginAsync's doc comment for why.
+/// </summary>
+public class LinkExternalLoginRequestDto
+{
+    [Required]
+    public string LoginProvider { get; set; } = string.Empty;
+
+    [Required]
+    public string ProviderKey { get; set; } = string.Empty;
+
+    public string? ProviderDisplayName { get; set; }
+}

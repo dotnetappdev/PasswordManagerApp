@@ -3,6 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:VaultGuard.WPF.Controls"
+        xmlns:loc="clr-namespace:VaultGuard.WPF.Localization"
         Icon="Assets/AppIcon.ico"
         Background="{DynamicResource ModernBackgroundBrush}"
         PreviewKeyDown="MainWindow_PreviewKeyDown">
@@ -33,24 +34,24 @@
                       Foreground="{DynamicResource ModernTextPrimaryBrush}"
                       VerticalAlignment="Center"
                       Padding="4,2">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Settings" Click="MenuSettings_Click" InputGestureText="Ctrl+,">
+            <MenuItem Header="{loc:T '_File'}">
+                <MenuItem Header="{loc:T '_Settings'}" Click="MenuSettings_Click" InputGestureText="Ctrl+,">
                     <MenuItem.Icon>
                         <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Sign in from _Phone (QR)…" Click="MenuQrSignIn_Click"
-                          ToolTip="Show a QR code — scan it with the Vault Guard mobile app to sign in on this PC">
+                <MenuItem Header="{loc:T 'Sign in from _Phone (QR)…'}" Click="MenuQrSignIn_Click"
+                          ToolTip="{loc:T 'Show a QR code — scan it with the Vault Guard mobile app to sign in on this PC'}">
                     <MenuItem.Icon>
                         <TextBlock Text="&#xE722;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="E_xit" Click="MenuExit_Click"/>
+                <MenuItem Header="{loc:T 'E_xit'}" Click="MenuExit_Click"/>
             </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem x:Name="ToggleSideMenuMenuItem" Header="_Side Menu"
+            <MenuItem Header="{loc:T '_View'}">
+                <MenuItem x:Name="ToggleSideMenuMenuItem" Header="{loc:T '_Side Menu'}"
                           IsCheckable="True" IsChecked="True"
                           Click="ToggleSideMenuMenuItem_Click"
                           InputGestureText="Ctrl+B">
@@ -59,22 +60,22 @@
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="Check for _Updates…" Click="MenuCheckUpdates_Click">
+            <MenuItem Header="{loc:T '_Help'}">
+                <MenuItem Header="{loc:T 'Check for _Updates…'}" Click="MenuCheckUpdates_Click">
                     <MenuItem.Icon>
                         <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="_Documentation" Click="MenuDocumentation_Click"/>
+                <MenuItem Header="{loc:T '_Documentation'}" Click="MenuDocumentation_Click"/>
                 <Separator/>
-                <MenuItem Header="_About Vault Guard" Click="MenuAbout_Click"/>
+                <MenuItem Header="{loc:T '_About Vault Guard'}" Click="MenuAbout_Click"/>
             </MenuItem>
                 </Menu>
 
                 <!-- Global search: a single search box that searches the whole vault from anywhere. -->
                 <ui:AutoSuggestBox x:Name="SearchBox" Grid.Column="1"
                                    QueryIcon="Find"
-                                   ui:ControlHelper.PlaceholderText="Search Vault Guard…"
+                                   ui:ControlHelper.PlaceholderText="{loc:T 'Search Vault Guard…'}"
                                    TextChanged="SearchBox_TextChanged"
                                    QuerySubmitted="SearchBox_QuerySubmitted"
                                    SuggestionChosen="SearchBox_SuggestionChosen"
@@ -116,6 +117,18 @@
                         </DataTemplate>
                     </ui:AutoSuggestBox.ItemTemplate>
                 </ui:AutoSuggestBox>
+
+                <!-- Language selector: SelectedItem binds straight to LocalizationManager.CurrentLanguage,
+                     so picking a language here updates every {loc:T 'Key'} binding in the app live -
+                     no restart, no page reload. See VaultGuard.WPF/Localization/LocalizationManager.cs. -->
+                <ComboBox x:Name="LanguageSelector" Grid.Column="2"
+                          ItemsSource="{Binding AvailableLanguages, Source={x:Static loc:LocalizationManager.Instance}}"
+                          SelectedItem="{Binding CurrentLanguage, Source={x:Static loc:LocalizationManager.Instance}, Mode=TwoWay}"
+                          DisplayMemberPath="NativeName"
+                          Width="110"
+                          Margin="0,6,12,6"
+                          VerticalAlignment="Center"
+                          ToolTipService.ToolTip="{loc:T 'Language'}"/>
             </Grid>
         </Border>
 
@@ -184,13 +197,13 @@
                             Click="ProfileButton_Click">
                         <Button.ContextMenu>
                             <ContextMenu x:Name="ProfileMenu" Placement="Bottom">
-                                <MenuItem Header="View Profile" Click="ViewProfileMenuItem_Click">
+                                <MenuItem Header="{loc:T 'View Profile'}" Click="ViewProfileMenuItem_Click">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator/>
-                                <MenuItem Header="Sign Out" Click="Logout_Click">
+                                <MenuItem Header="{loc:T 'Sign Out'}" Click="Logout_Click">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                                     </MenuItem.Icon>
@@ -237,10 +250,10 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock x:Name="UserNameText"
-                                           Text="My Account"
+                                           Text="{loc:T 'My Account'}"
                                            FontSize="13" FontWeight="Medium"
                                            Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
-                                <TextBlock Text="Personal Vault"
+                                <TextBlock Text="{loc:T 'Personal Vault'}"
                                            FontSize="11"
                                            Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
                             </StackPanel>
@@ -261,7 +274,7 @@
                             Width="28" Height="28" Margin="0,0,8,0"
                             Cursor="Hand"
                             Click="PaneToggleButton_Click"
-                            ToolTipService.ToolTip="Expand / collapse menu">
+                            ToolTipService.ToolTip="{loc:T 'Expand / collapse menu'}">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="HbBd" Background="{TemplateBinding Background}" CornerRadius="6">
@@ -303,7 +316,7 @@
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets"
                                                        FontSize="12" Foreground="White" Margin="0,0,6,0"/>
-                                            <TextBlock Text="New Item" Foreground="White"
+                                            <TextBlock Text="{loc:T 'New Item'}" Foreground="White"
                                                        FontSize="13" FontWeight="Medium"/>
                                         </StackPanel>
                                     </Border>
@@ -330,8 +343,15 @@
             <ui:NavigationView.MenuItems>
 
                 <!-- ── Quick Access ── -->
+                <ui:NavigationViewItem Content="{loc:T 'Dashboard'}" Tag="Home"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE80F;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
                 <ui:NavigationViewItem x:Name="AllItemsNavItem"
-                                       Content="All Items"
+                                       Content="{loc:T 'All Items'}"
                                        Background="{DynamicResource ModernBorderBrush}"
                                        Tag="AllItems"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
@@ -340,7 +360,7 @@
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Favourites" Tag="Favorites"
+                <ui:NavigationViewItem Content="{loc:T 'Favourites'}" Tag="Favorites"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE734;" FontSize="{DynamicResource MenuIconSize}"/>
@@ -349,7 +369,7 @@
 
                 <!-- ── Categories ── -->
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
-                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Categories"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="{loc:T 'Categories'}"/>
 
                 <!-- Hamburger / pane toggle — lives inside the items list (not PaneHeader, which the
                      framework hides while the pane is folded to its compact icon-only rail) so it
@@ -360,7 +380,7 @@
                         Background="Transparent" BorderThickness="0"
                         Cursor="Hand"
                         Click="PaneToggleButton_Click"
-                        ToolTipService.ToolTip="Expand / collapse menu">
+                        ToolTipService.ToolTip="{loc:T 'Expand / collapse menu'}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="HbBd" Background="{TemplateBinding Background}" CornerRadius="6">
@@ -382,35 +402,35 @@
                     </Button.Template>
                 </Button>
 
-                <ui:NavigationViewItem Content="Logins" Tag="LoginCategory"
+                <ui:NavigationViewItem Content="{loc:T 'Logins'}" Tag="LoginCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE192;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Credit Cards" Tag="CreditCardCategory"
+                <ui:NavigationViewItem Content="{loc:T 'Credit Cards'}" Tag="CreditCardCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE8C7;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Secure Notes" Tag="SecureNotesCategory"
+                <ui:NavigationViewItem Content="{loc:T 'Secure Notes'}" Tag="SecureNotesCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE70B;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Wi-Fi Networks" Tag="WiFiCategory"
+                <ui:NavigationViewItem Content="{loc:T 'Wi-Fi Networks'}" Tag="WiFiCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE701;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Identities" Tag="IdentityCategory"
+                <ui:NavigationViewItem Content="{loc:T 'Identities'}" Tag="IdentityCategory"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE77B;" FontSize="{DynamicResource MenuIconSize}"/>
@@ -419,12 +439,12 @@
 
                 <!-- ── Security ── -->
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
-                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Security"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="{loc:T 'Security'}"/>
 
                 <!-- Passkeys: hidden from the menu — manage them from Settings → Security instead -->
                 <!-- Vaults: managed entirely from the sidebar VAULTS list (create/rename/delete) -->
 
-                <ui:NavigationViewItem Content="Security Center" Tag="Security"
+                <ui:NavigationViewItem Content="{loc:T 'Security Center'}" Tag="Security"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE8E1;" FontSize="{DynamicResource MenuIconSize}"/>
@@ -433,9 +453,9 @@
 
                 <!-- ── Manage ── -->
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
-                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Manage"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="{loc:T 'Manage'}"/>
 
-                <ui:NavigationViewItem Content="Manage Categories" Tag="Categories"
+                <ui:NavigationViewItem Content="{loc:T 'Manage Categories'}" Tag="Categories"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE8FD;" FontSize="{DynamicResource MenuIconSize}"/>
@@ -455,12 +475,12 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Vaults" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                        <TextBlock Grid.Column="0" Text="{loc:T 'Vaults'}" VerticalAlignment="Center" IsHitTestVisible="False"/>
                         <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
                                 Padding="0" Width="32" Height="32" MinWidth="0" MinHeight="0"
                                 Margin="0,0,4,0"
                                 VerticalAlignment="Center"
-                                ToolTipService.ToolTip="Add Vault"
+                                ToolTipService.ToolTip="{loc:T 'Add Vault'}"
                                 Click="AddVaultNavButton_Click">
                             <TextBlock Text="&#xE109;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="18"
                                        Foreground="{DynamicResource ModernTextSecondaryBrush}"
@@ -470,39 +490,60 @@
                 </ui:NavigationViewItem>
                 <StackPanel x:Name="VaultsNavPanel" Margin="0,0,0,8"/>
 
-                <ui:NavigationViewItem Content="Import / Export" Tag="Import"
+                <ui:NavigationViewItem Content="{loc:T 'Import / Export'}" Tag="Import"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE8B5;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
+                <ui:NavigationViewItem Content="{loc:T 'API Keys'}" Tag="ApiKeys"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE192;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="{loc:T 'Audit Logs'}" Tag="AuditLogs"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE81C;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
+                <ui:NavigationViewItem Content="{loc:T 'Translations'}" Tag="Translations"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE775;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
                 <!-- ── More (moved from pinned footer so everything scrolls together) ── -->
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
-                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="More"/>
+                <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="{loc:T 'More'}"/>
 
-                <ui:NavigationViewItem Content="Archive" Tag="Archive"
+                <ui:NavigationViewItem Content="{loc:T 'Archive'}" Tag="Archive"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE7B8;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Recently Deleted" Tag="RecentlyDeleted"
+                <ui:NavigationViewItem Content="{loc:T 'Recently Deleted'}" Tag="RecentlyDeleted"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE74D;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="Settings" Tag="Settings"
+                <ui:NavigationViewItem Content="{loc:T 'Settings'}" Tag="Settings"
                                        MouseRightButtonUp="NavigationItem_RightTapped">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE713;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem Content="About" Tag="About">
+                <ui:NavigationViewItem Content="{loc:T 'About'}" Tag="About">
                     <ui:NavigationViewItem.Icon>
                         <ui:FontIcon Glyph="&#xE946;" FontSize="{DynamicResource MenuIconSize}"/>
                     </ui:NavigationViewItem.Icon>
@@ -523,12 +564,12 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="TAGS" FontSize="10" FontWeight="SemiBold"
+                        <TextBlock Text="{loc:T 'TAGS'}" FontSize="10" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ModernTextTertiaryBrush}"
                                    VerticalAlignment="Center"/>
                         <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
                                 Padding="4" MinWidth="0" MinHeight="0"
-                                ToolTipService.ToolTip="Add Tag"
+                                ToolTipService.ToolTip="{loc:T 'Add Tag'}"
                                 Click="AddTagNavButton_Click">
                             <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                        Foreground="{DynamicResource ModernTextTertiaryBrush}"/>

@@ -17,7 +17,10 @@
 @inject VaultGuard.Web.Services.AppNotificationService Notify
 @inject IApiKeyService ApiKeyService
 @inject IServiceProvider Services
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@inject VaultGuard.Web.Services.ISsoLinkTokenStore SsoLinkTokenStore
 @using Microsoft.Extensions.DependencyInjection
+@using Microsoft.Extensions.Configuration
 @using System.Linq
 @using System.Collections.Generic
 @using System.Net.Http.Json
@@ -153,6 +156,54 @@
                             View and revoke paired devices (phone QR sign-in).
                         </MudText>
                     </MudStack>
+                </MudPaper>
+
+                <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Single Sign-On</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                        Link an identity provider to jump straight to your profile on the login screen next time.
+                        Your master password is still required every sign-in — linking never bypasses it.
+                    </MudText>
+                    @if (SsoProviders.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                            No sign-in providers are configured. See docs/SSO.md.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudStack Spacing="3">
+                            @foreach (var provider in SsoProviders)
+                            {
+                                var isLinked = _linkedSsoProviderIds.Contains(provider.Id);
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                    <MudText>@provider.DisplayName</MudText>
+                                    @if (isLinked)
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Linked</MudChip>
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                                       OnClick="@(() => UnlinkSsoProvider(provider.Id))">
+                                                Unlink
+                                            </MudButton>
+                                        </MudStack>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                                   OnClick="@(() => LinkSsoProvider(provider.Id))">
+                                            Link account
+                                        </MudButton>
+                                    }
+                                </MudStack>
+                            }
+                        </MudStack>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Class="mt-2"
+                                   StartIcon="@Icons.Material.Filled.Refresh"
+                                   OnClick="@LoadSsoLinksAsync">
+                            Refresh
+                        </MudButton>
+                    }
                 </MudPaper>
 
                 <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
@@ -1916,6 +1967,56 @@
         // Prefill the "issue key from server" email with the signed-in account's email for convenience.
         try { _issueEmail = AuthService.CurrentUser?.Email ?? _issueEmail; }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+
+        try { await LoadSsoLinksAsync(); }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+    }
+
+    // ── Single Sign-On ───────────────────────────────────────────────────────────
+    // Whatever's actually configured in Sso:Providers, never a hardcoded vendor - see docs/SSO.md.
+
+    private HashSet<string> _linkedSsoProviderIds = new(StringComparer.OrdinalIgnoreCase);
+
+    private List<VaultGuard.Models.Configuration.SsoProviderConfig> SsoProviders =>
+        Configuration.GetSection("Sso").Get<VaultGuard.Models.Configuration.SsoConfiguration>()?.ConfiguredProviders.ToList()
+        ?? new();
+
+    private async Task LoadSsoLinksAsync()
+    {
+        var userId = await CurrentUserIdAsync();
+        if (string.IsNullOrEmpty(userId))
+        {
+            _linkedSsoProviderIds = new(StringComparer.OrdinalIgnoreCase);
+            return;
+        }
+
+        var links = await UserProfileService.GetExternalLoginsAsync(userId);
+        _linkedSsoProviderIds = links.Select(l => l.LoginProvider).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        StateHasChanged();
+    }
+
+    // Opens the OIDC challenge in a new tab with a short-lived link token identifying this user (see
+    // SsoLinkTokenStore's doc comment for why - this circuit's login state can't survive the full-page
+    // redirect the challenge itself requires). The new tab reports success/failure on its own; this
+    // tab just needs a manual Refresh once it's done.
+    private async Task LinkSsoProvider(string providerId)
+    {
+        var userId = await CurrentUserIdAsync();
+        if (string.IsNullOrEmpty(userId)) return;
+
+        var token = SsoLinkTokenStore.CreateToken(userId);
+        var url = $"/login/sso/{providerId}?linkToken={Uri.EscapeDataString(token)}";
+        await JS.InvokeVoidAsync("open", url, "_blank");
+        Snackbar.Add("Complete sign-in in the new tab, then click Refresh here.", Severity.Info);
+    }
+
+    private async Task UnlinkSsoProvider(string providerId)
+    {
+        var userId = await CurrentUserIdAsync();
+        if (string.IsNullOrEmpty(userId)) return;
+
+        await UserProfileService.RemoveExternalLoginAsync(userId, providerId);
+        await LoadSsoLinksAsync();
     }
 
     // ── Generator ────────────────────────────────────────────────────────────────

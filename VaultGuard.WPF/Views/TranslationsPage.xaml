@@ -1,0 +1,150 @@
+<Page
+    x:Class="VaultGuard.WPF.Views.TranslationsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.modernwpf.com/2019"
+      xmlns:loc="clr-namespace:VaultGuard.WPF.Localization"
+      Background="{DynamicResource ModernBackgroundBrush}">
+
+    <ScrollViewer>
+        <StackPanel Margin="0,0,0,24">
+
+            <!-- Page Header -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="8">
+                        <StackPanel Orientation="Horizontal" Margin="12">
+                            <Border Background="{StaticResource ModernSuccessBrush}" Width="32" Height="32">
+                                <TextBlock Text="&#xE775;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{loc:T 'Translations'}" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="{loc:T 'Manage languages and translation strings, or import/export .po files'}"
+                                   Style="{StaticResource ModernCaptionStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12" VerticalAlignment="Center">
+                        <Button x:Name="ImportButton" Style="{StaticResource ModernSecondaryButtonStyle}" Click="ImportButton_Click" Margin="0,0,10,0">
+                            <StackPanel Orientation="Horizontal" Margin="8,6">
+                                <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{loc:T 'Import .po'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ExportButton" Style="{StaticResource ModernSecondaryButtonStyle}" Click="ExportButton_Click" Margin="0,0,10,0">
+                            <StackPanel Orientation="Horizontal" Margin="8,6">
+                                <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{loc:T 'Export .po'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="AddKeyButton" Style="{StaticResource ModernPrimaryButtonStyle}" Click="AddKeyButton_Click">
+                            <StackPanel Orientation="Horizontal" Margin="8,6">
+                                <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{loc:T 'Add Key'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Language row: pick which language's catalog to edit, plus add/remove language -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="{loc:T 'Language'}" VerticalAlignment="Center" Margin="4,0,10,0"
+                               Style="{StaticResource ModernBodyStyle}" FontWeight="SemiBold"/>
+
+                    <ComboBox x:Name="LanguageComboBox" Grid.Column="1"
+                              DisplayMemberPath="NativeName"
+                              SelectionChanged="LanguageComboBox_SelectionChanged"
+                              VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="2" x:Name="RemoveLanguageButton" Style="{StaticResource ModernSecondaryButtonStyle}"
+                            Click="RemoveLanguageButton_Click" Margin="10,0,0,0">
+                        <TextBlock Text="{loc:T 'Remove Language'}" Margin="8,6"/>
+                    </Button>
+
+                    <Button Grid.Column="4" x:Name="AddLanguageButton" Style="{StaticResource ModernPrimaryButtonStyle}"
+                            Click="AddLanguageButton_Click">
+                        <StackPanel Orientation="Horizontal" Margin="8,6">
+                            <TextBlock Text="&#xE109;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="{loc:T 'Add Language'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Search -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Margin="8">
+                    <TextBlock Text="{loc:T 'Search Keys'}" Style="{StaticResource ModernCaptionStyle}" FontWeight="SemiBold"/>
+                    <TextBox x:Name="SearchTextBox" ui:ControlHelper.PlaceholderText="🔍 Search…"
+                             TextChanged="SearchTextBox_TextChanged" Style="{StaticResource ModernTextBoxStyle}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Translation rows -->
+            <Border Style="{StaticResource ModernCardStyle}">
+                <StackPanel Margin="4">
+                    <!-- Header row -->
+                    <Grid Margin="12,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{loc:T 'Key (English)'}" FontWeight="SemiBold" Style="{StaticResource ModernCaptionStyle}"/>
+                        <TextBlock Grid.Column="1" Text="{loc:T 'Translation'}" FontWeight="SemiBold" Style="{StaticResource ModernCaptionStyle}"/>
+                    </Grid>
+                    <Border Height="1" Background="{DynamicResource ModernBorderBrush}" Margin="0,0,0,4"/>
+
+                    <ItemsControl x:Name="TranslationsItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource ModernBorderBrush}" BorderThickness="0,0,0,1" Padding="12,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Key}" VerticalAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                 Style="{StaticResource ModernTextBoxStyle}"
+                                                 Margin="8,0"
+                                                 LostFocus="TranslationTextBox_LostFocus"/>
+                                        <Button Grid.Column="2" Width="32" Height="32" Padding="0"
+                                                Background="Transparent" BorderThickness="0"
+                                                Click="DeleteKeyButton_Click"
+                                                ToolTipService.ToolTip="{loc:T 'Delete key'}">
+                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="#EF4444"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock x:Name="EmptyStateText" Text="{loc:T 'No translation keys yet — add one to get started'}"
+                               Style="{StaticResource ModernCaptionStyle}" HorizontalAlignment="Center" Margin="0,24" Visibility="Collapsed"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

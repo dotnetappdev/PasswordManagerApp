@@ -1,0 +1,265 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: VaultGuard\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+
+msgid "_File"
+msgstr "_Archivo"
+
+msgid "_Settings"
+msgstr "_Configuración"
+
+msgid "Sign in from _Phone (QR)…"
+msgstr "Iniciar sesión desde el _teléfono (QR)…"
+
+msgid "Show a QR code — scan it with the Vault Guard mobile app to sign in on this PC"
+msgstr "Muestra un código QR: escanéalo con la aplicación móvil de Vault Guard para iniciar sesión en este equipo"
+
+msgid "E_xit"
+msgstr "_Salir"
+
+msgid "_View"
+msgstr "_Ver"
+
+msgid "_Side Menu"
+msgstr "_Menú lateral"
+
+msgid "_Help"
+msgstr "Ay_uda"
+
+msgid "Check for _Updates…"
+msgstr "Buscar act_ualizaciones…"
+
+msgid "_Documentation"
+msgstr "_Documentación"
+
+msgid "_About Vault Guard"
+msgstr "_Acerca de Vault Guard"
+
+msgid "Search Vault Guard…"
+msgstr "Buscar en Vault Guard…"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Expand / collapse menu"
+msgstr "Expandir / contraer menú"
+
+msgid "All Items"
+msgstr "Todos los elementos"
+
+msgid "Favourites"
+msgstr "Favoritos"
+
+msgid "Categories"
+msgstr "Categorías"
+
+msgid "Logins"
+msgstr "Inicios de sesión"
+
+msgid "Credit Cards"
+msgstr "Tarjetas de crédito"
+
+msgid "Secure Notes"
+msgstr "Notas seguras"
+
+msgid "Wi-Fi Networks"
+msgstr "Redes Wi-Fi"
+
+msgid "Identities"
+msgstr "Identidades"
+
+msgid "Security"
+msgstr "Seguridad"
+
+msgid "Security Center"
+msgstr "Centro de seguridad"
+
+msgid "Manage"
+msgstr "Administrar"
+
+msgid "Manage Categories"
+msgstr "Administrar categorías"
+
+msgid "Add Vault"
+msgstr "Agregar bóveda"
+
+msgid "Vaults"
+msgstr "Bóvedas"
+
+msgid "Import / Export"
+msgstr "Importar / Exportar"
+
+msgid "More"
+msgstr "Más"
+
+msgid "Archive"
+msgstr "Archivados"
+
+msgid "Recently Deleted"
+msgstr "Eliminados recientemente"
+
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "About"
+msgstr "Acerca de"
+
+msgid "View Profile"
+msgstr "Ver perfil"
+
+msgid "Sign Out"
+msgstr "Cerrar sesión"
+
+msgid "My Account"
+msgstr "Mi cuenta"
+
+msgid "Personal Vault"
+msgstr "Bóveda personal"
+
+msgid "New Item"
+msgstr "Nuevo elemento"
+
+msgid "TAGS"
+msgstr "ETIQUETAS"
+
+msgid "Add Tag"
+msgstr "Agregar etiqueta"
+
+msgid "Switch to light mode"
+msgstr "Cambiar a modo claro"
+
+msgid "Switch to dark mode"
+msgstr "Cambiar a modo oscuro"
+
+msgid "Profile"
+msgstr "Perfil"
+
+msgid "Dashboard"
+msgstr "Panel"
+
+msgid "CATEGORIES"
+msgstr "CATEGORÍAS"
+
+msgid "SECURITY"
+msgstr "SEGURIDAD"
+
+msgid "Passkeys"
+msgstr "Llaves de acceso"
+
+msgid "MANAGE"
+msgstr "ADMINISTRAR"
+
+msgid "Collections"
+msgstr "Colecciones"
+
+msgid "Tags"
+msgstr "Etiquetas"
+
+msgid "All Vaults"
+msgstr "Todas las bóvedas"
+
+msgid "No vaults yet"
+msgstr "Aún no hay bóvedas"
+
+msgid "API Keys"
+msgstr "Claves de API"
+
+msgid "MORE"
+msgstr "MÁS"
+
+msgid "Audit Logs"
+msgstr "Registros de auditoría"
+
+msgid "All Settings"
+msgstr "Toda la configuración"
+
+msgid "Translations"
+msgstr "Traducciones"
+
+msgid "Manage languages and translation strings, or import/export .po files"
+msgstr "Administra idiomas y cadenas de traducción, o importa/exporta archivos .po"
+
+msgid "Import .po"
+msgstr "Importar .po"
+
+msgid "Export .po"
+msgstr "Exportar .po"
+
+msgid "Add Key"
+msgstr "Agregar clave"
+
+msgid "Remove Language"
+msgstr "Quitar idioma"
+
+msgid "Add Language"
+msgstr "Agregar idioma"
+
+msgid "Search Keys"
+msgstr "Buscar claves"
+
+msgid "Key (English)"
+msgstr "Clave (inglés)"
+
+msgid "Translation"
+msgstr "Traducción"
+
+msgid "Delete key"
+msgstr "Eliminar clave"
+
+msgid "No translation keys yet — add one to get started"
+msgstr "Aún no hay claves de traducción; agrega una para empezar"
+
+msgid "Refresh"
+msgstr "Actualizar"
+
+msgid "Status"
+msgstr "Estado"
+
+msgid "Timestamp"
+msgstr "Marca de tiempo"
+
+msgid "Let external apps, including the mobile apps, authenticate to your vault"
+msgstr "Permite que aplicaciones externas, incluidas las aplicaciones móviles, se autentiquen en tu bóveda"
+
+msgid "Create New API Key"
+msgstr "Crear nueva clave de API"
+
+msgid "Create API Key"
+msgstr "Crear clave de API"
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Created"
+msgstr "Creada"
+
+msgid "Last Used"
+msgstr "Último uso"
+
+msgid "Revoke key"
+msgstr "Revocar clave"
+
+msgid "No API keys found. Create your first API key to get started."
+msgstr "No se encontraron claves de API. Crea tu primera clave de API para empezar."
+
+msgid "Track all activity on your account"
+msgstr "Registra toda la actividad de tu cuenta"
+
+msgid "Clear filters"
+msgstr "Borrar filtros"
+
+msgid "Entity Type"
+msgstr "Tipo de entidad"
+
+msgid "Item"
+msgstr "Elemento"
+
+msgid "View changes"
+msgstr "Ver cambios"
+
+msgid "No audit logs found"
+msgstr "No se encontraron registros de auditoría"

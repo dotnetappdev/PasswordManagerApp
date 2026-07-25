@@ -1,5 +1,7 @@
 using VaultGuard.Web.Components;
 using VaultGuard.Web.Middleware;
+using Microsoft.AspNetCore.Authentication; // HttpContext.AuthenticateAsync/SignOutAsync extensions (SSO callback)
+using Microsoft.AspNetCore.Authentication.OpenIdConnect; // generic OIDC handler - any provider from Sso:Providers, never one hardcoded vendor
 using Microsoft.EntityFrameworkCore;
 using VaultGuard.DAL;
 using VaultGuard.DAL.SqlServer;
@@ -49,6 +51,28 @@ builder.Services.AddSentryExceptionReporting(builder.Configuration["ExceptionRep
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Localization: PO-backed catalog (see VaultGuard.Localization) instead of the default RESX-backed
+// ResourceManagerStringLocalizer - AddLocalization() still wires up IStringLocalizer<T> DI the usual
+// way; only the underlying factory implementation is swapped afterward, so @inject
+// IStringLocalizer<T> in Razor components works unchanged.
+builder.Services.AddLocalization();
+builder.Services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, VaultGuard.Localization.PoStringLocalizerFactory>();
+
+var supportedCultureCodes = VaultGuard.Localization.SupportedLanguages.All.Select(l => l.Code).ToArray();
+builder.Services.Configure<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>(options =>
+{
+    options.SetDefaultCulture(VaultGuard.Localization.SupportedLanguages.English.Code)
+        .AddSupportedCultures(supportedCultureCodes)
+        .AddSupportedUICultures(supportedCultureCodes);
+    // Cookie only, no Accept-Language negotiation - a fresh browser always starts in English until
+    // the user explicitly picks a language via the AppBar selector (MainLayout.razor), which posts
+    // to the /culture/set endpoint below, rather than guessing from browser/OS locale.
+    options.RequestCultureProviders = new List<Microsoft.AspNetCore.Localization.IRequestCultureProvider>
+    {
+        new Microsoft.AspNetCore.Localization.CookieRequestCultureProvider()
+    };
+});
+
 // Add MudBlazor services
 builder.Services.AddMudServices(config =>
 {
@@ -64,6 +88,10 @@ builder.Services.AddMudServices(config =>
 
 // Register AppNotificationService (thin toast wrapper)
 builder.Services.AddScoped<VaultGuard.Web.Services.AppNotificationService>();
+
+// Bridges Settings.razor's "Link account" click to the /login/sso/{id} OIDC round trip that
+// necessarily happens in a separate browser tab - see SsoLinkTokenStore's doc comment.
+builder.Services.AddSingleton<VaultGuard.Web.Services.ISsoLinkTokenStore, VaultGuard.Web.Services.SsoLinkTokenStore>();
 
 // Configure MudBlazor theme — neutral dark grey, no blue accent by default
 builder.Services.AddScoped(sp => new MudBlazor.MudTheme()
@@ -160,6 +188,45 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 })
 .AddEntityFrameworkStores<VaultGuardDbContext>()
 .AddDefaultTokenProviders();
+
+// SSO - additive only, see SsoConfiguration.cs's doc comment for why this can never replace the
+// master password, and for why every provider here is plain OIDC rather than one hardcoded vendor.
+// AddIdentity above already called AddAuthentication(...) with its own cookie scheme as the default;
+// calling AddAuthentication() again here (no args) just adds each provider's scheme alongside it
+// without disturbing that default. Scheme name == provider Id, e.g. "google", "azuread", "keycloak".
+var ssoConfig = builder.Configuration.GetSection("Sso").Get<SsoConfiguration>() ?? new SsoConfiguration();
+builder.Services.Configure<SsoConfiguration>(builder.Configuration.GetSection("Sso"));
+var ssoProviders = ssoConfig.ConfiguredProviders.ToList();
+if (ssoProviders.Count > 0)
+{
+    var authBuilder = builder.Services.AddAuthentication();
+    foreach (var provider in ssoProviders)
+    {
+        authBuilder.AddOpenIdConnect(provider.Id, provider.DisplayName, options =>
+        {
+            options.Authority = provider.Authority;
+            options.ClientId = provider.ClientId;
+            if (!string.IsNullOrWhiteSpace(provider.ClientSecret))
+                options.ClientSecret = provider.ClientSecret;
+
+            options.ResponseType = "code";
+            options.UsePkce = true;
+            options.SaveTokens = false;
+            options.GetClaimsFromUserInfoEndpoint = true;
+
+            options.Scope.Clear();
+            foreach (var scope in provider.Scopes.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                options.Scope.Add(scope);
+
+            // The redirect URI you register with the IdP - see appsettings.json's "//Sso" comment.
+            options.CallbackPath = $"/signin-oidc/{provider.Id}";
+
+            // Held in the external cookie only - never signs the user into the app's own auth state.
+            // See the /login/sso/{id}/callback endpoint below for what happens with the verified email.
+            options.SignInScheme = Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme;
+        });
+    }
+}
 
 // Register application services
 builder.Services.AddScoped<IPasswordItemService, VaultGuard.Services.PasswordItemService>();
@@ -302,6 +369,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRequestLocalization(app.Services
+    .GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Builder.RequestLocalizationOptions>>()
+    .Value);
+
 app.UseStaticFiles();
 app.UseAntiforgery();
 
@@ -313,6 +384,114 @@ app.MapRazorComponents<App>()
 
 // Health check endpoint (used by Docker health checks)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Sets the language cookie and redirects back. Blazor Interactive Server components read
+// CultureInfo.CurrentUICulture once per circuit, at connection time, so switching language needs a
+// real HTTP round-trip through RequestLocalizationMiddleware (this endpoint + a full navigation) -
+// an in-page state update alone wouldn't re-resolve the culture. See LanguageSelector.razor, which
+// links here. Results.LocalRedirect (not Results.Redirect) rejects any redirectUri that isn't a
+// same-site relative path, so this can't be used as an open redirect.
+app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext ctx) =>
+{
+    ctx.Response.Cookies.Append(
+        Microsoft.AspNetCore.Localization.CookieRequestCultureProvider.DefaultCookieName,
+        Microsoft.AspNetCore.Localization.CookieRequestCultureProvider.MakeCookieValue(
+            new Microsoft.AspNetCore.Localization.RequestCulture(culture)),
+        new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+
+    return Results.LocalRedirect(string.IsNullOrEmpty(redirectUri) ? "/" : redirectUri);
+});
+
+// Downloads one language's current catalog as a .po file - the "Export .po" button on
+// /translations (TranslationsAdmin.razor). Results.File with a fileDownloadName sends a
+// Content-Disposition: attachment header, so a plain <MudButton Href=...> triggers a real browser
+// download instead of navigating to the raw text.
+app.MapGet("/translations/export", (string culture) =>
+{
+    var bytes = System.Text.Encoding.UTF8.GetBytes(VaultGuard.Localization.TranslationRepository.ExportPo(culture));
+    return Results.File(bytes, "text/plain; charset=utf-8", $"messages.{culture}.po");
+});
+
+// ── SSO (see SsoConfiguration.cs) ────────────────────────────────────────────────────────────────
+// Generic across every configured provider - one route pair handles Google, Azure AD, Keycloak,
+// ADFS, or anything else in Sso:Providers, keyed by the provider Id used as the scheme name above.
+if (ssoProviders.Count > 0)
+{
+    var ssoProviderIds = ssoProviders.Select(p => p.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    // Kicks off the IdP's OIDC challenge. Redirecting the browser here (a plain <a href>, not
+    // Blazor's NavigateTo) is required because Interactive Server components can't issue an auth
+    // challenge themselves - same reason /culture/set above is a plain endpoint rather than
+    // in-component code. An optional linkToken (see SsoLinkTokenStore) means this came from
+    // Settings.razor's "Link account" button in a new tab rather than the login screen - threaded
+    // through to the callback via our own RedirectUri, untouched by the IdP.
+    // Explicit IResult/Task<IResult> return types below - the branches return different concrete
+    // Results.* types (ChallengeHttpResult/NotFound/LocalRedirect) which don't implicitly convert to
+    // each other, only to their shared IResult interface, so lambda return-type inference needs help.
+    app.MapGet("/login/sso/{id}", IResult (string id, string? linkToken) =>
+    {
+        if (!ssoProviderIds.Contains(id)) return Results.NotFound();
+
+        var callbackUri = $"/login/sso/{id}/callback";
+        if (!string.IsNullOrEmpty(linkToken))
+            callbackUri += $"?linkToken={Uri.EscapeDataString(linkToken)}";
+
+        return Results.Challenge(
+            new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = callbackUri },
+            new[] { id });
+    });
+
+    // Reads the verified email/subject the IdP returned. Two outcomes depending on how we got here:
+    //  - Settings-initiated (linkToken present): this is a separate tab from an already-authenticated
+    //    Settings session, so it links directly (IUserProfileService.LinkExternalLoginAsync) and shows
+    //    a plain static result - there is no app page to redirect back into.
+    //  - Login-initiated (no linkToken): hands the identity to the login page's profile picker via a
+    //    query string, exactly as before. Either way this does NOT sign the user into the app itself
+    //    (no cookie, no session, no vault unlock) - the external-scheme cookie this handshake used is
+    //    signed out immediately so nothing lingers past this one redirect.
+    app.MapGet("/login/sso/{id}/callback", async Task<IResult> (
+        string id, string? linkToken, HttpContext ctx,
+        VaultGuard.Web.Services.ISsoLinkTokenStore linkTokenStore,
+        IUserProfileService userProfileService) =>
+    {
+        if (!ssoProviderIds.Contains(id)) return Results.NotFound();
+
+        var result = await ctx.AuthenticateAsync(Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme);
+        await ctx.SignOutAsync(Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme);
+
+        var email = result.Succeeded
+            ? result.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            : null;
+        // The OIDC handler's underlying JwtSecurityTokenHandler maps the id_token's "sub" claim to
+        // ClaimTypes.NameIdentifier by default - this is the stable identifier LinkExternalLoginAsync
+        // persists against, since (unlike email) it can't drift out of sync with the IdP over time.
+        var subject = result.Succeeded
+            ? result.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            : null;
+
+        if (!string.IsNullOrEmpty(linkToken))
+        {
+            const string closeTabHtml = "<html><body><h2>{0}</h2><p>You can close this tab and go back to Settings.</p></body></html>";
+
+            if (string.IsNullOrWhiteSpace(subject) || !linkTokenStore.TryConsumeToken(linkToken, out var userId) || userId == null)
+                return Results.Content(string.Format(closeTabHtml, "VaultGuard: link failed or expired."), "text/html");
+
+            var providerDisplayName = ssoProviders.First(p => p.Id == id).DisplayName;
+            var (success, error) = await userProfileService.LinkExternalLoginAsync(userId, id, subject, providerDisplayName);
+            return Results.Content(
+                string.Format(closeTabHtml, success ? "VaultGuard: account linked." : $"VaultGuard: linking failed - {System.Net.WebUtility.HtmlEncode(error)}"),
+                "text/html");
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+            return Results.LocalRedirect($"/login?ssoError=1&ssoProvider={Uri.EscapeDataString(id)}");
+
+        var redirect = $"/login?ssoEmail={Uri.EscapeDataString(email)}&ssoProvider={Uri.EscapeDataString(id)}";
+        if (!string.IsNullOrWhiteSpace(subject))
+            redirect += $"&ssoSub={Uri.EscapeDataString(subject)}";
+        return Results.LocalRedirect(redirect);
+    });
+}
 
 // ── Passkey Relying Party association files ─────────────────────────────────────────────────────────
 // Native passkeys only bind to this domain if it serves these files over valid HTTPS. Android Credential

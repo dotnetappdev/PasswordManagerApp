@@ -1,0 +1,265 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: VaultGuard\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+
+msgid "_File"
+msgstr "_Datei"
+
+msgid "_Settings"
+msgstr "_Einstellungen"
+
+msgid "Sign in from _Phone (QR)…"
+msgstr "Vom _Smartphone anmelden (QR)…"
+
+msgid "Show a QR code — scan it with the Vault Guard mobile app to sign in on this PC"
+msgstr "Zeigt einen QR-Code an – scannen Sie ihn mit der Vault Guard-App, um sich auf diesem PC anzumelden"
+
+msgid "E_xit"
+msgstr "_Beenden"
+
+msgid "_View"
+msgstr "_Ansicht"
+
+msgid "_Side Menu"
+msgstr "_Seitenmenü"
+
+msgid "_Help"
+msgstr "_Hilfe"
+
+msgid "Check for _Updates…"
+msgstr "Nach _Updates suchen…"
+
+msgid "_Documentation"
+msgstr "_Dokumentation"
+
+msgid "_About Vault Guard"
+msgstr "Ü_ber Vault Guard"
+
+msgid "Search Vault Guard…"
+msgstr "Vault Guard durchsuchen…"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "Expand / collapse menu"
+msgstr "Menü ein-/ausblenden"
+
+msgid "All Items"
+msgstr "Alle Einträge"
+
+msgid "Favourites"
+msgstr "Favoriten"
+
+msgid "Categories"
+msgstr "Kategorien"
+
+msgid "Logins"
+msgstr "Anmeldedaten"
+
+msgid "Credit Cards"
+msgstr "Kreditkarten"
+
+msgid "Secure Notes"
+msgstr "Sichere Notizen"
+
+msgid "Wi-Fi Networks"
+msgstr "WLAN-Netzwerke"
+
+msgid "Identities"
+msgstr "Identitäten"
+
+msgid "Security"
+msgstr "Sicherheit"
+
+msgid "Security Center"
+msgstr "Sicherheitscenter"
+
+msgid "Manage"
+msgstr "Verwalten"
+
+msgid "Manage Categories"
+msgstr "Kategorien verwalten"
+
+msgid "Add Vault"
+msgstr "Tresor hinzufügen"
+
+msgid "Vaults"
+msgstr "Tresore"
+
+msgid "Import / Export"
+msgstr "Importieren / Exportieren"
+
+msgid "More"
+msgstr "Mehr"
+
+msgid "Archive"
+msgstr "Archiv"
+
+msgid "Recently Deleted"
+msgstr "Kürzlich gelöscht"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "About"
+msgstr "Über"
+
+msgid "View Profile"
+msgstr "Profil anzeigen"
+
+msgid "Sign Out"
+msgstr "Abmelden"
+
+msgid "My Account"
+msgstr "Mein Konto"
+
+msgid "Personal Vault"
+msgstr "Persönlicher Tresor"
+
+msgid "New Item"
+msgstr "Neuer Eintrag"
+
+msgid "TAGS"
+msgstr "TAGS"
+
+msgid "Add Tag"
+msgstr "Tag hinzufügen"
+
+msgid "Switch to light mode"
+msgstr "Zum hellen Modus wechseln"
+
+msgid "Switch to dark mode"
+msgstr "Zum dunklen Modus wechseln"
+
+msgid "Profile"
+msgstr "Profil"
+
+msgid "Dashboard"
+msgstr "Übersicht"
+
+msgid "CATEGORIES"
+msgstr "KATEGORIEN"
+
+msgid "SECURITY"
+msgstr "SICHERHEIT"
+
+msgid "Passkeys"
+msgstr "Passkeys"
+
+msgid "MANAGE"
+msgstr "VERWALTEN"
+
+msgid "Collections"
+msgstr "Sammlungen"
+
+msgid "Tags"
+msgstr "Tags"
+
+msgid "All Vaults"
+msgstr "Alle Tresore"
+
+msgid "No vaults yet"
+msgstr "Noch keine Tresore"
+
+msgid "API Keys"
+msgstr "API-Schlüssel"
+
+msgid "MORE"
+msgstr "MEHR"
+
+msgid "Audit Logs"
+msgstr "Prüfprotokolle"
+
+msgid "All Settings"
+msgstr "Alle Einstellungen"
+
+msgid "Translations"
+msgstr "Übersetzungen"
+
+msgid "Manage languages and translation strings, or import/export .po files"
+msgstr "Sprachen und Übersetzungstexte verwalten oder .po-Dateien importieren/exportieren"
+
+msgid "Import .po"
+msgstr ".po importieren"
+
+msgid "Export .po"
+msgstr ".po exportieren"
+
+msgid "Add Key"
+msgstr "Schlüssel hinzufügen"
+
+msgid "Remove Language"
+msgstr "Sprache entfernen"
+
+msgid "Add Language"
+msgstr "Sprache hinzufügen"
+
+msgid "Search Keys"
+msgstr "Schlüssel suchen"
+
+msgid "Key (English)"
+msgstr "Schlüssel (Englisch)"
+
+msgid "Translation"
+msgstr "Übersetzung"
+
+msgid "Delete key"
+msgstr "Schlüssel löschen"
+
+msgid "No translation keys yet — add one to get started"
+msgstr "Noch keine Übersetzungsschlüssel – fügen Sie einen hinzu, um zu beginnen"
+
+msgid "Refresh"
+msgstr "Aktualisieren"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Timestamp"
+msgstr "Zeitstempel"
+
+msgid "Let external apps, including the mobile apps, authenticate to your vault"
+msgstr "Ermöglicht externen Apps, einschließlich der mobilen Apps, sich bei Ihrem Tresor zu authentifizieren"
+
+msgid "Create New API Key"
+msgstr "Neuen API-Schlüssel erstellen"
+
+msgid "Create API Key"
+msgstr "API-Schlüssel erstellen"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Created"
+msgstr "Erstellt"
+
+msgid "Last Used"
+msgstr "Zuletzt verwendet"
+
+msgid "Revoke key"
+msgstr "Schlüssel widerrufen"
+
+msgid "No API keys found. Create your first API key to get started."
+msgstr "Keine API-Schlüssel gefunden. Erstellen Sie Ihren ersten API-Schlüssel, um zu beginnen."
+
+msgid "Track all activity on your account"
+msgstr "Verfolgen Sie die gesamte Aktivität Ihres Kontos"
+
+msgid "Clear filters"
+msgstr "Filter zurücksetzen"
+
+msgid "Entity Type"
+msgstr "Entitätstyp"
+
+msgid "Item"
+msgstr "Element"
+
+msgid "View changes"
+msgstr "Änderungen anzeigen"
+
+msgid "No audit logs found"
+msgstr "Keine Prüfprotokolleinträge gefunden"

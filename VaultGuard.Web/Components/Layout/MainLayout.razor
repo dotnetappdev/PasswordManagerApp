@@ -1,11 +1,14 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.Extensions.Localization
+@using VaultGuard.Localization
 @inject VaultGuard.Components.Shared.Services.ThemeService ThemeService
 @inject IJSRuntime JS
 @inject VaultGuard.Services.Interfaces.IAuthService AuthService
 @inject VaultGuard.Services.Interfaces.IVaultService VaultService
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResources> L
 
 @if (!_authorized)
 {
@@ -29,41 +32,42 @@ else
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6" Style="font-weight:700; color: var(--mud-palette-text-primary);">🔐 Vault Guard</MudText>
         <MudSpacer />
-        <MudTooltip Text="@(ThemeService.IsDarkMode ? "Switch to light mode" : "Switch to dark mode")">
+        <MudTooltip Text="@(ThemeService.IsDarkMode ? L["Switch to light mode"] : L["Switch to dark mode"])">
             <MudIconButton data-testid="theme-toggle" Icon="@(ThemeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
         </MudTooltip>
+        <LanguageSelector />
         <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <MudMenuItem Href="/profile">Profile</MudMenuItem>
-            <MudMenuItem Href="/settings">Settings</MudMenuItem>
+            <MudMenuItem Href="/profile">@L["Profile"]</MudMenuItem>
+            <MudMenuItem Href="/settings">@L["Settings"]</MudMenuItem>
             <MudDivider />
-            <MudMenuItem OnClick="@SignOut">Sign Out</MudMenuItem>
+            <MudMenuItem OnClick="@SignOut">@L["Sign Out"]</MudMenuItem>
         </MudMenu>
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Variant="DrawerVariant.Responsive"
                Style="background: var(--mud-palette-drawer-background);">
         <MudNavMenu>
             <!-- Quick Access (mirrors the WPF desktop navigation) -->
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="/passwords" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
-            <MudNavLink Href="/passwords?fav=true" Icon="@Icons.Material.Filled.Star">Favourites</MudNavLink>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@L["Dashboard"]</MudNavLink>
+            <MudNavLink Href="/passwords" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Lock">@L["All Items"]</MudNavLink>
+            <MudNavLink Href="/passwords?fav=true" Icon="@Icons.Material.Filled.Star">@L["Favourites"]</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">CATEGORIES</MudText>
-            <MudNavLink Href="/passwords?type=Login" Icon="@Icons.Material.Filled.Login">Logins</MudNavLink>
-            <MudNavLink Href="/passwords?type=CreditCard" Icon="@Icons.Material.Filled.CreditCard">Credit Cards</MudNavLink>
-            <MudNavLink Href="/passwords?type=SecureNote" Icon="@Icons.Material.Filled.StickyNote2">Secure Notes</MudNavLink>
-            <MudNavLink Href="/passwords?type=WiFi" Icon="@Icons.Material.Filled.Wifi">Wi-Fi Networks</MudNavLink>
-            <MudNavLink Href="/passwords?type=Identity" Icon="@Icons.Material.Filled.Badge">Identities</MudNavLink>
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">@L["CATEGORIES"]</MudText>
+            <MudNavLink Href="/passwords?type=Login" Icon="@Icons.Material.Filled.Login">@L["Logins"]</MudNavLink>
+            <MudNavLink Href="/passwords?type=CreditCard" Icon="@Icons.Material.Filled.CreditCard">@L["Credit Cards"]</MudNavLink>
+            <MudNavLink Href="/passwords?type=SecureNote" Icon="@Icons.Material.Filled.StickyNote2">@L["Secure Notes"]</MudNavLink>
+            <MudNavLink Href="/passwords?type=WiFi" Icon="@Icons.Material.Filled.Wifi">@L["Wi-Fi Networks"]</MudNavLink>
+            <MudNavLink Href="/passwords?type=Identity" Icon="@Icons.Material.Filled.Badge">@L["Identities"]</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">SECURITY</MudText>
-            <MudNavLink Href="/security" Icon="@Icons.Material.Filled.HealthAndSafety">Security Center</MudNavLink>
-            <MudNavLink Href="/passkeys" Icon="@Icons.Material.Filled.Fingerprint">Passkeys</MudNavLink>
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">@L["SECURITY"]</MudText>
+            <MudNavLink Href="/security" Icon="@Icons.Material.Filled.HealthAndSafety">@L["Security Center"]</MudNavLink>
+            <MudNavLink Href="/passkeys" Icon="@Icons.Material.Filled.Fingerprint">@L["Passkeys"]</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">MANAGE</MudText>
-            <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category">Categories</MudNavLink>
-            <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.FolderSpecial">Collections</MudNavLink>
-            <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
-            <MudNavGroup Title="Vaults" Icon="@Icons.Material.Filled.Shield" Expanded="false">
-                <MudNavLink Href="/vaults" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.GridView">All Vaults</MudNavLink>
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">@L["MANAGE"]</MudText>
+            <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category">@L["Categories"]</MudNavLink>
+            <MudNavLink Href="/collections" Icon="@Icons.Material.Filled.FolderSpecial">@L["Collections"]</MudNavLink>
+            <MudNavLink Href="/tags" Icon="@Icons.Material.Filled.Tag">@L["Tags"]</MudNavLink>
+            <MudNavGroup Title="@L["Vaults"]" Icon="@Icons.Material.Filled.Shield" Expanded="false">
+                <MudNavLink Href="/vaults" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.GridView">@L["All Vaults"]</MudNavLink>
                 @if (_vaults is { Count: > 0 })
                 {
                     @foreach (var v in _vaults)
@@ -75,24 +79,25 @@ else
                 }
                 else
                 {
-                    <MudText Typo="Typo.caption" Class="px-4 py-1" Style="color:#6B7280;">No vaults yet</MudText>
+                    <MudText Typo="Typo.caption" Class="px-4 py-1" Style="color:#6B7280;">@L["No vaults yet"]</MudText>
                 }
             </MudNavGroup>
-            <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
-            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">Import / Export</MudNavLink>
+            <MudNavLink Href="/api-keys" Icon="@Icons.Material.Filled.Key">@L["API Keys"]</MudNavLink>
+            <MudNavLink Href="/import" Icon="@Icons.Material.Filled.ImportExport">@L["Import / Export"]</MudNavLink>
+            <MudNavLink Href="/translations" Icon="@Icons.Material.Filled.Translate">@L["Translations"]</MudNavLink>
 
-            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">MORE</MudText>
-            <MudNavLink Href="/passwords?status=archived" Icon="@Icons.Material.Filled.Archive">Archive</MudNavLink>
-            <MudNavLink Href="/passwords?status=deleted" Icon="@Icons.Material.Filled.DeleteSweep">Recently Deleted</MudNavLink>
-            <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.History">Audit Logs</MudNavLink>
-            <MudNavGroup Title="Settings" Icon="@Icons.Material.Filled.Settings" Expanded="false">
-                <MudNavLink Href="/settings" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Tune">All Settings</MudNavLink>
+            <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:#6B7280; font-weight:600; letter-spacing:0.5px;">@L["MORE"]</MudText>
+            <MudNavLink Href="/passwords?status=archived" Icon="@Icons.Material.Filled.Archive">@L["Archive"]</MudNavLink>
+            <MudNavLink Href="/passwords?status=deleted" Icon="@Icons.Material.Filled.DeleteSweep">@L["Recently Deleted"]</MudNavLink>
+            <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.History">@L["Audit Logs"]</MudNavLink>
+            <MudNavGroup Title="@L["Settings"]" Icon="@Icons.Material.Filled.Settings" Expanded="false">
+                <MudNavLink Href="/settings" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Tune">@L["All Settings"]</MudNavLink>
                 @foreach (var t in SettingsTabs)
                 {
                     <MudNavLink Href="@($"/settings?tab={t.Key}")" Icon="@t.Value">@t.Key</MudNavLink>
                 }
             </MudNavGroup>
-            <MudNavLink Icon="@Icons.Material.Filled.Info" OnClick="@(() => _aboutOpen = true)">About</MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.Info" OnClick="@(() => _aboutOpen = true)">@L["About"]</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent>

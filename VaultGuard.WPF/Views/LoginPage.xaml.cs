@@ -621,6 +621,32 @@ public sealed partial class LoginPage : Page
         }
     }
 
+    // Opens the system browser for the clicked provider's sign-in; on a verified email match it
+    // jumps straight to the master-password step for that profile (see LoginViewModel.SignInWithSsoAsync).
+    // One handler serves every provider button - the provider id travels via the button's Tag.
+    private async void ContinueWithSsoButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null || sender is not Button button || button.Tag is not string providerId) return;
+
+        var originalContent = button.Content;
+        try
+        {
+            button.IsEnabled = false;
+            button.Content = "Waiting for sign-in…";
+
+            var success = await _viewModel.SignInWithSsoAsync(providerId);
+            if (!success && !string.IsNullOrEmpty(_viewModel.ErrorMessage))
+            {
+                await ShowLoginMessageAsync("SSO sign-in", _viewModel.ErrorMessage);
+            }
+        }
+        finally
+        {
+            button.IsEnabled = true;
+            button.Content = originalContent;
+        }
+    }
+
     private void BackToProfilesButton_Click(object sender, RoutedEventArgs e)
     {
         _viewModel?.GoBackToProfileSelection();

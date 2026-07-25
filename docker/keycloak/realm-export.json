@@ -1,0 +1,55 @@
+{
+  "realm": "vaultguard",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "users": [
+    {
+      "username": "testuser",
+      "email": "testuser@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test123!",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "vaultguard-web",
+      "name": "VaultGuard Web (local dev)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "secret": "vaultguard-dev-secret",
+      "redirectUris": [
+        "https://localhost:7202/signin-oidc/keycloak",
+        "http://localhost:5169/signin-oidc/keycloak"
+      ],
+      "webOrigins": [
+        "https://localhost:7202",
+        "http://localhost:5169"
+      ]
+    },
+    {
+      "clientId": "vaultguard-desktop",
+      "name": "VaultGuard Desktop (local dev)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:*"
+      ]
+    }
+  ]
+}

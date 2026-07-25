@@ -2,6 +2,7 @@
 @using System.Linq
 @using System.Text.Json
 @using System.Net.Http.Json
+@using Microsoft.Extensions.Configuration
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using VaultGuard.Crypto.Interfaces
@@ -20,6 +21,7 @@
 @inject ISnackbar Snackbar
 @inject IServiceProvider Services
 @inject HttpClient Http
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 <div class="auth-container">
     <div class="auth-card @(!isFirstTime && !show2fa && _selectedProfile == null && _profiles.Count > 0 ? "auth-card--wide" : "")">
@@ -167,6 +169,20 @@
                                 </div>
                             }
                         </div>
+
+                        @foreach (var provider in SsoProviders)
+                        {
+                            @* Verifies WHO you are (your email) so this picker can jump straight to your
+                               tile - it does not and cannot unlock the vault itself; the master password
+                               below is still required either way. See SsoConfiguration.cs. A real anchor
+                               link (not an onclick/NavigateTo) so the browser does a full navigation into
+                               the IdP's OIDC challenge, same reasoning as the language/culture links
+                               elsewhere. One button per configured provider - any OIDC IdP, never one
+                               hardcoded vendor. *@
+                            <a href="@($"/login/sso/{provider.Id}")" class="auth-button auth-button-outline" style="text-decoration:none;">
+                                Continue with @provider.DisplayName
+                            </a>
+                        }
 
                         <div class="auth-footer">
                             <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
@@ -346,6 +362,7 @@
     private void SwitchAccount()
     {
         _selectedProfile = null;
+        _pendingSsoLink = null;
         loginKey = string.Empty;
         loginKeyError = false;
         errorMessage = string.Empty;
@@ -399,6 +416,11 @@
         }
         finally { isSeeding = false; }
     }
+    // Set when an SSO sign-in matched a profile by email only (no persisted AspNetUserLogins link
+    // yet) - carries just enough to create that link once the user proves they hold this profile's
+    // master password in AuthenticateUser(). Cleared as soon as it's consumed.
+    private (string ProviderId, string? ProviderDisplayName, string Subject, string UserId)? _pendingSsoLink;
+
     private string passwordStrength = "Weak";
     private string passkeyId = string.Empty;
     private bool showQrLogin = false;
@@ -407,6 +429,32 @@
     private bool masterKeyError = false;
     private bool confirmKeyError = false;
     private bool loginKeyError = false;
+
+    // Every configured, enabled provider from Sso:Providers - could be Google, Azure AD, Keycloak,
+    // ADFS, any OIDC IdP, in any combination, or none. Reads config directly (Get&lt;SsoConfiguration&gt;
+    // binding, not an IOptions&lt;SsoConfiguration&gt; DI registration) so this shared component doesn't
+    // require every host (MAUI, etc.) to register that type just to no-op here.
+    private IReadOnlyList<VaultGuard.Models.Configuration.SsoProviderConfig> SsoProviders =>
+        Configuration.GetSection("Sso").Get<VaultGuard.Models.Configuration.SsoConfiguration>()
+            ?.ConfiguredProviders.ToList()
+        ?? new List<VaultGuard.Models.Configuration.SsoProviderConfig>();
+
+    // Minimal query-string reader - avoids [SupplyParameterFromQuery], which only binds correctly on
+    // the component the Router actually matched. VaultGuard.Web hosts this component as a child of
+    // its own "/login" page rather than routing to it directly (this component's own @page "/login"
+    // is for OTHER hosts, e.g. MAUI - see VaultGuard.Web/Components/Pages/Login.razor's comment), so
+    // query binding attributes here wouldn't reliably fire in the Web scenario this feature targets.
+    private string? GetQueryParam(string name)
+    {
+        var query = new Uri(Navigation.Uri).Query.TrimStart('?');
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            if (parts.Length == 2 && Uri.UnescapeDataString(parts[0]) == name)
+                return Uri.UnescapeDataString(parts[1]);
+        }
+        return null;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -417,6 +465,46 @@
         {
             storedHint = await AuthService.GetMasterPasswordHintAsync();
             await LoadProfilesAsync();
+        }
+
+        // Returning from the /login/sso/{id}/callback redirect (see Program.cs) - the IdP only
+        // verified an identity, so this just pre-selects the matching profile (identical to clicking
+        // its tile) and still requires the master password below; it never signs the user in by
+        // itself. Prefers a persisted AspNetUserLogins link (keyed on the IdP's stable "sub" claim,
+        // via ssoSub) over a same-email match, since email can drift out of sync with the IdP.
+        var ssoProviderId = GetQueryParam("ssoProvider");
+        var ssoProviderName = SsoProviders.FirstOrDefault(p => p.Id == ssoProviderId)?.DisplayName ?? ssoProviderId ?? "SSO";
+        var ssoEmail = GetQueryParam("ssoEmail");
+        var ssoSub = GetQueryParam("ssoSub");
+        if (!string.IsNullOrEmpty(ssoEmail))
+        {
+            var linkedMatch = !string.IsNullOrEmpty(ssoSub) && !string.IsNullOrEmpty(ssoProviderId)
+                ? await UserProfileService.FindByExternalLoginAsync(ssoProviderId, ssoSub)
+                : null;
+            // linkedMatch may not be one of the profiles this device's picker already loaded (e.g. a
+            // deactivated profile) - re-resolve against _profiles so SelectProfile gets a consistent instance.
+            var match = linkedMatch != null
+                ? _profiles.FirstOrDefault(p => p.Id == linkedMatch.Id)
+                : _profiles.FirstOrDefault(p => string.Equals(p.Email, ssoEmail, StringComparison.OrdinalIgnoreCase));
+
+            if (match != null)
+            {
+                SelectProfile(match);
+                Snackbar.Add($"Verified as {match.Email} via {ssoProviderName} — enter your master password to unlock your vault.", Severity.Info);
+
+                // No persisted link yet - remember to create one once the master password below
+                // proves this really is that profile's owner (see AuthenticateUser).
+                if (linkedMatch == null && !string.IsNullOrEmpty(ssoSub) && !string.IsNullOrEmpty(ssoProviderId))
+                    _pendingSsoLink = (ssoProviderId, ssoProviderName, ssoSub, match.Id);
+            }
+            else
+            {
+                Snackbar.Add($"No VaultGuard account found for {ssoEmail} yet.", Severity.Warning);
+            }
+        }
+        else if (GetQueryParam("ssoError") != null)
+        {
+            Snackbar.Add($"{ssoProviderName} sign-in failed. Please try again or use your master password.", Severity.Error);
         }
     }
 
@@ -640,6 +728,15 @@
 
             if (success)
             {
+                // The master password just verified is proof enough to persist the SSO link that
+                // OnInitializedAsync deferred - see _pendingSsoLink's doc comment for why this can't
+                // happen any earlier.
+                if (_pendingSsoLink is { } pending && pending.UserId == _selectedProfile?.Id)
+                {
+                    await UserProfileService.LinkExternalLoginAsync(_selectedProfile.Id, pending.ProviderId, pending.Subject, pending.ProviderDisplayName);
+                    _pendingSsoLink = null;
+                }
+
                 // If this account has 2FA enabled, collect the authenticator code before completing login.
                 // (TwoFactorEnabled is the flag TwoFactorService actually sets on setup — IsTwoFactorEnabled
                 // is a separate, unrelated flag used only by the API's SMS-based 2FA controller.)

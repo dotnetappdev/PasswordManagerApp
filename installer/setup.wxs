@@ -31,6 +31,21 @@
     <Property Id="ApplicationFolderName" Value="Vault Guard" />
     <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
 
+    <!-- .NET runtime check: the app is published framework-dependent (not self-contained - see
+         build-wpf.yml), so it needs a matching runtime already on the machine to run at all. This
+         only confirms the .NET shared host (dotnet.exe) exists under Program Files, not that the
+         specific Microsoft.WindowsDesktop.App 10.x shared framework is present - a precise version/
+         component check would need a custom action or a Burn bootstrapper, which this bare MSI
+         doesn't have. setup.iss (the EXE installer) does the precise check instead, via the
+         dotnet CLI's list-runtimes command; this is a coarser fallback for whoever chooses the MSI. -->
+    <Property Id="DOTNETSHAREDHOST" Secure="yes">
+      <DirectorySearch Id="ProgramFilesDotnetDir" Path="[ProgramFiles64Folder]dotnet">
+        <FileSearch Id="DotnetExeSearch" Name="dotnet.exe" />
+      </DirectorySearch>
+    </Property>
+    <Launch Condition="Installed OR DOTNETSHAREDHOST"
+            Message="Vault Guard requires the .NET 10 Desktop Runtime, which was not found on this computer. Download it from https://dotnet.microsoft.com/download/dotnet/10.0/runtime, install it, then run this setup again." />
+
     <StandardDirectory Id="ProgramFilesFolder">
       <Directory Id="APPLICATIONFOLDER" Name="Vault Guard" />
     </StandardDirectory>
@@ -52,11 +67,15 @@
                     WorkingDirectory="APPLICATIONFOLDER" />
         </File>
       </Component>
-      <!-- Harvest remaining publish output files via heat / build tooling.
-           For CI use the Wix heat tool to auto-harvest or list files here. -->
-      <Component Id="AllOtherFiles" Guid="*">
-        <File Source="$(var.PublishDir)\VaultGuard.WPF.dll" KeyPath="yes" />
-      </Component>
+      <!-- WiX v4's built-in directory harvesting - was previously one hardcoded Component listing
+           only VaultGuard.WPF.dll, so the self-contained publish output's several hundred other
+           files (the entire bundled .NET runtime, every dependency DLL, resources) never made it
+           into the MSI at all. That's why the MSI was ~684KB against the EXE installer's ~66MB for
+           the exact same PublishDir - the app installed by the MSI was missing almost everything it
+           needs to run. Excludes the exe above (already its own Component, carrying the shortcuts). -->
+      <Files Include="$(var.PublishDir)\**">
+        <Exclude Files="$(var.PublishDir)\VaultGuard.WPF.exe" />
+      </Files>
     </ComponentGroup>
 
     <Feature Id="ProductFeature" Title="VaultGuard" Level="1">

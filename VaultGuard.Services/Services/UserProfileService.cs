@@ -466,4 +466,103 @@ public class UserProfileService : IUserProfileService
             return (false, ex.Message);
         }
     }
+
+    /// <summary>See IUserProfileService.FindByExternalLoginAsync's doc comment.</summary>
+    public async Task<UserDto?> FindByExternalLoginAsync(string loginProvider, string providerKey)
+    {
+        try
+        {
+            var user = await _userManager.FindByLoginAsync(loginProvider, providerKey);
+            if (user == null)
+                return null;
+
+            return new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email ?? string.Empty,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                CreatedAt = user.CreatedAt,
+                LastLoginAt = user.LastLoginAt,
+                IsActive = user.IsActive
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error looking up external login {Provider}", loginProvider);
+            return null;
+        }
+    }
+
+    /// <summary>See IUserProfileService.LinkExternalLoginAsync's doc comment - callers must have already verified the master password.</summary>
+    public async Task<(bool Success, string? ErrorMessage)> LinkExternalLoginAsync(string userId, string loginProvider, string providerKey, string? providerDisplayName)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return (false, "User not found");
+
+            var existingLogins = await _userManager.GetLoginsAsync(user);
+            if (existingLogins.Any(l => l.LoginProvider == loginProvider && l.ProviderKey == providerKey))
+                return (true, null); // already linked - idempotent
+
+            var result = await _userManager.AddLoginAsync(user,
+                new UserLoginInfo(loginProvider, providerKey, providerDisplayName ?? loginProvider));
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                _logger.LogError("Failed to link external login {Provider} for user {UserId}: {Errors}", loginProvider, userId, errors);
+                return (false, errors);
+            }
+
+            _logger.LogInformation("Linked external login {Provider} for user {UserId}", loginProvider, userId);
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error linking external login {Provider} for user {UserId}", loginProvider, userId);
+            return (false, ex.Message);
+        }
+    }
+
+    /// <summary>See IUserProfileService.GetExternalLoginsAsync's doc comment.</summary>
+    public async Task<List<ExternalLoginDto>> GetExternalLoginsAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return new List<ExternalLoginDto>();
+
+        var logins = await _userManager.GetLoginsAsync(user);
+        return logins.Select(l => new ExternalLoginDto
+        {
+            LoginProvider = l.LoginProvider,
+            ProviderDisplayName = l.ProviderDisplayName ?? l.LoginProvider
+        }).ToList();
+    }
+
+    /// <summary>See IUserProfileService.RemoveExternalLoginAsync's doc comment.</summary>
+    public async Task<bool> RemoveExternalLoginAsync(string userId, string loginProvider)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return true;
+
+            var logins = await _userManager.GetLoginsAsync(user);
+            var match = logins.FirstOrDefault(l => l.LoginProvider == loginProvider);
+            if (match == null)
+                return true; // nothing to remove
+
+            var result = await _userManager.RemoveLoginAsync(user, match.LoginProvider, match.ProviderKey);
+            return result.Succeeded;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing external login {Provider} for user {UserId}", loginProvider, userId);
+            return false;
+        }
+    }
 }

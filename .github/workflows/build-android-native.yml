@@ -8,12 +8,8 @@ on:
   push:
     branches: [ devmain, main ]
     tags:     [ 'v*' ]
-    paths:
-      - 'VaultGuard.Android/**'
   pull_request:
     branches: [ devmain, main ]
-    paths:
-      - 'VaultGuard.Android/**'
   workflow_dispatch: {}
 
 # See run-tests.yml's concurrency comment - cancels a stale in-flight run instead of piling up

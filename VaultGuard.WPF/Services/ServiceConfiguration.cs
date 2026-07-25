@@ -37,6 +37,9 @@ public static class ServiceConfiguration
         services.AddSingleton<ISecureStorageService, WpfSecureStorageService>();
         services.AddSingleton<IMasterPasswordCacheService, MasterPasswordCacheService>();
         services.AddSingleton<IWindowsHelloService, WindowsHelloService>();
+        // Same shared settings.json the Blazor apps use (see AppSettingsService's doc comment) -
+        // language preference lives in it, keyed "Language", alongside theme/accent/API settings.
+        services.AddSingleton<IAppSettingsService, AppSettingsService>();
 
         // Database services
         ConfigureDatabaseServices(services);
@@ -56,6 +59,9 @@ public static class ServiceConfiguration
 
         // Exception reporting (Sentry-backed, swappable via IExceptionReporter)
         services.AddSentryExceptionReporting(configuration["ExceptionReporting:SentryDsn"], "WPF");
+
+        // SSO - identity verification only, any configured OIDC provider, see SsoConfiguration's doc comment.
+        services.AddSingleton<IOidcSsoService, OidcSsoService>();
 
         // HTTP client
         services.AddHttpClient();
@@ -218,6 +224,11 @@ public static class ServiceConfiguration
         services.AddScoped<IPasscodeService, PasscodeService>();
         services.AddScoped<IVaultService, VaultService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        // Same key-generation/storage service Blazor's ApiKeyManagement.razor uses - mirrors each
+        // key into the per-user SQLite store too, so a key created here also works for a device
+        // connecting in local-SQLite mode (see IApiKeySqliteMirror's doc comment).
+        services.AddScoped<IApiKeySqliteMirror, ApiKeySqliteMirrorService>();
+        services.AddScoped<IApiKeyService, ApiKeyService>();
         services.AddScoped<ITwoFactorService, TwoFactorService>();
         services.AddScoped<IDeviceService, DeviceService>();
 

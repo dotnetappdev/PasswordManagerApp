@@ -19,6 +19,7 @@ public class LoginViewModel : BaseViewModel
     private readonly ITwoFactorService? _twoFactorService;
     private readonly IMasterPasswordCacheService? _masterPasswordCacheService;
     private readonly IWindowsHelloService? _helloService;
+    private readonly IOidcSsoService? _ssoService;
     private string _masterPassword = string.Empty;
     private string _confirmMasterPassword = string.Empty;
     private string _passwordHint = string.Empty;
@@ -52,6 +53,7 @@ public class LoginViewModel : BaseViewModel
         _twoFactorService = serviceProvider.GetService<ITwoFactorService>();
         _masterPasswordCacheService = serviceProvider.GetService<IMasterPasswordCacheService>();
         _helloService = serviceProvider.GetService<IWindowsHelloService>();
+        _ssoService = serviceProvider.GetService<IOidcSsoService>();
 
         // Initialize with default state and then asynchronously update
         UpdateUIForSetupMode(); // Set initial UI state
@@ -300,6 +302,10 @@ public class LoginViewModel : BaseViewModel
         get => _showProfileSelection;
         set => SetProperty(ref _showProfileSelection, value);
     }
+
+    /// <summary>Every configured OIDC provider from appsettings.json's Sso:Providers section - drives the profile picker's list of "Continue with &lt;provider&gt;" buttons. Empty when none are configured.</summary>
+    public IReadOnlyList<VaultGuard.Models.Configuration.SsoProviderConfig> SsoProviders =>
+        _ssoService?.ConfiguredProviders ?? Array.Empty<VaultGuard.Models.Configuration.SsoProviderConfig>();
 
     public bool ShowPasswordEntry => !ShowProfileSelection;
 
@@ -668,6 +674,83 @@ public class LoginViewModel : BaseViewModel
         _ = EvaluateWindowsHelloQuickUnlockAsync(user);
     }
 
+    // Set when an SSO sign-in matched a profile by email only (no persisted AspNetUserLogins link
+    // yet) - carries just enough to create that link once, and only once, the user has separately
+    // proven they hold this profile's master password (see AuthenticateSpecificUserAsync). Cleared
+    // as soon as it's consumed, or if the user backs out to the profile picker.
+    private (string ProviderId, string? ProviderDisplayName, string Subject, string UserId)? _pendingSsoLink;
+
+    /// <summary>
+    /// Opens the system browser for the given provider's sign-in, then selects the matching local
+    /// profile exactly as clicking its tile would (<see cref="SelectUserProfile"/>). Prefers a
+    /// persisted AspNetUserLogins link (keyed on the IdP's stable "sub" claim) over a same-email
+    /// match, since email can drift out of sync between the IdP and the local profile. This never
+    /// authenticates the user: it only jumps to the master-password step for whichever profile
+    /// matches, since only the master password can derive the vault key. Returns true if a matching
+    /// profile was found and selected.
+    /// </summary>
+    public async Task<bool> SignInWithSsoAsync(string providerId)
+    {
+        if (_ssoService == null || !_ssoService.ConfiguredProviders.Any(p => p.Id == providerId))
+        {
+            ErrorMessage = "That sign-in provider is not configured.";
+            return false;
+        }
+
+        try
+        {
+            IsLoading = true;
+            var result = await _ssoService.SignInAsync(providerId);
+            if (!result.Success || string.IsNullOrWhiteSpace(result.Email))
+            {
+                ErrorMessage = result.ErrorMessage ?? "Sign-in failed.";
+                return false;
+            }
+
+            var providerDisplayName = _ssoService.ConfiguredProviders.FirstOrDefault(p => p.Id == providerId)?.DisplayName;
+
+            var linkedMatch = !string.IsNullOrWhiteSpace(result.Subject)
+                ? await _userProfileService.FindByExternalLoginAsync(providerId, result.Subject)
+                : null;
+
+            if (linkedMatch != null)
+            {
+                _pendingSsoLink = null;
+                SelectUserProfile(linkedMatch);
+                return true;
+            }
+
+            var users = await _userProfileService.GetAllUsersAsync();
+            var match = users?.FirstOrDefault(u =>
+                u?.IsActive == true && string.Equals(u.Email, result.Email, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
+            {
+                ErrorMessage = $"No local profile matches the account {result.Email}.";
+                return false;
+            }
+
+            // No persisted link yet - remember to create one once the master password below proves
+            // this really is that profile's owner.
+            _pendingSsoLink = !string.IsNullOrWhiteSpace(result.Subject)
+                ? (providerId, providerDisplayName, result.Subject, match.Id)
+                : null;
+
+            SelectUserProfile(match);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Sign-in failed: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
+            OnPropertyChanged(nameof(HasError));
+        }
+    }
+
     /// <summary>
     /// Checks whether the selected profile qualifies for 2FA-only quick unlock (2FA enabled +
     /// cached master password present). If so, swaps the UI to the TOTP/recovery-code field
@@ -811,6 +894,7 @@ public class LoginViewModel : BaseViewModel
 
     public void GoBackToProfileSelection()
     {
+        _pendingSsoLink = null;
         SelectedUser = null;
         ShowProfileSelection = true;
         ShowLockMessage = false; // Hide lock message when going back to selection
@@ -913,6 +997,15 @@ public class LoginViewModel : BaseViewModel
                 if (_masterPasswordCacheService != null)
                 {
                     await _masterPasswordCacheService.CacheMasterPasswordAsync(user.Id, masterPassword);
+                }
+
+                // The master password just verified is proof enough to persist the SSO link that
+                // SignInWithSsoAsync deferred - see _pendingSsoLink's doc comment for why this can't
+                // happen any earlier.
+                if (_pendingSsoLink is { } pending && pending.UserId == user.Id)
+                {
+                    await _userProfileService.LinkExternalLoginAsync(user.Id, pending.ProviderId, pending.Subject, pending.ProviderDisplayName);
+                    _pendingSsoLink = null;
                 }
 
                 return true;

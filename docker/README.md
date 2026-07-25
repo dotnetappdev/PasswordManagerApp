@@ -10,6 +10,7 @@ This directory contains Docker configuration files for running the Vault Guard W
 - [HTTPS Certificate Setup](#https-certificate-setup)
 - [Container Management](#container-management)
 - [Database Management](#database-management)
+- [Keycloak (SSO Testing)](#-keycloak-sso-testing)
 - [Troubleshooting](#troubleshooting)
 - [Advanced Configuration](#advanced-configuration)
 
@@ -320,6 +321,58 @@ docker volume rm docker_sqlserver-data
 docker-compose up -d
 ```
 
+## 🔑 Keycloak (SSO Testing)
+
+A `keycloak` service is included for testing VaultGuard's SSO feature (Blazor + WPF "Continue with
+&lt;provider&gt;") end to end against a real OIDC identity provider, without registering anything at
+Google/Microsoft/Okta. It's **independent of the `api`/`web` services above** - it runs entirely on
+its own, so the fastest local test loop is this container plus `VaultGuard.Web`/`VaultGuard.API`/
+`VaultGuard.WPF` run normally via `dotnet run`, rather than also using the containerized apps.
+
+**These are throwaway, local-only dev credentials (`start-dev` mode, no TLS, secrets committed to the
+repo) - never reuse this realm or its client secrets anywhere but your own machine.**
+
+### Start it
+
+```bash
+cd docker
+docker compose up -d keycloak
+```
+
+First start takes a few seconds while Keycloak imports the pre-built realm
+(`docker/keycloak/realm-export.json`). Watch it come up with:
+
+```bash
+docker compose logs -f keycloak
+```
+
+### What you get
+
+| | |
+|---|---|
+| Admin console | http://localhost:8081/admin |
+| Admin login | `admin` / `admin` (set via `KEYCLOAK_ADMIN_PASSWORD` in `.env`, see `.env.example`) |
+| Realm | `vaultguard` |
+| Web client (confidential) | `vaultguard-web` / secret `vaultguard-dev-secret` |
+| Desktop client (public) | `vaultguard-desktop` (no secret, loopback redirect) |
+| Test user | `testuser@example.com` / `Test123!` |
+
+Point `Sso:Providers` in `VaultGuard.Web`'s and `VaultGuard.WPF`'s `appsettings.json` (or
+`appsettings.Development.json` for Web) at `Authority: http://localhost:8081/realms/vaultguard` with
+the matching client above - see **[docs/SSO.md](../docs/SSO.md#testing-locally-with-keycloak)** for
+the exact JSON to paste in and what the full sign-in flow looks like once it's wired up.
+
+### Stop it / reset it
+
+```bash
+# Stop, keep realm data (users/clients you created by hand in the admin console)
+docker compose stop keycloak
+
+# Stop and wipe all Keycloak data - next start re-imports the clean realm-export.json
+docker compose down keycloak
+docker volume rm docker_keycloak-data
+```
+
 ## 🔍 Troubleshooting
 
 ### Container Won't Start
@@ -330,6 +383,7 @@ docker-compose logs api
 docker-compose logs web
 docker-compose logs sqlserver
 docker-compose logs nginx
+docker-compose logs keycloak
 ```
 
 **Common issues:**

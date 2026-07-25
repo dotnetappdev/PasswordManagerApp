@@ -24,6 +24,31 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Keycloak - local OIDC identity provider for testing SSO end-to-end (any OIDC IdP works the same
+  # way, see docs/SSO.md; Keycloak is just the easiest one to self-host for dev). Independent of the
+  # api/web services below - run it on its own with `docker compose up keycloak` while running
+  # VaultGuard.Web/VaultGuard.API/VaultGuard.WPF locally via `dotnet run`, which is the fastest local
+  # SSO test loop. Auto-imports docker/keycloak/realm-export.json: a "vaultguard" realm with a
+  # confidential "vaultguard-web" client (secret "vaultguard-dev-secret"), a public
+  # "vaultguard-desktop" client (loopback wildcard redirect, no secret), and a test user
+  # (testuser@example.com / Test123!). Dev-mode only - these are throwaway local credentials, never
+  # use start-dev or this realm export in production.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: passwordmanager-keycloak
+    command: start-dev --import-realm
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - keycloak-data:/opt/keycloak/data
+    networks:
+      - passwordmanager-network
+    restart: unless-stopped
+
   # Vault Guard Web API
   api:
     build:
@@ -102,6 +127,8 @@ services:
 
 volumes:
   sqlserver-data:
+    driver: local
+  keycloak-data:
     driver: local
   api-logs:
     driver: local
