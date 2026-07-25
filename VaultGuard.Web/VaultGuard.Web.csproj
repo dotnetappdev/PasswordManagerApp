@@ -18,10 +18,12 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.0" />
-    <!-- SSO (any OIDC identity provider) uses Microsoft.AspNetCore.Authentication.OpenIdConnect,
-         part of the ASP.NET Core shared framework - no extra package needed. See SsoConfiguration.cs
-         and Program.cs's Sso section for why this is additive-only (verifies email, never touches
-         the master password / vault encryption key) and provider-agnostic (never one hardcoded vendor). -->
+    <!-- SSO (any OIDC identity provider) - see SsoConfiguration.cs and Program.cs's Sso section for
+         why this is additive-only (verifies email, never touches the master password / vault
+         encryption key) and provider-agnostic (never one hardcoded vendor). Unlike Cookies/JwtBearer,
+         the OpenIdConnect handler is NOT part of the ASP.NET Core shared framework and needs this
+         explicit package (confirmed via a real CS0234 in CI - don't remove without re-verifying). -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
