@@ -31,8 +31,8 @@
     <Property Id="ApplicationFolderName" Value="Vault Guard" />
     <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
 
-    <StandardDirectory Id="TARGETDIR">
-      <Directory Id="APPLICATIONFOLDER" />
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="APPLICATIONFOLDER" Name="Vault Guard" />
     </StandardDirectory>
 
     <ComponentGroup Id="AppFiles" Directory="APPLICATIONFOLDER">

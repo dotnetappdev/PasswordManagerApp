@@ -258,15 +258,18 @@
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right"
                             Background="Transparent" BorderThickness="0"
-                            Width="36" Height="36" Margin="0,0,8,0"
+                            Width="28" Height="28" Margin="0,0,8,0"
                             Cursor="Hand"
                             Click="PaneToggleButton_Click"
                             ToolTipService.ToolTip="Expand / collapse menu">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="HbBd" Background="{TemplateBinding Background}" CornerRadius="6">
+                                    <!-- Fixed size (not the DynamicResource MenuIconSize the nav items use) - this
+                                         is chrome for opening/closing the pane, not scalable content, so it
+                                         doesn't grow with the user's "Menu icons" accessibility setting. -->
                                     <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="{DynamicResource MenuIconSize}"
+                                               FontSize="14"
                                                Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -353,7 +356,7 @@
                      stays reachable and can re-expand the menu in every state. -->
                 <Button x:Name="PaneToggleButton"
                         HorizontalAlignment="Stretch"
-                        Height="36" Margin="8,2,8,8"
+                        Height="28" Margin="8,2,8,8"
                         Background="Transparent" BorderThickness="0"
                         Cursor="Hand"
                         Click="PaneToggleButton_Click"
@@ -361,8 +364,9 @@
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="HbBd" Background="{TemplateBinding Background}" CornerRadius="6">
+                                <!-- Fixed size - see HeaderPaneToggleButton's identical comment above. -->
                                 <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets"
-                                           FontSize="{DynamicResource MenuIconSize}"
+                                           FontSize="14"
                                            Foreground="{DynamicResource ModernTextSecondaryBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
