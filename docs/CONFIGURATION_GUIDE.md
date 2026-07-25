@@ -556,7 +556,7 @@ Benefits:
 
 ## Related Documentation
 
-- [Single Sign-On (Google) setup](SSO.md) - what a deploying organization needs to do in Google Cloud Console for "Continue with Google" on Web and WPF
+- [Single Sign-On setup](SSO.md) - config-driven, pluggable OIDC providers (Google, Azure AD, Keycloak, ADFS, ...) for "Continue with &lt;provider&gt;" on Web and WPF
 - [Browser Extension README](../VaultGuard.BrowserExtension/README.md)
 - [Native Host README](../VaultGuard.BrowserExtension.NativeHost/README.md)
 - [Web UI README](../VaultGuard.Web/README.md)

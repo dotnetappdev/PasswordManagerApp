@@ -621,35 +621,29 @@ public sealed partial class LoginPage : Page
         }
     }
 
-    // Opens the system browser for Google sign-in; on a verified email match it jumps straight to
-    // the master-password step for that profile (see LoginViewModel.SignInWithGoogleAsync).
-    private async void ContinueWithGoogleButton_Click(object sender, RoutedEventArgs e)
+    // Opens the system browser for the clicked provider's sign-in; on a verified email match it
+    // jumps straight to the master-password step for that profile (see LoginViewModel.SignInWithSsoAsync).
+    // One handler serves every provider button - the provider id travels via the button's Tag.
+    private async void ContinueWithSsoButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_viewModel == null) return;
+        if (_viewModel == null || sender is not Button button || button.Tag is not string providerId) return;
 
-        var button = sender as Button;
-        var originalContent = button?.Content;
+        var originalContent = button.Content;
         try
         {
-            if (button != null)
-            {
-                button.IsEnabled = false;
-                button.Content = "Waiting for Google sign-in…";
-            }
+            button.IsEnabled = false;
+            button.Content = "Waiting for sign-in…";
 
-            var success = await _viewModel.SignInWithGoogleAsync();
+            var success = await _viewModel.SignInWithSsoAsync(providerId);
             if (!success && !string.IsNullOrEmpty(_viewModel.ErrorMessage))
             {
-                await ShowLoginMessageAsync("Google sign-in", _viewModel.ErrorMessage);
+                await ShowLoginMessageAsync("SSO sign-in", _viewModel.ErrorMessage);
             }
         }
         finally
         {
-            if (button != null)
-            {
-                button.IsEnabled = true;
-                button.Content = originalContent ?? "Continue with Google";
-            }
+            button.IsEnabled = true;
+            button.Content = originalContent;
         }
     }
 

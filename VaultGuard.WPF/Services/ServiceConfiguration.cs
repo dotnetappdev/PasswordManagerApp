@@ -60,8 +60,8 @@ public static class ServiceConfiguration
         // Exception reporting (Sentry-backed, swappable via IExceptionReporter)
         services.AddSentryExceptionReporting(configuration["ExceptionReporting:SentryDsn"], "WPF");
 
-        // "Sign in with Google" - identity verification only, see SsoConfiguration's doc comment.
-        services.AddSingleton<IGoogleSsoService, GoogleSsoService>();
+        // SSO - identity verification only, any configured OIDC provider, see SsoConfiguration's doc comment.
+        services.AddSingleton<IOidcSsoService, OidcSsoService>();
 
         // HTTP client
         services.AddHttpClient();

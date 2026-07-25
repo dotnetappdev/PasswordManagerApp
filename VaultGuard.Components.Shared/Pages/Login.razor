@@ -169,15 +169,17 @@
                             }
                         </div>
 
-                        @if (IsGoogleSsoConfigured)
+                        @foreach (var provider in SsoProviders)
                         {
                             @* Verifies WHO you are (your email) so this picker can jump straight to your
                                tile - it does not and cannot unlock the vault itself; the master password
                                below is still required either way. See SsoConfiguration.cs. A real anchor
                                link (not an onclick/NavigateTo) so the browser does a full navigation into
-                               the OAuth challenge, same reasoning as the language/culture links elsewhere. *@
-                            <a href="/login/google" class="auth-button auth-button-outline" style="text-decoration:none;">
-                                Continue with Google
+                               the IdP's OIDC challenge, same reasoning as the language/culture links
+                               elsewhere. One button per configured provider - any OIDC IdP, never one
+                               hardcoded vendor. *@
+                            <a href="@($"/login/sso/{provider.Id}")" class="auth-button auth-button-outline" style="text-decoration:none;">
+                                Continue with @provider.DisplayName
                             </a>
                         }
 
@@ -421,12 +423,14 @@
     private bool confirmKeyError = false;
     private bool loginKeyError = false;
 
-    // Only shown/reachable when a real Google OAuth client is configured (Sso:GoogleClientId/Secret) -
-    // reads config directly rather than an IOptions<SsoConfiguration> registration so this shared
-    // component doesn't require every host (MAUI, etc.) to register that type just to no-op here.
-    private bool IsGoogleSsoConfigured =>
-        !string.IsNullOrWhiteSpace(Configuration["Sso:GoogleClientId"]) &&
-        !string.IsNullOrWhiteSpace(Configuration["Sso:GoogleClientSecret"]);
+    // Every configured, enabled provider from Sso:Providers - could be Google, Azure AD, Keycloak,
+    // ADFS, any OIDC IdP, in any combination, or none. Reads config directly (Get&lt;SsoConfiguration&gt;
+    // binding, not an IOptions&lt;SsoConfiguration&gt; DI registration) so this shared component doesn't
+    // require every host (MAUI, etc.) to register that type just to no-op here.
+    private IReadOnlyList<VaultGuard.Models.Configuration.SsoProviderConfig> SsoProviders =>
+        Configuration.GetSection("Sso").Get<VaultGuard.Models.Configuration.SsoConfiguration>()
+            ?.ConfiguredProviders.ToList()
+        ?? new List<VaultGuard.Models.Configuration.SsoProviderConfig>();
 
     // Minimal query-string reader - avoids [SupplyParameterFromQuery], which only binds correctly on
     // the component the Router actually matched. VaultGuard.Web hosts this component as a child of
@@ -456,9 +460,11 @@
             await LoadProfilesAsync();
         }
 
-        // Returning from the /login/google-callback redirect (see Program.cs) - Google only verified
-        // an email, so this just pre-selects the matching profile (identical to clicking its tile) and
-        // still requires the master password below; it never signs the user in by itself.
+        // Returning from the /login/sso/{id}/callback redirect (see Program.cs) - the IdP only
+        // verified an email, so this just pre-selects the matching profile (identical to clicking its
+        // tile) and still requires the master password below; it never signs the user in by itself.
+        var ssoProviderId = GetQueryParam("ssoProvider");
+        var ssoProviderName = SsoProviders.FirstOrDefault(p => p.Id == ssoProviderId)?.DisplayName ?? ssoProviderId ?? "SSO";
         var ssoEmail = GetQueryParam("ssoEmail");
         if (!string.IsNullOrEmpty(ssoEmail))
         {
@@ -466,7 +472,7 @@
             if (match != null)
             {
                 SelectProfile(match);
-                Snackbar.Add($"Verified as {match.Email} via Google — enter your master password to unlock your vault.", Severity.Info);
+                Snackbar.Add($"Verified as {match.Email} via {ssoProviderName} — enter your master password to unlock your vault.", Severity.Info);
             }
             else
             {
@@ -475,7 +481,7 @@
         }
         else if (GetQueryParam("ssoError") != null)
         {
-            Snackbar.Add("Google sign-in failed. Please try again or use your master password.", Severity.Error);
+            Snackbar.Add($"{ssoProviderName} sign-in failed. Please try again or use your master password.", Severity.Error);
         }
     }
 

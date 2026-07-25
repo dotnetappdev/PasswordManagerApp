@@ -18,9 +18,10 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.0" />
-    <!-- "Sign in with Google" - see SsoConfiguration.cs and Program.cs's Sso section for why this is
-         additive-only (verifies email, never touches the master password / vault encryption key). -->
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.0" />
+    <!-- SSO (any OIDC identity provider) uses Microsoft.AspNetCore.Authentication.OpenIdConnect,
+         part of the ASP.NET Core shared framework - no extra package needed. See SsoConfiguration.cs
+         and Program.cs's Sso section for why this is additive-only (verifies email, never touches
+         the master password / vault encryption key) and provider-agnostic (never one hardcoded vendor). -->
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />

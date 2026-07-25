@@ -1,6 +1,7 @@
 using VaultGuard.Web.Components;
 using VaultGuard.Web.Middleware;
-using Microsoft.AspNetCore.Authentication; // HttpContext.AuthenticateAsync/SignOutAsync extensions (Google SSO callback)
+using Microsoft.AspNetCore.Authentication; // HttpContext.AuthenticateAsync/SignOutAsync extensions (SSO callback)
+using Microsoft.AspNetCore.Authentication.OpenIdConnect; // generic OIDC handler - any provider from Sso:Providers, never one hardcoded vendor
 using Microsoft.EntityFrameworkCore;
 using VaultGuard.DAL;
 using VaultGuard.DAL.SqlServer;
@@ -184,23 +185,43 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddEntityFrameworkStores<VaultGuardDbContext>()
 .AddDefaultTokenProviders();
 
-// "Sign in with Google" - additive only, see SsoConfiguration.cs's doc comment for why this can never
-// replace the master password. AddIdentity above already called AddAuthentication(...) with its own
-// cookie scheme as the default; calling AddAuthentication() again here (no args) just adds the Google
-// scheme alongside it without disturbing that default.
+// SSO - additive only, see SsoConfiguration.cs's doc comment for why this can never replace the
+// master password, and for why every provider here is plain OIDC rather than one hardcoded vendor.
+// AddIdentity above already called AddAuthentication(...) with its own cookie scheme as the default;
+// calling AddAuthentication() again here (no args) just adds each provider's scheme alongside it
+// without disturbing that default. Scheme name == provider Id, e.g. "google", "azuread", "keycloak".
 var ssoConfig = builder.Configuration.GetSection("Sso").Get<SsoConfiguration>() ?? new SsoConfiguration();
 builder.Services.Configure<SsoConfiguration>(builder.Configuration.GetSection("Sso"));
-if (ssoConfig.IsGoogleConfigured)
+var ssoProviders = ssoConfig.ConfiguredProviders.ToList();
+if (ssoProviders.Count > 0)
 {
-    builder.Services.AddAuthentication()
-        .AddGoogle(options =>
+    var authBuilder = builder.Services.AddAuthentication();
+    foreach (var provider in ssoProviders)
+    {
+        authBuilder.AddOpenIdConnect(provider.Id, provider.DisplayName, options =>
         {
-            options.ClientId = ssoConfig.GoogleClientId!;
-            options.ClientSecret = ssoConfig.GoogleClientSecret!;
+            options.Authority = provider.Authority;
+            options.ClientId = provider.ClientId;
+            if (!string.IsNullOrWhiteSpace(provider.ClientSecret))
+                options.ClientSecret = provider.ClientSecret;
+
+            options.ResponseType = "code";
+            options.UsePkce = true;
+            options.SaveTokens = false;
+            options.GetClaimsFromUserInfoEndpoint = true;
+
+            options.Scope.Clear();
+            foreach (var scope in provider.Scopes.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                options.Scope.Add(scope);
+
+            // The redirect URI you register with the IdP - see appsettings.json's "//Sso" comment.
+            options.CallbackPath = $"/signin-oidc/{provider.Id}";
+
             // Held in the external cookie only - never signs the user into the app's own auth state.
-            // See the /login/google-callback endpoint below for what happens with the verified email.
+            // See the /login/sso/{id}/callback endpoint below for what happens with the verified email.
             options.SignInScheme = Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme;
         });
+    }
 }
 
 // Register application services
@@ -387,26 +408,35 @@ app.MapGet("/translations/export", (string culture) =>
     return Results.File(bytes, "text/plain; charset=utf-8", $"messages.{culture}.po");
 });
 
-// ── "Sign in with Google" (see SsoConfiguration.cs) ─────────────────────────────────────────────────
-// Only registered when a real ClientId/ClientSecret is configured, matching LanguageSelector-style
-// hidden-until-configured features elsewhere in this file.
-if (ssoConfig.IsGoogleConfigured)
+// ── SSO (see SsoConfiguration.cs) ────────────────────────────────────────────────────────────────
+// Generic across every configured provider - one route pair handles Google, Azure AD, Keycloak,
+// ADFS, or anything else in Sso:Providers, keyed by the provider Id used as the scheme name above.
+if (ssoProviders.Count > 0)
 {
-    // Kicks off the Google OAuth challenge. Redirecting the browser here (a plain <a href>, not
+    var ssoProviderIds = ssoProviders.Select(p => p.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    // Kicks off the IdP's OIDC challenge. Redirecting the browser here (a plain <a href>, not
     // Blazor's NavigateTo) is required because Interactive Server components can't issue an auth
     // challenge themselves - same reason /culture/set above is a plain endpoint rather than
     // in-component code.
-    app.MapGet("/login/google", () =>
-        Results.Challenge(
-            new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/login/google-callback" },
-            new[] { Microsoft.AspNetCore.Authentication.Google.GoogleDefaults.AuthenticationScheme }));
+    // Explicit IResult/Task<IResult> return types below - the branches return different concrete
+    // Results.* types (ChallengeHttpResult/NotFound/LocalRedirect) which don't implicitly convert to
+    // each other, only to their shared IResult interface, so lambda return-type inference needs help.
+    app.MapGet("/login/sso/{id}", IResult (string id) =>
+        ssoProviderIds.Contains(id)
+            ? Results.Challenge(
+                new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = $"/login/sso/{id}/callback" },
+                new[] { id })
+            : Results.NotFound());
 
-    // Reads the verified email Google returned and hands it to the existing login page's profile
+    // Reads the verified email the IdP returned and hands it to the existing login page's profile
     // picker via a query string - it does NOT sign the user into the app itself (no cookie, no
     // session, no vault unlock). The external-scheme cookie this handshake used is signed out
     // immediately so nothing lingers past this one redirect. See Login.razor's ssoEmail handling.
-    app.MapGet("/login/google-callback", async (HttpContext ctx) =>
+    app.MapGet("/login/sso/{id}/callback", async Task<IResult> (string id, HttpContext ctx) =>
     {
+        if (!ssoProviderIds.Contains(id)) return Results.NotFound();
+
         var result = await ctx.AuthenticateAsync(Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme);
         await ctx.SignOutAsync(Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme);
 
@@ -415,8 +445,8 @@ if (ssoConfig.IsGoogleConfigured)
             : null;
 
         return string.IsNullOrWhiteSpace(email)
-            ? Results.LocalRedirect("/login?ssoError=1")
-            : Results.LocalRedirect($"/login?ssoEmail={Uri.EscapeDataString(email)}");
+            ? Results.LocalRedirect($"/login?ssoError=1&ssoProvider={Uri.EscapeDataString(id)}")
+            : Results.LocalRedirect($"/login?ssoEmail={Uri.EscapeDataString(email)}&ssoProvider={Uri.EscapeDataString(id)}");
     });
 }
 

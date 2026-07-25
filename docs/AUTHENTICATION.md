@@ -5,7 +5,7 @@ biometrics, passcode, the Bitwarden-style unlock flow, QR sign-in, device manage
 profiles. Each section below was previously a standalone root-level document.
 
 ## Contents
-- [Single Sign-On (Google)](SSO.md) - identity-verification-only "Continue with Google" for Blazor and WPF; see the standalone doc for setup
+- [Single Sign-On](SSO.md) - pluggable, config-driven "Continue with &lt;provider&gt;" (Google, Azure AD, Keycloak, ADFS, any OIDC IdP) for Blazor and WPF, identity verification only; see the standalone doc for setup
 - Master Key Login Implementation Summary
 - Two-Factor Authentication (2FA) and Passkey Implementation
 - 2FA and Passkey API Documentation

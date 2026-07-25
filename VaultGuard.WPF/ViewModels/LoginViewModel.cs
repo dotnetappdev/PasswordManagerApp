@@ -19,7 +19,7 @@ public class LoginViewModel : BaseViewModel
     private readonly ITwoFactorService? _twoFactorService;
     private readonly IMasterPasswordCacheService? _masterPasswordCacheService;
     private readonly IWindowsHelloService? _helloService;
-    private readonly IGoogleSsoService? _googleSsoService;
+    private readonly IOidcSsoService? _ssoService;
     private string _masterPassword = string.Empty;
     private string _confirmMasterPassword = string.Empty;
     private string _passwordHint = string.Empty;
@@ -53,7 +53,7 @@ public class LoginViewModel : BaseViewModel
         _twoFactorService = serviceProvider.GetService<ITwoFactorService>();
         _masterPasswordCacheService = serviceProvider.GetService<IMasterPasswordCacheService>();
         _helloService = serviceProvider.GetService<IWindowsHelloService>();
-        _googleSsoService = serviceProvider.GetService<IGoogleSsoService>();
+        _ssoService = serviceProvider.GetService<IOidcSsoService>();
 
         // Initialize with default state and then asynchronously update
         UpdateUIForSetupMode(); // Set initial UI state
@@ -303,8 +303,9 @@ public class LoginViewModel : BaseViewModel
         set => SetProperty(ref _showProfileSelection, value);
     }
 
-    /// <summary>True once a Google "Desktop app" OAuth client is configured (see appsettings.json's Sso section) - drives visibility of the "Continue with Google" button on the profile picker.</summary>
-    public bool IsGoogleSsoConfigured => _googleSsoService?.IsConfigured ?? false;
+    /// <summary>Every configured OIDC provider from appsettings.json's Sso:Providers section - drives the profile picker's list of "Continue with &lt;provider&gt;" buttons. Empty when none are configured.</summary>
+    public IReadOnlyList<VaultGuard.Models.Configuration.SsoProviderConfig> SsoProviders =>
+        _ssoService?.ConfiguredProviders ?? Array.Empty<VaultGuard.Models.Configuration.SsoProviderConfig>();
 
     public bool ShowPasswordEntry => !ShowProfileSelection;
 
@@ -674,27 +675,27 @@ public class LoginViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Opens the system browser for Google sign-in, then - on a verified email - selects the
-    /// matching local profile exactly as clicking its tile would (<see cref="SelectUserProfile"/>).
+    /// Opens the system browser for the given provider's sign-in, then - on a verified email -
+    /// selects the matching local profile exactly as clicking its tile would (<see cref="SelectUserProfile"/>).
     /// This never authenticates the user: it only jumps to the master-password step for whichever
-    /// profile matches the Google account, since only the master password can derive the vault key.
+    /// profile matches the verified email, since only the master password can derive the vault key.
     /// Returns true if a matching profile was found and selected.
     /// </summary>
-    public async Task<bool> SignInWithGoogleAsync()
+    public async Task<bool> SignInWithSsoAsync(string providerId)
     {
-        if (_googleSsoService == null || !_googleSsoService.IsConfigured)
+        if (_ssoService == null || !_ssoService.ConfiguredProviders.Any(p => p.Id == providerId))
         {
-            ErrorMessage = "Google sign-in is not configured.";
+            ErrorMessage = "That sign-in provider is not configured.";
             return false;
         }
 
         try
         {
             IsLoading = true;
-            var result = await _googleSsoService.SignInAsync();
+            var result = await _ssoService.SignInAsync(providerId);
             if (!result.Success || string.IsNullOrWhiteSpace(result.Email))
             {
-                ErrorMessage = result.ErrorMessage ?? "Google sign-in failed.";
+                ErrorMessage = result.ErrorMessage ?? "Sign-in failed.";
                 return false;
             }
 
@@ -704,7 +705,7 @@ public class LoginViewModel : BaseViewModel
 
             if (match == null)
             {
-                ErrorMessage = $"No local profile matches the Google account {result.Email}.";
+                ErrorMessage = $"No local profile matches the account {result.Email}.";
                 return false;
             }
 
@@ -713,7 +714,7 @@ public class LoginViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Google sign-in failed: {ex.Message}";
+            ErrorMessage = $"Sign-in failed: {ex.Message}";
             return false;
         }
         finally
