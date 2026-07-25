@@ -43,6 +43,26 @@ your email later changes at the IdP or locally. The link is only ever created af
 proof, so SSO identity alone (e.g. an attacker who merely knows your email and controls *their own*
 account at some IdP) can never hijack it.
 
+### Managing links from Settings
+
+Both apps' **Settings -> Security** tab has a "Single Sign-On" section listing whatever's actually in
+`Sso:Providers` - never a hardcoded name - with the current user's linked/not-linked status and
+Link/Unlink buttons:
+
+- **WPF**: linking runs the same in-process loopback flow as the login screen and calls
+  `LinkExternalLoginAsync` directly - no extra machinery needed, since a desktop app never loses its
+  session across the OAuth browser round trip.
+- **Blazor**: VaultGuard.Web never issues a persistent ASP.NET Identity auth cookie (login state lives
+  only in the Blazor Server circuit - see `IdentityAuthService`), so a full-page OIDC redirect from
+  Settings would lose track of which user asked for the link. "Link account" instead mints a
+  short-lived, single-use token for the current user (`ISsoLinkTokenStore`,
+  `VaultGuard.Web/Services/SsoLinkTokenStore.cs`) and opens the challenge in a **new tab**; the callback
+  consumes the token to recover the user id and links directly, then shows a plain "you can close this
+  tab" page. The original Settings tab has a manual Refresh button rather than trying to poll or share
+  state across tabs.
+- Unlinking is always a direct, in-session `RemoveExternalLoginAsync` call on both platforms - no
+  browser round trip needed.
+
 ## Why this is provider-agnostic, not "Google support"
 
 Every entry under `Sso:Providers` is described the same way: a display name, an `Authority` (the IdP's

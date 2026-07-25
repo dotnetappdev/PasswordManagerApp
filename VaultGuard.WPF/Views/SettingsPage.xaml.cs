@@ -29,6 +29,7 @@ public sealed partial class SettingsPage : Page
     private IServiceProvider? _serviceProvider;
     private IAuthService? _authService;
     private IUserProfileService? _userProfileService;
+    private IOidcSsoService? _ssoService;
     private readonly FileLogger _logger;
     private List<UserDto> _availableUsers = new();
 
@@ -278,6 +279,7 @@ public sealed partial class SettingsPage : Page
             _serviceProvider = serviceProvider;
             _authService = serviceProvider.GetRequiredService<IAuthService>();
             _userProfileService = serviceProvider.GetService<IUserProfileService>();
+            _ssoService = serviceProvider.GetService<IOidcSsoService>();
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
             StartOneDriveStatusTimer();
@@ -295,6 +297,8 @@ public sealed partial class SettingsPage : Page
             await LoadUsersAsync();
 
             await RefreshTwoFactorStatusAsync();
+
+            await LoadSsoProviderLinksAsync();
 
             // Update network location visibility based on initial provider selection
             UpdateNetworkLocationVisibility();
@@ -2700,6 +2704,110 @@ public sealed partial class SettingsPage : Page
         {
             await _logger.LogErrorAsync("SettingsPage", "Linked Devices QR failed", ex);
         }
+    }
+
+    // ── Single Sign-On: whatever's configured in appsettings.json's Sso:Providers, never a
+    // hardcoded vendor - see docs/SSO.md. Linking here (an already-authenticated context, since
+    // reaching Settings requires having unlocked the vault) is as safe as the login-time
+    // auto-link that happens right after a master-password check: it's still the user proving
+    // account ownership first, SSO identity never grants it on its own.
+    private sealed record SsoProviderLinkRow(string Id, string DisplayName, bool IsLinked);
+
+    private async Task LoadSsoProviderLinksAsync()
+    {
+        if (_ssoService == null || _userProfileService == null) return;
+        var userId = _authService?.CurrentUser?.Id;
+        if (string.IsNullOrEmpty(userId)) return;
+
+        try
+        {
+            var linked = await _userProfileService.GetExternalLoginsAsync(userId);
+            var linkedIds = linked.Select(l => l.LoginProvider).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var rows = _ssoService.ConfiguredProviders
+                .Select(p => new SsoProviderLinkRow(p.Id, p.DisplayName, linkedIds.Contains(p.Id)))
+                .ToList();
+
+            if (GetElement<ItemsControl>("SsoProviderLinksList") is ItemsControl list)
+                list.ItemsSource = rows;
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Failed to load SSO provider links", ex);
+        }
+    }
+
+    private async void LinkSsoButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_ssoService == null || _userProfileService == null || _authService?.CurrentUser == null) return;
+        if (sender is not Button button || button.Tag is not string providerId) return;
+
+        var originalContent = button.Content;
+        try
+        {
+            button.IsEnabled = false;
+            button.Content = "Waiting for sign-in…";
+
+            var result = await _ssoService.SignInAsync(providerId);
+            if (!result.Success || string.IsNullOrWhiteSpace(result.Subject))
+            {
+                await ShowSsoMessageAsync("Sign-in", result.ErrorMessage ?? "Sign-in failed - no identity was returned to link.");
+                return;
+            }
+
+            var displayName = _ssoService.ConfiguredProviders.FirstOrDefault(p => p.Id == providerId)?.DisplayName;
+            var (success, error) = await _userProfileService.LinkExternalLoginAsync(
+                _authService.CurrentUser.Id, providerId, result.Subject, displayName);
+
+            if (!success)
+            {
+                await ShowSsoMessageAsync("Link account", error ?? "Could not link this account.");
+                return;
+            }
+
+            await LoadSsoProviderLinksAsync();
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Linking SSO provider failed", ex);
+        }
+        finally
+        {
+            button.IsEnabled = true;
+            button.Content = originalContent;
+        }
+    }
+
+    private async void UnlinkSsoButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_userProfileService == null || _authService?.CurrentUser == null) return;
+        if (sender is not Button button || button.Tag is not string providerId) return;
+
+        try
+        {
+            button.IsEnabled = false;
+            await _userProfileService.RemoveExternalLoginAsync(_authService.CurrentUser.Id, providerId);
+            await LoadSsoProviderLinksAsync();
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogErrorAsync("SettingsPage", "Unlinking SSO provider failed", ex);
+        }
+        finally
+        {
+            button.IsEnabled = true;
+        }
+    }
+
+    private static async Task ShowSsoMessageAsync(string title, string message)
+    {
+        var dialog = new ModernWpf.Controls.ContentDialog
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK"
+        };
+        await dialog.ShowAsync();
     }
 
     private async void SeedVaultsButton_Click(object sender, RoutedEventArgs e)

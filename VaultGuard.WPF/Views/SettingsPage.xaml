@@ -645,7 +645,58 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
-            
+
+            <!-- Single Sign-On: one row per provider actually configured in appsettings.json's
+                 Sso:Providers section - never a hardcoded vendor name. See docs/SSO.md. Linking here
+                 is safe because reaching Settings already requires an unlocked vault (master password
+                 proven); it never grants access on its own. -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="{StaticResource ModernAccentBrush}"
+                               Width="24"
+                               Height="24"
+                               CornerRadius="6"
+                               Margin="0,0,10,0">
+                            <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets"
+                                     FontSize="12"
+                                     Foreground="White"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Single Sign-On"
+                                  Style="{StaticResource ModernHeading3Style}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Link an identity provider to jump straight to your profile on the login screen next time. Your master password is still required every sign-in - linking never bypasses it."
+                               TextWrapping="Wrap" Opacity="0.8" FontSize="12" Margin="12,0,12,12"/>
+
+                    <ItemsControl x:Name="SsoProviderLinksList" Margin="12,0,12,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" MinWidth="140"/>
+                                    <TextBlock Text="Linked" Foreground="{StaticResource ModernSuccessBrush}"
+                                               VerticalAlignment="Center" Margin="0,0,12,0"
+                                               Visibility="{Binding IsLinked, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <Button Content="Unlink"
+                                           Style="{StaticResource ModernSecondaryButtonStyle}"
+                                           Tag="{Binding Id}"
+                                           Click="UnlinkSsoButton_Click"
+                                           Visibility="{Binding IsLinked, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <Button Content="Link account"
+                                           Style="{StaticResource ModernSecondaryButtonStyle}"
+                                           Tag="{Binding Id}"
+                                           Click="LinkSsoButton_Click"
+                                           Visibility="{Binding IsLinked, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
                     </WrapPanel>
                   </ScrollViewer>
                 </TabItem>

@@ -89,6 +89,10 @@ builder.Services.AddMudServices(config =>
 // Register AppNotificationService (thin toast wrapper)
 builder.Services.AddScoped<VaultGuard.Web.Services.AppNotificationService>();
 
+// Bridges Settings.razor's "Link account" click to the /login/sso/{id} OIDC round trip that
+// necessarily happens in a separate browser tab - see SsoLinkTokenStore's doc comment.
+builder.Services.AddSingleton<VaultGuard.Web.Services.ISsoLinkTokenStore, VaultGuard.Web.Services.SsoLinkTokenStore>();
+
 // Configure MudBlazor theme — neutral dark grey, no blue accent by default
 builder.Services.AddScoped(sp => new MudBlazor.MudTheme()
 {
@@ -418,22 +422,37 @@ if (ssoProviders.Count > 0)
     // Kicks off the IdP's OIDC challenge. Redirecting the browser here (a plain <a href>, not
     // Blazor's NavigateTo) is required because Interactive Server components can't issue an auth
     // challenge themselves - same reason /culture/set above is a plain endpoint rather than
-    // in-component code.
+    // in-component code. An optional linkToken (see SsoLinkTokenStore) means this came from
+    // Settings.razor's "Link account" button in a new tab rather than the login screen - threaded
+    // through to the callback via our own RedirectUri, untouched by the IdP.
     // Explicit IResult/Task<IResult> return types below - the branches return different concrete
     // Results.* types (ChallengeHttpResult/NotFound/LocalRedirect) which don't implicitly convert to
     // each other, only to their shared IResult interface, so lambda return-type inference needs help.
-    app.MapGet("/login/sso/{id}", IResult (string id) =>
-        ssoProviderIds.Contains(id)
-            ? Results.Challenge(
-                new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = $"/login/sso/{id}/callback" },
-                new[] { id })
-            : Results.NotFound());
+    app.MapGet("/login/sso/{id}", IResult (string id, string? linkToken) =>
+    {
+        if (!ssoProviderIds.Contains(id)) return Results.NotFound();
 
-    // Reads the verified email the IdP returned and hands it to the existing login page's profile
-    // picker via a query string - it does NOT sign the user into the app itself (no cookie, no
-    // session, no vault unlock). The external-scheme cookie this handshake used is signed out
-    // immediately so nothing lingers past this one redirect. See Login.razor's ssoEmail handling.
-    app.MapGet("/login/sso/{id}/callback", async Task<IResult> (string id, HttpContext ctx) =>
+        var callbackUri = $"/login/sso/{id}/callback";
+        if (!string.IsNullOrEmpty(linkToken))
+            callbackUri += $"?linkToken={Uri.EscapeDataString(linkToken)}";
+
+        return Results.Challenge(
+            new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = callbackUri },
+            new[] { id });
+    });
+
+    // Reads the verified email/subject the IdP returned. Two outcomes depending on how we got here:
+    //  - Settings-initiated (linkToken present): this is a separate tab from an already-authenticated
+    //    Settings session, so it links directly (IUserProfileService.LinkExternalLoginAsync) and shows
+    //    a plain static result - there is no app page to redirect back into.
+    //  - Login-initiated (no linkToken): hands the identity to the login page's profile picker via a
+    //    query string, exactly as before. Either way this does NOT sign the user into the app itself
+    //    (no cookie, no session, no vault unlock) - the external-scheme cookie this handshake used is
+    //    signed out immediately so nothing lingers past this one redirect.
+    app.MapGet("/login/sso/{id}/callback", async Task<IResult> (
+        string id, string? linkToken, HttpContext ctx,
+        VaultGuard.Web.Services.ISsoLinkTokenStore linkTokenStore,
+        IUserProfileService userProfileService) =>
     {
         if (!ssoProviderIds.Contains(id)) return Results.NotFound();
 
@@ -449,6 +468,20 @@ if (ssoProviders.Count > 0)
         var subject = result.Succeeded
             ? result.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
             : null;
+
+        if (!string.IsNullOrEmpty(linkToken))
+        {
+            const string closeTabHtml = "<html><body><h2>{0}</h2><p>You can close this tab and go back to Settings.</p></body></html>";
+
+            if (string.IsNullOrWhiteSpace(subject) || !linkTokenStore.TryConsumeToken(linkToken, out var userId) || userId == null)
+                return Results.Content(string.Format(closeTabHtml, "VaultGuard: link failed or expired."), "text/html");
+
+            var providerDisplayName = ssoProviders.First(p => p.Id == id).DisplayName;
+            var (success, error) = await userProfileService.LinkExternalLoginAsync(userId, id, subject, providerDisplayName);
+            return Results.Content(
+                string.Format(closeTabHtml, success ? "VaultGuard: account linked." : $"VaultGuard: linking failed - {System.Net.WebUtility.HtmlEncode(error)}"),
+                "text/html");
+        }
 
         if (string.IsNullOrWhiteSpace(email))
             return Results.LocalRedirect($"/login?ssoError=1&ssoProvider={Uri.EscapeDataString(id)}");
