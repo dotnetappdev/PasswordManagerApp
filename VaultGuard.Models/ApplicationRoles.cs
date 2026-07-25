@@ -26,9 +26,15 @@ public static class ApplicationRoles
     public const string User = "User";
 
     /// <summary>
+    /// Super administrator role - grants access to VaultGuard.Admin (the customer/subscription/licensing
+    /// control panel), distinct from the in-app <see cref="Admin"/> role used for family/vault administration.
+    /// </summary>
+    public const string SuperAdmin = "SuperAdmin";
+
+    /// <summary>
     /// Get all available roles
     /// </summary>
-    public static readonly string[] AllRoles = { Admin, Parent, Child, User };
+    public static readonly string[] AllRoles = { Admin, Parent, Child, User, SuperAdmin };
 
     /// <summary>
     /// Get role descriptions for seeding
@@ -38,7 +44,8 @@ public static class ApplicationRoles
         { Admin, "Administrator with full system access" },
         { Parent, "Parent user who can manage child accounts and family password data" },
         { Child, "Child user with limited access, managed by parent accounts" },
-        { User, "Standard user with access to personal password data" }
+        { User, "Standard user with access to personal password data" },
+        { SuperAdmin, "Super administrator with access to the VaultGuard.Admin control panel (customers, subscriptions, license keys, tenants)" }
     };
 
     /// <summary>
@@ -46,6 +53,7 @@ public static class ApplicationRoles
     /// </summary>
     public static readonly Dictionary<string, int> RoleDisplayOrder = new()
     {
+        { SuperAdmin, 0 },
         { Admin, 1 },
         { Parent, 2 },
         { User, 3 },

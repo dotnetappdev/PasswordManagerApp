@@ -1,0 +1,70 @@
+@page "/users"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = VaultGuard.Models.ApplicationRoles.SuperAdmin)]
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Users - VaultGuard Admin</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
+
+@if (_users is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="@_users" Dense="true" Hover="true" Filter="@FilterFunc" @bind-SelectedItem="_selected">
+        <ToolBarContent>
+            <MudTextField T="string" ValueChanged="@(s => _searchText = s)" Placeholder="Search by email" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" Class="mb-0" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Email</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Created</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Email">@context.Email</MudTd>
+            <MudTd DataLabel="Name">@($"{context.FirstName} {context.LastName}")</MudTd>
+            <MudTd DataLabel="Created">@context.CreatedAt.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
+                    @(context.IsActive ? "Active" : "Disabled")
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ManageUser(context))">Manage</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<UserDto>? _users;
+    private UserDto? _selected;
+    private string _searchText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _users = await Api.GetUsersAsync();
+    }
+
+    private bool FilterFunc(UserDto? u) =>
+        u is not null && (string.IsNullOrWhiteSpace(_searchText) || u.Email.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    private async Task ManageUser(UserDto? user)
+    {
+        if (user is null) return;
+        var parameters = new DialogParameters<ManageUserDialog> { { d => d.User, user } };
+        var dialog = await DialogService.ShowAsync<ManageUserDialog>($"Manage {user.Email}", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _users = await Api.GetUsersAsync();
+            StateHasChanged();
+        }
+    }
+}

@@ -198,6 +198,13 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddDefaultTokenProviders()
 .AddApiEndpoints(); // Enable .NET 9 Identity API endpoints
 
+// AddApiEndpoints() maps /login, /register, etc., but the "useCookies=false" (bearer token) path on
+// /login needs its own scheme handler registered explicitly — without this, POST /login?useCookies=false
+// throws "No sign-in authentication handler is registered for the scheme 'Identity.Bearer'" instead of
+// returning a token. VaultGuard.Admin is the first caller of this bearer flow (WPF/Blazor use the
+// separate master-key-based AuthController instead), which is why this was missing until now.
+builder.Services.AddAuthentication().AddBearerToken(IdentityConstants.BearerScheme);
+
 // Register application services
 builder.Services.AddScoped<IVaultGuardDbContext>(provider =>
 {
@@ -244,6 +251,12 @@ builder.Services.AddScoped<IPermissionService, VaultGuard.Services.Services.Perm
 builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceService>();
 builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditLogService>();
 builder.Services.AddHostedService<VaultGuard.Services.Services.AutoSyncService>();
+
+// Licensing (CD keys / Pro feature unlock) + multi-tenancy — see docs/LICENSING.md and
+// docs/ADMIN_MULTITENANCY.md.
+builder.Services.Configure<VaultGuard.Models.Configuration.LicensingConfiguration>(
+    builder.Configuration.GetSection(VaultGuard.Models.Configuration.LicensingConfiguration.SectionName));
+builder.Services.AddScoped<ICurrentTenantService, VaultGuard.Services.Services.CurrentTenantService>();
 
 // Identity data seeder — creates the default accounts + "Personal" vault (same across all providers)
 builder.Services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
@@ -385,6 +398,10 @@ if (rateLimitingEnabled)
 {
     app.UseRateLimiter();
 }
+
+// Resolve a multi-tenant custom domain / subdomain (if any) before auth so downstream code — including
+// ICurrentTenantService consumers — sees it regardless of how the request got authenticated.
+app.UseMiddleware<TenantResolutionMiddleware>();
 
 // Run the framework authentication step (Identity bearer/cookie schemes registered by
 // AddIdentity().AddApiEndpoints()) before our API-key gate, so a request carrying a valid bearer

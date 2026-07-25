@@ -1,0 +1,129 @@
+@page "/tenants"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = VaultGuard.Models.ApplicationRoles.SuperAdmin)]
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Tenants &amp; Domains - VaultGuard Admin</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h4">Tenants &amp; Domains</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="CreateTenant">
+        New Tenant
+    </MudButton>
+</MudStack>
+
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Each tenant gets a subdomain (<code>&lt;slug&gt;.&lt;your base domain&gt;</code>) automatically. To give a
+    customer their own domain (e.g. <code>vaultguard.acme.com</code>), set it below, have them add the TXT
+    record it gives you, then click Verify.
+</MudAlert>
+
+@if (_tenants is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="@_tenants" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Subdomain</MudTh>
+            <MudTh>Custom Domain</MudTh>
+            <MudTh>Users</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Subdomain"><code>@context.Slug</code></MudTd>
+            <MudTd DataLabel="Custom Domain">
+                @if (!string.IsNullOrEmpty(context.CustomDomain))
+                {
+                    <span><code>@context.CustomDomain</code></span>
+                    @if (context.CustomDomainVerified)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Class="ml-2">Verified</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">Pending</MudChip>
+                    }
+                }
+                else
+                {
+                    <span class="mud-text-secondary">Not set</span>
+                }
+            </MudTd>
+            <MudTd DataLabel="Users">@context.UserCount</MudTd>
+            <MudTd DataLabel="Status">@context.Status</MudTd>
+            <MudTd>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ManageDomain(context))">Domain</MudButton>
+                @if (!context.CustomDomainVerified && !string.IsNullOrEmpty(context.CustomDomain))
+                {
+                    <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Text" OnClick="@(() => Verify(context))">Verify</MudButton>
+                }
+                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="@(() => Delete(context))">Delete</MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<TenantResponse>? _tenants;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tenants = await Api.GetTenantsAsync();
+    }
+
+    private async Task CreateTenant()
+    {
+        var dialog = await DialogService.ShowAsync<CreateTenantDialog>("New Tenant");
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _tenants = await Api.GetTenantsAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ManageDomain(TenantResponse tenant)
+    {
+        var parameters = new DialogParameters<SetCustomDomainDialog> { { d => d.Tenant, tenant } };
+        var dialog = await DialogService.ShowAsync<SetCustomDomainDialog>($"Custom domain — {tenant.Name}", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _tenants = await Api.GetTenantsAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Verify(TenantResponse tenant)
+    {
+        if (await Api.VerifyCustomDomainAsync(tenant.Id))
+        {
+            Snackbar.Add("Domain verified.", Severity.Success);
+            _tenants = await Api.GetTenantsAsync();
+        }
+        else
+        {
+            Snackbar.Add("Could not verify domain.", Severity.Error);
+        }
+    }
+
+    private async Task Delete(TenantResponse tenant)
+    {
+        if (await Api.DeleteTenantAsync(tenant.Id))
+        {
+            Snackbar.Add("Tenant deleted.", Severity.Success);
+            _tenants = await Api.GetTenantsAsync();
+        }
+        else
+        {
+            Snackbar.Add("Could not delete tenant.", Severity.Error);
+        }
+    }
+}

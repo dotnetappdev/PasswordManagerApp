@@ -17,6 +17,7 @@
 @inject VaultGuard.Web.Services.AppNotificationService Notify
 @inject IApiKeyService ApiKeyService
 @inject IServiceProvider Services
+@inject ILicenseClientService LicenseClient
 @using Microsoft.Extensions.DependencyInjection
 @using System.Linq
 @using System.Collections.Generic
@@ -769,6 +770,55 @@
                             Delete Account
                         </MudButton>
                     </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="License" Icon="@Icons.Material.Filled.WorkspacePremium">
+        <MudGrid>
+            <MudItem xs="12" md="7">
+                <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-1" Style="font-weight:600;">Pro License</MudText>
+                    @if (LicenseClient.IsProUnlocked)
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mb-3">
+                            <strong>@LicenseClient.CurrentPlan</strong> plan active
+                            @(LicenseClient.ExpiresAt.HasValue ? $" — renews/expires {LicenseClient.ExpiresAt:yyyy-MM-dd}" : " (perpetual license)")
+                        </MudAlert>
+                        <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                            Unlocked features: @FeatureSummary()
+                        </MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.RemoveCircle"
+                                   OnClick="@DeactivateLicense">
+                            Deactivate this device
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mb-3">
+                            You're on the Free plan. Enter a CD key to unlock Pro features like API access and cloud backup.
+                        </MudAlert>
+                        <MudTextField @bind-Value="_licenseKeyInput" Label="License Key"
+                                      Variant="Variant.Outlined" Class="mb-3"
+                                      Placeholder="VG-XXXXX-XXXXX-XXXXX-XXXXX" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.LockOpen"
+                                   OnClick="@ActivateLicense" Disabled="@(_activatingLicense || string.IsNullOrWhiteSpace(_licenseKeyInput))">
+                            @if (_activatingLicense)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Activate
+                        </MudButton>
+                    }
+                    @if (!string.IsNullOrEmpty(_licenseStatusMessage))
+                    {
+                        <MudAlert Severity="@_licenseStatusSeverity" Variant="Variant.Outlined" Dense="true" Class="mt-3">
+                            @_licenseStatusMessage
+                        </MudAlert>
+                    }
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -1916,6 +1966,66 @@
         // Prefill the "issue key from server" email with the signed-in account's email for convenience.
         try { _issueEmail = AuthService.CurrentUser?.Email ?? _issueEmail; }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+
+        try
+        {
+            LicenseClient.LoadCached();
+            _ = LicenseClient.TryRefreshAsync(); // best-effort background re-check; ignore result
+        }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+    }
+
+    // ── License ──────────────────────────────────────────────────────────────────
+
+    string _licenseKeyInput = "";
+    bool _activatingLicense;
+    string? _licenseStatusMessage;
+    Severity _licenseStatusSeverity = Severity.Info;
+
+    string FeatureSummary()
+    {
+        var features = LicenseClient.CurrentFeatures;
+        if (features == VaultGuard.Models.Licensing.LicenseFeature.None) return "none";
+        return string.Join(", ", Enum.GetValues<VaultGuard.Models.Licensing.LicenseFeature>()
+            .Where(f => f != VaultGuard.Models.Licensing.LicenseFeature.None && f != VaultGuard.Models.Licensing.LicenseFeature.All)
+            .Where(f => (features & f) == f)
+            .Select(f => f.ToString()));
+    }
+
+    async Task ActivateLicense()
+    {
+        _activatingLicense = true;
+        _licenseStatusMessage = null;
+        try
+        {
+            await LicenseClient.ActivateAsync(_licenseKeyInput);
+            _licenseKeyInput = "";
+            _licenseStatusSeverity = Severity.Success;
+            _licenseStatusMessage = $"License activated — {LicenseClient.CurrentPlan} plan unlocked.";
+            Snackbar.Add("License activated", Severity.Success);
+        }
+        catch (VaultGuard.Services.Interfaces.LicenseActivationException ex)
+        {
+            _licenseStatusSeverity = Severity.Error;
+            _licenseStatusMessage = ex.Message;
+        }
+        catch (System.Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Warning("License activation failed", ex);
+            _licenseStatusSeverity = Severity.Error;
+            _licenseStatusMessage = "Activation failed unexpectedly. Please try again.";
+        }
+        finally
+        {
+            _activatingLicense = false;
+        }
+    }
+
+    void DeactivateLicense()
+    {
+        LicenseClient.ClearCached();
+        _licenseStatusMessage = "License removed from this device.";
+        _licenseStatusSeverity = Severity.Info;
     }
 
     // ── Generator ────────────────────────────────────────────────────────────────

@@ -6,7 +6,8 @@ using VaultGuard.Models;
 
 namespace VaultGuard.API.Controllers;
 
-[Authorize(Roles = ApplicationRoles.Admin)]
+// SuperAdmin (VaultGuard.Admin control panel) can manage users the same way in-app Admins can.
+[Authorize(Roles = $"{ApplicationRoles.Admin},{ApplicationRoles.SuperAdmin}")]
 [ApiController]
 [Route("api/[controller]")]
 public class UserProfileController : ControllerBase

@@ -1,0 +1,49 @@
+@page "/api-keys"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = VaultGuard.Models.ApplicationRoles.SuperAdmin)]
+@inject AdminApiClient Api
+
+<PageTitle>API Keys - VaultGuard Admin</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">API Keys</MudText>
+<MudAlert Severity="Severity.Info" Class="mb-4">
+    Cross-account oversight of every API key issued across VaultGuard — API access itself is a Pro feature
+    unlocked per-user via a license key (see the Licenses page).
+</MudAlert>
+
+@if (_keys is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="@_keys" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Owner</MudTh>
+            <MudTh>Created</MudTh>
+            <MudTh>Last Used</MudTh>
+            <MudTh>Status</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Owner">@context.UserEmail</MudTd>
+            <MudTd DataLabel="Created">@context.CreatedAt.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Last Used">@(context.LastUsedAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Error)">
+                    @(context.IsActive ? "Active" : "Inactive")
+                </MudChip>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<AdminApiKeyResponse>? _keys;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _keys = await Api.GetAllApiKeysAsync();
+    }
+}

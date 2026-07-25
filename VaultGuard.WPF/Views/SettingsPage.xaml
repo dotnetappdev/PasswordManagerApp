@@ -2124,6 +2124,41 @@
                   </ScrollViewer>
                 </TabItem>
 
+                <TabItem Header="License">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
+                    <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">
+
+            <!-- License -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="#1D4ED8" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Pro License" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Margin="16">
+                        <TextBlock x:Name="LicenseStatusText" Text="Free plan — no license key activated."
+                                   Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                        <TextBox x:Name="LicenseKeyTextBox" Height="36" VerticalContentAlignment="Center"
+                                 Padding="8,0" Margin="0,0,0,10"
+                                 Text=""
+                                 ToolTip="VG-XXXXX-XXXXX-XXXXX-XXXXX"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="ActivateLicenseButton" Content="Activate" Width="120" Height="32"
+                                    Click="ActivateLicenseButton_Click" Margin="0,0,10,0"/>
+                            <Button x:Name="DeactivateLicenseButton" Content="Deactivate Device" Width="150" Height="32"
+                                    Click="DeactivateLicenseButton_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+                    </WrapPanel>
+                  </ScrollViewer>
+                </TabItem>
+
                 <TabItem Header="About">
                   <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,12,0,0">
                     <WrapPanel Orientation="Horizontal" ItemWidth="560" MaxWidth="1132" HorizontalAlignment="Left">

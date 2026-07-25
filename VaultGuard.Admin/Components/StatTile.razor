@@ -1,0 +1,15 @@
+<MudPaper Class="pa-4" Elevation="1">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+        <MudIcon Icon="@Icon" Color="Color.Primary" Size="Size.Large" />
+        <div>
+            <MudText Typo="Typo.h5" Style="font-weight:700;">@Value</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@Label</MudText>
+        </div>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Info;
+}

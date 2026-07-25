@@ -1,0 +1,95 @@
+@page "/licenses"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = VaultGuard.Models.ApplicationRoles.SuperAdmin)]
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>License Keys - VaultGuard Admin</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h4">License Keys</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="IssueLicense">
+        Issue License Key
+    </MudButton>
+</MudStack>
+
+@if (_licenses is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="@_licenses" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Key</MudTh>
+            <MudTh>Customer</MudTh>
+            <MudTh>Plan</MudTh>
+            <MudTh>Activations</MudTh>
+            <MudTh>Expires</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Key"><code>@context.KeyCode</code></MudTd>
+            <MudTd DataLabel="Customer">@context.CustomerEmail</MudTd>
+            <MudTd DataLabel="Plan">@context.Plan</MudTd>
+            <MudTd DataLabel="Activations">@context.ActiveActivations / @context.MaxActivations</MudTd>
+            <MudTd DataLabel="Expires">@(context.ExpiresAt?.ToString("yyyy-MM-dd") ?? "Perpetual")</MudTd>
+            <MudTd DataLabel="Status">
+                @if (context.IsRevoked)
+                {
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Revoked</MudChip>
+                }
+                else if (context.ExpiresAt.HasValue && context.ExpiresAt < DateTime.UtcNow)
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">Expired</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Active</MudChip>
+                }
+            </MudTd>
+            <MudTd>
+                @if (!context.IsRevoked)
+                {
+                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="@(() => Revoke(context))">Revoke</MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<LicenseKeyResponse>? _licenses;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _licenses = await Api.GetLicensesAsync();
+    }
+
+    private async Task IssueLicense()
+    {
+        var dialog = await DialogService.ShowAsync<IssueLicenseDialog>("Issue License Key");
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _licenses = await Api.GetLicensesAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Revoke(LicenseKeyResponse license)
+    {
+        var ok = await Api.RevokeLicenseAsync(license.Id, "Revoked from VaultGuard.Admin");
+        if (ok)
+        {
+            Snackbar.Add("License revoked.", Severity.Success);
+            _licenses = await Api.GetLicensesAsync();
+        }
+        else
+        {
+            Snackbar.Add("Could not revoke license.", Severity.Error);
+        }
+    }
+}

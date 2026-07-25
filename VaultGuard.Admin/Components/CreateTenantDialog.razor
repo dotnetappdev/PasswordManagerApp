@@ -1,0 +1,37 @@
+@inject AdminApiClient Api
+
+<MudDialog>
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+        }
+        <MudTextField T="string" @bind-Value="_name" Label="Company / Tenant Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField T="string" @bind-Value="_slug" Label="Subdomain slug (optional — derived from name)" Variant="Variant.Outlined" HelperText="e.g. 'acme' for acme.yourdomain.com" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save" Disabled="@(_saving || string.IsNullOrWhiteSpace(_name))">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private string _name = "";
+    private string? _slug;
+    private bool _saving;
+    private string? _error;
+
+    private async Task Save()
+    {
+        _saving = true;
+        var (success, _, error) = await Api.CreateTenantAsync(new CreateTenantRequest { Name = _name, Slug = _slug });
+        _saving = false;
+
+        if (success) MudDialog.Close(DialogResult.Ok(true));
+        else _error = error ?? "Could not create tenant.";
+    }
+
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+}

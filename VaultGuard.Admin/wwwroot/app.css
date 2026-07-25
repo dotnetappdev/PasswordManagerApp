@@ -1,0 +1,10 @@
+html, body {
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}

@@ -329,6 +329,9 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.Property<bool>("StorePasskeysInVault")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("TwoFactorBackupCodesRemaining")
                         .HasColumnType("int");
 
@@ -366,6 +369,8 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -938,6 +943,169 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Device", (string)null);
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Licensing.LicenseActivation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ActivatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AppVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("DeviceName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastValidatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("LicenseKeyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Platform")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LicenseKeyId", "DeviceId")
+                        .IsUnique();
+
+                    b.ToTable("LicenseActivations");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Licensing.LicenseKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CustomerEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("CustomerName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Features")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IssuedByAdminUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("KeyCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("MaxActivations")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Plan")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerEmail");
+
+                    b.HasIndex("KeyCode")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("LicenseKeys");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Licensing.Subscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CurrentPeriodEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExternalProviderRef")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("LicenseKeyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Plan")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SeatCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LicenseKeyId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.LoginItem", b =>
@@ -1629,6 +1797,61 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.ToTable("Tags");
                 });
 
+            modelBuilder.Entity("VaultGuard.Models.Tenancy.Tenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomDomain")
+                        .HasMaxLength(253)
+                        .HasColumnType("nvarchar(253)");
+
+                    b.Property<bool>("CustomDomainVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("DomainVerificationToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("nvarchar(63)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("SubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomDomain")
+                        .IsUnique()
+                        .HasFilter("[CustomDomain] IS NOT NULL");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique()
+                        .HasFilter("[SubscriptionId] IS NOT NULL");
+
+                    b.ToTable("Tenants");
+                });
+
             modelBuilder.Entity("VaultGuard.Models.UserBackupSettings", b =>
                 {
                     b.Property<int>("Id")
@@ -2178,6 +2401,16 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("VaultGuard.Models.ApplicationUser", b =>
+                {
+                    b.HasOne("VaultGuard.Models.Tenancy.Tenant", "Tenant")
+                        .WithMany("Users")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("VaultGuard.Models.AuditLog", b =>
                 {
                     b.HasOne("VaultGuard.Models.ApplicationUser", "User")
@@ -2284,6 +2517,51 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Licensing.LicenseActivation", b =>
+                {
+                    b.HasOne("VaultGuard.Models.Licensing.LicenseKey", "LicenseKey")
+                        .WithMany("Activations")
+                        .HasForeignKey("LicenseKeyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LicenseKey");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Licensing.LicenseKey", b =>
+                {
+                    b.HasOne("VaultGuard.Models.Tenancy.Tenant", "Tenant")
+                        .WithMany("LicenseKeys")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Licensing.Subscription", b =>
+                {
+                    b.HasOne("VaultGuard.Models.Licensing.LicenseKey", "LicenseKey")
+                        .WithMany()
+                        .HasForeignKey("LicenseKeyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("VaultGuard.Models.Tenancy.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("VaultGuard.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("LicenseKey");
+
+                    b.Navigation("Tenant");
 
                     b.Navigation("User");
                 });
@@ -2398,6 +2676,16 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Tenancy.Tenant", b =>
+                {
+                    b.HasOne("VaultGuard.Models.Licensing.Subscription", "Subscription")
+                        .WithOne()
+                        .HasForeignKey("VaultGuard.Models.Tenancy.Tenant", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Subscription");
                 });
 
             modelBuilder.Entity("VaultGuard.Models.UserBackupSettings", b =>
@@ -2537,6 +2825,11 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.Navigation("PasswordItems");
                 });
 
+            modelBuilder.Entity("VaultGuard.Models.Licensing.LicenseKey", b =>
+                {
+                    b.Navigation("Activations");
+                });
+
             modelBuilder.Entity("VaultGuard.Models.PasswordItem", b =>
                 {
                     b.Navigation("CreditCardItem");
@@ -2550,6 +2843,13 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.Navigation("SecureNoteItem");
 
                     b.Navigation("WiFiItem");
+                });
+
+            modelBuilder.Entity("VaultGuard.Models.Tenancy.Tenant", b =>
+                {
+                    b.Navigation("LicenseKeys");
+
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

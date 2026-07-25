@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using VaultGuard.Models.Tenancy;
 
 namespace VaultGuard.Models;
 
@@ -14,6 +15,12 @@ public class ApplicationUser : IdentityUser
     public bool IsActive { get; set; } = true;
     public string? MasterPasswordHint { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Organization this user belongs to, if multi-tenancy is in use. Null = single-tenant
+    /// (default) install; see docs/ADMIN_MULTITENANCY.md.</summary>
+    public Guid? TenantId { get; set; }
+    [ForeignKey(nameof(TenantId))]
+    public virtual Tenant? Tenant { get; set; }
 
     // Computed property for backward compatibility
     [NotMapped]

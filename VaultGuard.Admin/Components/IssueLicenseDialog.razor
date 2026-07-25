@@ -1,0 +1,80 @@
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+        }
+        @if (_issued is not null)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-3">
+                License issued: <code>@_issued.KeyCode</code> — copy this now and send it to the customer.
+            </MudAlert>
+        }
+        else
+        {
+            <MudTextField T="string" @bind-Value="_customerEmail" Label="Customer Email" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+            <MudTextField T="string" @bind-Value="_customerName" Label="Customer Name (optional)" Variant="Variant.Outlined" Class="mb-3" />
+            <MudSelect T="LicensePlan" @bind-Value="_plan" Label="Plan" Variant="Variant.Outlined" Class="mb-3">
+                @foreach (var plan in Enum.GetValues<LicensePlan>())
+                {
+                    <MudSelectItem T="LicensePlan" Value="@plan">@plan</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField @bind-Value="_maxActivations" Label="Max Activations (devices)" Variant="Variant.Outlined" Min="1" Class="mb-3" />
+            <MudDatePicker @bind-Date="_expiresAt" Label="Expires (leave blank for perpetual)" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField T="string" @bind-Value="_notes" Label="Notes (optional)" Variant="Variant.Outlined" Lines="2" />
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (_issued is not null)
+        {
+            <MudButton OnClick="Done" Color="Color.Primary">Done</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Issue" Disabled="@(_issuing || string.IsNullOrWhiteSpace(_customerEmail))">
+                Issue
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private string _customerEmail = "";
+    private string? _customerName;
+    private LicensePlan _plan = LicensePlan.Pro;
+    private int _maxActivations = 1;
+    private DateTime? _expiresAt;
+    private string? _notes;
+    private bool _issuing;
+    private string? _error;
+    private LicenseKeyResponse? _issued;
+
+    private async Task Issue()
+    {
+        _issuing = true;
+        _error = null;
+        var (success, license, error) = await Api.IssueLicenseAsync(new IssueLicenseRequest
+        {
+            CustomerEmail = _customerEmail,
+            CustomerName = _customerName,
+            Plan = _plan,
+            MaxActivations = _maxActivations,
+            ExpiresAt = _expiresAt,
+            Notes = _notes
+        });
+        _issuing = false;
+
+        if (success) _issued = license;
+        else _error = error ?? "Could not issue license.";
+    }
+
+    private void Done() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+}

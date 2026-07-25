@@ -1,0 +1,68 @@
+@inject AdminApiClient Api
+
+<MudDialog>
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+        }
+        @if (_setup is not null)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-3">
+                Domain recorded. Ask the customer to add this DNS record, then click Verify on the Tenants page
+                once it has propagated (can take up to 24h):
+            </MudAlert>
+            <MudSimpleTable Dense="true">
+                <tbody>
+                    <tr><td><strong>Type</strong></td><td>TXT</td></tr>
+                    <tr><td><strong>Name</strong></td><td><code>@_setup.TxtRecordName</code></td></tr>
+                    <tr><td><strong>Value</strong></td><td><code>@_setup.TxtRecordValue</code></td></tr>
+                </tbody>
+            </MudSimpleTable>
+            <MudText Typo="Typo.body2" Class="mt-3 mud-text-secondary">
+                They'll also need a CNAME (or A record, per your hosting) pointing
+                <code>@_setup.Domain</code> at this VaultGuard deployment.
+            </MudText>
+        }
+        else
+        {
+            <MudTextField T="string" @bind-Value="_domain" Label="Custom Domain" Placeholder="vaultguard.customer.com" Variant="Variant.Outlined" />
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (_setup is not null)
+        {
+            <MudButton OnClick="Done" Color="Color.Primary">Done</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save" Disabled="@(_saving || string.IsNullOrWhiteSpace(_domain))">Save</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public TenantResponse Tenant { get; set; } = null!;
+
+    private string _domain = "";
+    private bool _saving;
+    private string? _error;
+    private CustomDomainSetupResponse? _setup;
+
+    protected override void OnInitialized() => _domain = Tenant.CustomDomain ?? "";
+
+    private async Task Save()
+    {
+        _saving = true;
+        var (success, setup, error) = await Api.SetCustomDomainAsync(Tenant.Id, _domain);
+        _saving = false;
+
+        if (success) _setup = setup;
+        else _error = error ?? "Could not set custom domain.";
+    }
+
+    private void Done() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+}

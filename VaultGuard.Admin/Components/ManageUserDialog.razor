@@ -1,0 +1,112 @@
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_allRoles is null)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Roles</MudText>
+            @foreach (var role in _allRoles)
+            {
+                <MudCheckBox T="bool" Value="@_userRoles.Contains(role)" ValueChanged="@(v => ToggleRole(role, v))" Label="@role" Dense="true" />
+            }
+
+            <MudDivider Class="my-4" />
+
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Tenant</MudText>
+            <MudSelect T="Guid?" @bind-Value="_tenantId" Label="Assigned tenant" Variant="Variant.Outlined" Clearable="true">
+                @foreach (var tenant in _tenants)
+                {
+                    <MudSelectItem T="Guid?" Value="@tenant.Id">@tenant.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudButton Class="mt-2" Size="Size.Small" OnClick="SaveTenant">Save Tenant</MudButton>
+
+            <MudDivider Class="my-4" />
+
+            <MudStack Row="true" Spacing="2">
+                @if (User.IsActive)
+                {
+                    <MudButton Color="Color.Warning" Variant="Variant.Outlined" OnClick="Deactivate">Deactivate</MudButton>
+                }
+                else
+                {
+                    <MudButton Color="Color.Success" Variant="Variant.Outlined" OnClick="Reactivate">Reactivate</MudButton>
+                }
+                <MudButton Color="Color.Error" Variant="Variant.Outlined" OnClick="Delete">Delete Permanently</MudButton>
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public UserDto User { get; set; } = null!;
+
+    private List<string>? _allRoles;
+    private List<string> _userRoles = new();
+    private List<TenantResponse> _tenants = new();
+    private Guid? _tenantId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allRoles = await Api.GetAllRolesAsync();
+        _userRoles = await Api.GetUserRolesAsync(User.Id);
+        _tenants = await Api.GetTenantsAsync();
+    }
+
+    private async Task ToggleRole(string role, bool isChecked)
+    {
+        var ok = isChecked
+            ? await Api.AddUserToRoleAsync(User.Id, role)
+            : await Api.RemoveUserFromRoleAsync(User.Id, role);
+
+        if (ok)
+        {
+            if (isChecked) _userRoles.Add(role); else _userRoles.Remove(role);
+            Snackbar.Add($"{role} {(isChecked ? "granted" : "revoked")}.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Could not update role.", Severity.Error);
+        }
+    }
+
+    private async Task SaveTenant()
+    {
+        var ok = await Api.SetUserTenantAsync(User.Id, _tenantId);
+        Snackbar.Add(ok ? "Tenant updated." : "Could not update tenant.", ok ? Severity.Success : Severity.Error);
+    }
+
+    private async Task Deactivate()
+    {
+        if (await Api.DeactivateUserAsync(User.Id)) { User.IsActive = false; Snackbar.Add("User deactivated.", Severity.Success); }
+    }
+
+    private async Task Reactivate()
+    {
+        if (await Api.ReactivateUserAsync(User.Id)) { User.IsActive = true; Snackbar.Add("User reactivated.", Severity.Success); }
+    }
+
+    private async Task Delete()
+    {
+        if (await Api.DeleteUserAsync(User.Id))
+        {
+            Snackbar.Add("User deleted.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add("Could not delete user.", Severity.Error);
+        }
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

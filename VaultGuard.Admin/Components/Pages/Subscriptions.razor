@@ -1,0 +1,89 @@
+@page "/subscriptions"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = VaultGuard.Models.ApplicationRoles.SuperAdmin)]
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Subscriptions - VaultGuard Admin</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h4">Subscriptions</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="Create">
+        New Subscription
+    </MudButton>
+</MudStack>
+
+@if (_subs is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="@_subs" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Owner</MudTh>
+            <MudTh>Plan</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Seats</MudTh>
+            <MudTh>Period End</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Owner">@(context.TenantName ?? context.UserEmail ?? "—")</MudTd>
+            <MudTd DataLabel="Plan">@context.Plan</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Color="@StatusColor(context.Status)">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Seats">@context.SeatCount</MudTd>
+            <MudTd DataLabel="Period End">@(context.CurrentPeriodEnd?.ToString("yyyy-MM-dd") ?? "—")</MudTd>
+            <MudTd>
+                @if (context.Status is SubscriptionStatus.Active or SubscriptionStatus.Trialing or SubscriptionStatus.PastDue)
+                {
+                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="@(() => Cancel(context))">Cancel</MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<SubscriptionResponse>? _subs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _subs = await Api.GetSubscriptionsAsync();
+    }
+
+    private static Color StatusColor(SubscriptionStatus status) => status switch
+    {
+        SubscriptionStatus.Active => Color.Success,
+        SubscriptionStatus.Trialing => Color.Info,
+        SubscriptionStatus.PastDue => Color.Warning,
+        _ => Color.Error
+    };
+
+    private async Task Create()
+    {
+        var dialog = await DialogService.ShowAsync<CreateSubscriptionDialog>("New Subscription");
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _subs = await Api.GetSubscriptionsAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Cancel(SubscriptionResponse sub)
+    {
+        if (await Api.CancelSubscriptionAsync(sub.Id))
+        {
+            Snackbar.Add("Subscription cancelled.", Severity.Success);
+            _subs = await Api.GetSubscriptionsAsync();
+        }
+        else
+        {
+            Snackbar.Add("Could not cancel subscription.", Severity.Error);
+        }
+    }
+}

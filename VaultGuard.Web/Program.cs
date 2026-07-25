@@ -205,6 +205,13 @@ builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditL
 builder.Services.AddScoped<ITwoFactorService, VaultGuard.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceService>();
 
+// Licensing (CD keys / Pro feature unlock) + multi-tenancy — see docs/LICENSING.md and
+// docs/ADMIN_MULTITENANCY.md.
+builder.Services.Configure<VaultGuard.Models.Configuration.LicensingConfiguration>(
+    builder.Configuration.GetSection(VaultGuard.Models.Configuration.LicensingConfiguration.SectionName));
+builder.Services.AddScoped<ICurrentTenantService, VaultGuard.Services.Services.CurrentTenantService>();
+builder.Services.AddScoped<ILicenseClientService, VaultGuard.Services.Services.LicenseClientService>();
+
 // "Remember this device" master-key cache (encrypted with server data-protection keys) so a
 // 2FA-enabled account can sign in code-only on a remembered browser.
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedLocalStorage>();
@@ -304,6 +311,8 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.UseTenantResolution();
 
 app.UseAuthentication();
 app.UseAuthorization();

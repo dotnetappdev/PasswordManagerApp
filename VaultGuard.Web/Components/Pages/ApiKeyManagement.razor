@@ -7,9 +7,24 @@
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
 @inject VaultGuard.Web.Services.AppNotificationService Notify
+@inject ILicenseClientService LicenseClient
 
 <PageTitle>API Key Management</PageTitle>
 
+@if (!LicenseClient.HasFeature(VaultGuard.Models.Licensing.LicenseFeature.ApiAccess))
+{
+    <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+        <MudPaper Class="pa-6">
+            <MudText Typo="Typo.h4" Class="mb-4">API Key Management</MudText>
+            <MudAlert Severity="Severity.Warning" Class="mb-2">
+                API access is a <strong>Pro</strong> feature. Activate a license key under
+                <MudLink Href="/settings">Settings → License</MudLink> to unlock it.
+            </MudAlert>
+        </MudPaper>
+    </MudContainer>
+}
+else
+{
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudPaper Class="pa-6">
         <MudText Typo="Typo.h4" Class="mb-4">API Key Management</MudText>
@@ -114,6 +129,7 @@
         }
     </MudPaper>
 </MudContainer>
+}
 
 <!-- API Key Display Dialog -->
 <MudDialog @bind-Visible="showApiKeyDialog" Options="dialogOptions">
@@ -175,6 +191,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try { LicenseClient.LoadCached(); }
+        catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
+
         await LoadApiKeys();
     }
 

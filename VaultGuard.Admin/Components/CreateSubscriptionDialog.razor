@@ -1,0 +1,72 @@
+@inject AdminApiClient Api
+
+<MudDialog>
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+        }
+        <MudTextField T="string" @bind-Value="_userId" Label="User Id (leave blank for a tenant subscription)" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField T="string" @bind-Value="_tenantIdText" Label="Tenant Id (GUID, optional)" Variant="Variant.Outlined" Class="mb-3" />
+        <MudSelect T="LicensePlan" @bind-Value="_plan" Label="Plan" Variant="Variant.Outlined" Class="mb-3">
+            @foreach (var plan in Enum.GetValues<LicensePlan>())
+            {
+                <MudSelectItem T="LicensePlan" Value="@plan">@plan</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="_seats" Label="Seats" Variant="Variant.Outlined" Min="1" Class="mb-3" />
+        <MudDatePicker @bind-Date="_periodEnd" Label="Current Period End (optional)" Variant="Variant.Outlined" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save" Disabled="_saving">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private string? _userId;
+    private string? _tenantIdText;
+    private LicensePlan _plan = LicensePlan.Free;
+    private int _seats = 1;
+    private DateTime? _periodEnd;
+    private bool _saving;
+    private string? _error;
+
+    private async Task Save()
+    {
+        Guid? tenantId = null;
+        if (!string.IsNullOrWhiteSpace(_tenantIdText))
+        {
+            if (!Guid.TryParse(_tenantIdText, out var parsed))
+            {
+                _error = "Tenant Id must be a valid GUID.";
+                return;
+            }
+            tenantId = parsed;
+        }
+
+        if (string.IsNullOrWhiteSpace(_userId) && tenantId is null)
+        {
+            _error = "Provide a User Id or a Tenant Id.";
+            return;
+        }
+
+        _saving = true;
+        var (success, error) = await Api.CreateSubscriptionAsync(new CreateSubscriptionRequest
+        {
+            UserId = string.IsNullOrWhiteSpace(_userId) ? null : _userId,
+            TenantId = tenantId,
+            Plan = _plan,
+            SeatCount = _seats,
+            CurrentPeriodEnd = _periodEnd
+        });
+        _saving = false;
+
+        if (success) MudDialog.Close(DialogResult.Ok(true));
+        else _error = error ?? "Could not create subscription.";
+    }
+
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+}

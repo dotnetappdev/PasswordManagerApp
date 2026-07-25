@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <base href="/" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="VaultGuard.Admin.styles.css" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <!-- No render mode set here on purpose: Login/Signup must stay static SSR so their plain <form> posts
+         (to /admin-auth/login etc.) run HttpContext.SignInAsync before the response starts. Pages that
+         need interactivity (Dashboard, Users, …) opt in individually via a page-level render mode directive. -->
+    <Routes />
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+</body>
+
+</html>

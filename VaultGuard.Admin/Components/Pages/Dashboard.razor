@@ -1,0 +1,33 @@
+@page "/"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = VaultGuard.Models.ApplicationRoles.SuperAdmin)]
+@inject AdminApiClient Api
+
+<PageTitle>Dashboard - VaultGuard Admin</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+@if (_stats is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3"><StatTile Label="Total Users" Value="@_stats.TotalUsers.ToString()" Icon="@Icons.Material.Filled.People" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><StatTile Label="Active Users" Value="@_stats.ActiveUsers.ToString()" Icon="@Icons.Material.Filled.PersonOutline" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><StatTile Label="Tenants" Value="@($"{_stats.ActiveTenants} / {_stats.TotalTenants}")" Icon="@Icons.Material.Filled.Domain" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><StatTile Label="Active Subscriptions" Value="@_stats.ActiveSubscriptions.ToString()" Icon="@Icons.Material.Filled.CreditCard" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><StatTile Label="License Keys" Value="@($"{_stats.ActiveLicenseKeys} / {_stats.TotalLicenseKeys}")" Icon="@Icons.Material.Filled.WorkspacePremium" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><StatTile Label="Device Activations" Value="@_stats.TotalActivations.ToString()" Icon="@Icons.Material.Filled.Devices" /></MudItem>
+    </MudGrid>
+}
+
+@code {
+    private AdminDashboardStats? _stats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await Api.GetDashboardStatsAsync();
+    }
+}

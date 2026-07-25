@@ -57,6 +57,18 @@ public class RequireAdminAttribute : AuthorizeAttribute
 }
 
 /// <summary>
+/// Authorization attribute for VaultGuard.Admin-only operations (customers, subscriptions, license
+/// keys, tenants) — separate from <see cref="RequireAdminAttribute"/>, which gates in-app admin actions.
+/// </summary>
+public class RequireSuperAdminAttribute : AuthorizeAttribute
+{
+    public RequireSuperAdminAttribute()
+    {
+        Roles = ApplicationRoles.SuperAdmin;
+    }
+}
+
+/// <summary>
 /// Authorization attribute for operations that children cannot perform
 /// </summary>
 public class RestrictedFromChildrenAttribute : AuthorizeAttribute

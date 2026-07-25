@@ -91,6 +91,20 @@ public class IdentityDataSeeder
     /// </summary>
     private async Task SeedDefaultUsersAsync()
     {
+        // Bootstrap super admin for VaultGuard.Admin (customers/subscriptions/license keys/tenants).
+        // Unlike the other seeded accounts, VaultGuard.Admin authenticates via ASP.NET Identity's own
+        // email+password login (POST /login), not the master-key flow — so this account needs a REAL,
+        // known Identity password, not the usual random discarded one. CHANGE THIS PASSWORD IMMEDIATELY
+        // after first login — see docs/ADMIN_MULTITENANCY.md.
+        await CreateDefaultUserWithMasterKeyAsync(
+            "superadmin@passwordmanager.local",
+            "Super",
+            "Admin",
+            ApplicationRoles.SuperAdmin,
+            CommonMasterKey,
+            identityPassword: CommonMasterKey
+        );
+
         // Create default admin user with common master key
         await CreateDefaultUserWithMasterKeyAsync(
             "admin@passwordmanager.local",
@@ -138,7 +152,8 @@ public class IdentityDataSeeder
         string firstName,
         string lastName,
         string roleName,
-        string masterPassword)
+        string masterPassword,
+        string? identityPassword = null)
     {
         var existingUser = await _userManager.FindByEmailAsync(email);
         if (existingUser != null)
@@ -155,6 +170,15 @@ public class IdentityDataSeeder
                 existingUser.MasterKeyIdentifier = _passwordCryptoService.CreateMasterKeyIdentifier(masterPassword, existingSalt);
                 existingUser.LastModified = DateTime.UtcNow;
                 await _userManager.UpdateAsync(existingUser);
+
+                // Keep the real Identity password in sync too, for accounts that log in that way
+                // (VaultGuard.Admin's SuperAdmin bootstrap account) rather than via master key.
+                if (identityPassword is not null)
+                {
+                    var resetToken = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
+                    await _userManager.ResetPasswordAsync(existingUser, resetToken, identityPassword);
+                }
+
                 _logger.LogInformation("Refreshed master key for existing user {Email}", email);
             }
             catch (Exception ex)
@@ -191,8 +215,10 @@ public class IdentityDataSeeder
             ConcurrencyStamp = Guid.NewGuid().ToString()
         };
 
-        // Use a temporary password for Identity creation, but the user will actually login with master key
-        var tempPassword = $"TempPass_{DateTime.UtcNow.Ticks}!";
+        // Regular seeded accounts log in via master key, so a random discarded password is fine here.
+        // identityPassword overrides this for accounts (SuperAdmin) that must log in with a real,
+        // known Identity password instead — see the SuperAdmin seeding call above.
+        var tempPassword = identityPassword ?? $"TempPass_{DateTime.UtcNow.Ticks}!";
         var result = await _userManager.CreateAsync(user, tempPassword);
         
         if (result.Succeeded)

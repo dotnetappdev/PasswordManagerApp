@@ -1,0 +1,43 @@
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthStateProvider
+@inject AdminSession Session
+
+<MudThemeProvider @ref="_mudThemeProvider" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudText Typo="Typo.h6" Class="ml-2">VaultGuard Admin</MudText>
+        <MudSpacer />
+        @if (Session.Loaded)
+        {
+            <MudText Typo="Typo.body2" Class="mr-4">@Session.Email</MudText>
+            <form method="post" action="/admin-auth/logout">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Logout">
+                    Sign out
+                </MudButton>
+            </form>
+        }
+    </MudAppBar>
+    <MudDrawer Open="true" Elevation="0" Variant="DrawerVariant.Persistent">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudThemeProvider _mudThemeProvider = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+            Session.Load(state.User);
+    }
+}

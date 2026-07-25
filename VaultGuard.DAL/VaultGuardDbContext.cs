@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using VaultGuard.Models;
+using VaultGuard.Models.Licensing;
+using VaultGuard.Models.Tenancy;
 using VaultGuard.DAL.Interfaces;
 
 namespace VaultGuard.DAL;
@@ -47,6 +49,13 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
     // Parent/child relationship + permission entities (previously only on VaultGuardDbContextApp).
     public DbSet<UserRelationship> UserRelationships { get; set; } = null!;
     public DbSet<ChildPermissionConfig> ChildPermissionConfigs { get; set; } = null!;
+
+    // Licensing / multi-tenancy (VaultGuard.Admin control panel — see docs/LICENSING.md and
+    // docs/ADMIN_MULTITENANCY.md).
+    public DbSet<Tenant> Tenants { get; set; } = null!;
+    public DbSet<LicenseKey> LicenseKeys { get; set; } = null!;
+    public DbSet<LicenseActivation> LicenseActivations { get; set; } = null!;
+    public DbSet<Subscription> Subscriptions { get; set; } = null!;
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -474,6 +483,108 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
                   .WithMany(u => u.ManagedChildPermissions)
                   .HasForeignKey(e => e.ParentUserId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configure Tenant
+        modelBuilder.Entity<Tenant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Slug).IsRequired().HasMaxLength(63);
+            entity.Property(e => e.CustomDomain).HasMaxLength(253);
+            entity.Property(e => e.DomainVerificationToken).HasMaxLength(64);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasIndex(e => e.Slug).IsUnique();
+            entity.HasIndex(e => e.CustomDomain).IsUnique();
+
+            // Tenant -> Subscription is one-to-one, but Subscription.TenantId is the FK used for the
+            // "org-wide subscription" lookup; Tenant.SubscriptionId is just a convenience pointer to the
+            // *current* one, so this navigation has no inverse and no cascade of its own.
+            entity.HasOne(e => e.Subscription)
+                  .WithOne()
+                  .HasForeignKey<Tenant>(e => e.SubscriptionId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasMany(e => e.Users)
+                  .WithOne(u => u.Tenant)
+                  .HasForeignKey(u => u.TenantId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure LicenseKey
+        modelBuilder.Entity<LicenseKey>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.KeyCode).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.CustomerEmail).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.CustomerName).HasMaxLength(100);
+            entity.Property(e => e.IssuedAt).IsRequired();
+            entity.Property(e => e.IssuedByAdminUserId).HasMaxLength(450);
+            entity.Property(e => e.RevokedReason).HasMaxLength(500);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+
+            entity.HasIndex(e => e.KeyCode).IsUnique();
+            entity.HasIndex(e => e.CustomerEmail);
+
+            entity.HasOne(e => e.Tenant)
+                  .WithMany(t => t.LicenseKeys)
+                  .HasForeignKey(e => e.TenantId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure LicenseActivation
+        modelBuilder.Entity<LicenseActivation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DeviceId).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.DeviceName).HasMaxLength(200);
+            entity.Property(e => e.AppVersion).HasMaxLength(50);
+            entity.Property(e => e.Platform).HasMaxLength(50);
+            entity.Property(e => e.ActivatedAt).IsRequired();
+
+            entity.HasIndex(e => new { e.LicenseKeyId, e.DeviceId }).IsUnique();
+
+            entity.HasOne(e => e.LicenseKey)
+                  .WithMany(k => k.Activations)
+                  .HasForeignKey(e => e.LicenseKeyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure Subscription
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).HasMaxLength(450);
+            entity.Property(e => e.ExternalProviderRef).HasMaxLength(200);
+            entity.Property(e => e.StartedAt).IsRequired();
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.TenantId);
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Subscription -> Tenant uses NoAction: Tenant already reaches its current subscription via
+            // Tenant.SubscriptionId (configured above), so a second cascade path through this FK would be
+            // rejected by SQL Server (same pattern as Collection -> Vault above).
+            entity.HasOne(e => e.Tenant)
+                  .WithMany()
+                  .HasForeignKey(e => e.TenantId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(e => e.LicenseKey)
+                  .WithMany()
+                  .HasForeignKey(e => e.LicenseKeyId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
