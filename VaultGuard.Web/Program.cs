@@ -443,10 +443,20 @@ if (ssoProviders.Count > 0)
         var email = result.Succeeded
             ? result.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
             : null;
+        // The OIDC handler's underlying JwtSecurityTokenHandler maps the id_token's "sub" claim to
+        // ClaimTypes.NameIdentifier by default - this is the stable identifier LinkExternalLoginAsync
+        // persists against, since (unlike email) it can't drift out of sync with the IdP over time.
+        var subject = result.Succeeded
+            ? result.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            : null;
 
-        return string.IsNullOrWhiteSpace(email)
-            ? Results.LocalRedirect($"/login?ssoError=1&ssoProvider={Uri.EscapeDataString(id)}")
-            : Results.LocalRedirect($"/login?ssoEmail={Uri.EscapeDataString(email)}&ssoProvider={Uri.EscapeDataString(id)}");
+        if (string.IsNullOrWhiteSpace(email))
+            return Results.LocalRedirect($"/login?ssoError=1&ssoProvider={Uri.EscapeDataString(id)}");
+
+        var redirect = $"/login?ssoEmail={Uri.EscapeDataString(email)}&ssoProvider={Uri.EscapeDataString(id)}";
+        if (!string.IsNullOrWhiteSpace(subject))
+            redirect += $"&ssoSub={Uri.EscapeDataString(subject)}";
+        return Results.LocalRedirect(redirect);
     });
 }
 

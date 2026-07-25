@@ -15,15 +15,33 @@ your vault - that key is **derived from the master password itself** (`AuthServi
 `IVaultSessionService.InitializeSession`). An identity provider can prove *who you are*, but it can never
 supply that derived key, because it never had it.
 
-So "Sign in with &lt;provider&gt;" in VaultGuard does exactly one thing: it verifies your account's email
-address at that provider and uses it to **jump straight to your existing profile** on the login screen's
-profile picker, skipping the "which account is mine?" step. It does **not** log you in, and the
-master-password step that follows is unchanged. If no local profile matches the verified email, you're
-told so and nothing happens - SSO never creates an account or bypasses the master password.
+So "Sign in with &lt;provider&gt;" in VaultGuard does exactly one thing: it verifies your identity at that
+provider and uses it to **jump straight to your existing profile** on the login screen's profile picker,
+skipping the "which account is mine?" step. It does **not** log you in, and the master-password step that
+follows is unchanged. If no local profile matches, you're told so and nothing happens - SSO never creates
+an account or bypasses the master password.
 
-This is why the feature needs no new database tables, no token storage tied to a session, and no changes
-to `AuthService`/`IVaultSessionService` at all - it's purely a shortcut into the picker that already
-exists, and it's why the provider list can grow or shrink freely without touching that core logic.
+This is why the feature needs no changes to `AuthService`/`IVaultSessionService` at all - it's purely a
+shortcut into the picker that already exists, and it's why the provider list can grow or shrink freely
+without touching that core logic.
+
+### How your local profile gets linked to the external identity
+
+The first time you use a given provider, VaultGuard matches you to a local profile by comparing the
+verified email address - there's nothing else to go on yet. Once you finish that sign-in by entering your
+master password (proving you actually own the account, not just that email), VaultGuard persists a link
+between your local account and that provider's stable subject ("sub") claim, using ASP.NET Identity's
+built-in `AspNetUserLogins` table (`IUserProfileService.LinkExternalLoginAsync`, called from
+`Login.razor`/`LoginViewModel` right after a successful master-password check - never before). This table
+already exists in the schema (SQLite creates it automatically via `EnsureCreatedAsync` since
+`VaultGuardDbContext` derives from `IdentityDbContext`; it's also already in the SQL Server migration) -
+**no new migration was needed**, only actually using the table.
+
+Every sign-in after that looks up the link first (`IUserProfileService.FindByExternalLoginAsync`) and only
+falls back to matching by email if no link exists yet - so the picker keeps resolving correctly even if
+your email later changes at the IdP or locally. The link is only ever created after a real master-password
+proof, so SSO identity alone (e.g. an attacker who merely knows your email and controls *their own*
+account at some IdP) can never hijack it.
 
 ## Why this is provider-agnostic, not "Google support"
 
@@ -132,20 +150,100 @@ The steps are the same shape for every IdP - only the specific console/portal di
   only when configured), signed in under `IdentityConstants.ExternalScheme` (isolated from the app's real
   authentication cookie) so a challenge/callback can never accidentally establish a real session.
   `GET /login/sso/{id}` starts the challenge for that provider; `GET /login/sso/{id}/callback` reads the
-  email claim, signs the external principal back out immediately, and redirects to
-  `/login?ssoEmail=...&ssoProvider={id}` (or `?ssoError=1&ssoProvider={id}`) for `Login.razor` to consume.
+  email and subject ("sub") claims, signs the external principal back out immediately, and redirects to
+  `/login?ssoEmail=...&ssoProvider={id}&ssoSub={sub}` (or `?ssoError=1&ssoProvider={id}`) for `Login.razor`
+  to consume.
 - **WPF**: `OidcSsoService` (`VaultGuard.Services/Services/OidcSsoService.cs`) hand-rolls the OAuth2 + PKCE
   loopback flow using only BCL APIs (`System.Net.HttpListener`, `System.Diagnostics.Process`,
   `System.Security.Cryptography.SHA256`) - the same pattern `OneDriveBackupService` already uses for
   OneDrive sign-in - so no third-party OIDC package is required. It resolves each provider's real
-  authorization/token endpoints via OIDC discovery at sign-in time, then reads the `email`/`email_verified`
-  claims out of the returned `id_token`'s JWT payload without verifying the signature, since the result is
-  only ever used to pick a profile, never to authenticate.
+  authorization/token endpoints via OIDC discovery at sign-in time, then reads the `sub`/`email`/
+  `email_verified` claims out of the returned `id_token`'s JWT payload without verifying the signature,
+  since the result is only ever used to pick a profile, never to authenticate.
 - Neither platform stores a refresh token or keeps the user signed into the IdP within VaultGuard between
   attempts; every click re-runs the browser flow from scratch.
-- Adding a new provider is a config-only change on both platforms - `SsoConfiguration`/`SsoProviderConfig`
+- Adding a new provider is a config-only change on every platform - `SsoConfiguration`/`SsoProviderConfig`
   (`VaultGuard.Models/Configuration/SsoConfiguration.cs`) are the only shared types involved, and neither
   references any specific vendor.
+
+## Web API (`VaultGuard.API`)
+
+The API doesn't run an OIDC challenge/callback itself - that needs a system browser, which a client that
+already has one (WPF today; a future native mobile app) is better placed to drive itself, the same loopback
+flow `OidcSsoService` already runs. What the API exposes (`SsoController`,
+`VaultGuard.API/Controllers/SsoController.cs`) is the provider list and the account-linking management
+those clients need around that flow:
+
+| Endpoint | Auth | Purpose |
+| --- | --- | --- |
+| `GET /api/sso/providers` | Anonymous | Lists configured providers (`Id`, `DisplayName` only - never secrets) so any client can render buttons. |
+| `GET /api/sso/links` | Bearer token | Lists the calling user's currently linked external identities. |
+| `POST /api/sso/link` | Bearer token | Persists `{ loginProvider, providerKey, providerDisplayName }` via `AspNetUserLogins`. Requires an already-authenticated caller - i.e. only after a real master-password login - for the same reason `Login.razor`/`LoginViewModel` only link after a successful password check. |
+| `DELETE /api/sso/link/{provider}` | Bearer token | Removes a linked identity. |
+
+`Sso:Providers` in `VaultGuard.API/appsettings.json` is a separate, independent list from Web's and WPF's
+(same reasoning as the two-lists table above) - keep provider `Id`s consistent across all three if you want
+"google"/"keycloak"/etc. to mean the same IdP everywhere, but each app's own client registration for that
+IdP is still its own.
+
+## Testing locally with Keycloak
+
+Keycloak is a free, self-hostable OIDC/SAML IdP and the easiest way to test this whole feature end-to-end
+without registering a real client at Google/Microsoft/Okta. `docker/docker-compose.yml` has a `keycloak`
+service that auto-imports `docker/keycloak/realm-export.json` - a ready-made `vaultguard` realm with:
+
+- A confidential **`vaultguard-web`** client (secret `vaultguard-dev-secret`) with redirect URIs already
+  registered for `VaultGuard.Web`'s default `dotnet run` ports (`https://localhost:7202/signin-oidc/keycloak`,
+  `http://localhost:5169/signin-oidc/keycloak`).
+- A public **`vaultguard-desktop`** client (no secret, PKCE-only) with redirect URI `http://127.0.0.1:*` -
+  Keycloak's trailing-`*` wildcard, needed because (unlike Google/Azure AD, which grant a blanket loopback
+  exemption) Keycloak requires a client's redirect URIs to be registered, and `OidcSsoService` binds a
+  different random port every sign-in.
+- A test user: `testuser@example.com` / `Test123!`.
+
+**These are throwaway, local-only dev credentials** - `start-dev` mode, no TLS, secrets committed to the
+repo - never point this realm export at a real deployment.
+
+To try it:
+
+```bash
+cd docker
+docker compose up keycloak
+```
+
+Keycloak comes up on `http://localhost:8081` (admin console: `http://localhost:8081/admin`, `admin`/`admin`
+by default - see `.env.example`'s `KEYCLOAK_ADMIN_PASSWORD`). The fastest local loop is running
+`VaultGuard.Web`/`VaultGuard.API`/`VaultGuard.WPF` normally via `dotnet run` alongside it, rather than also
+using the (currently stale - see the note in `docker/Dockerfile.api`) `api`/`web` Docker services.
+
+Add matching entries to each app's `Sso:Providers` (`appsettings.Development.json` is the natural place for
+web/API so these never land in a committed production config):
+
+```json
+// VaultGuard.Web/appsettings.Development.json and VaultGuard.API/appsettings.Development.json
+{
+  "Id": "keycloak",
+  "DisplayName": "Keycloak (dev)",
+  "Authority": "http://localhost:8081/realms/vaultguard",
+  "ClientId": "vaultguard-web",
+  "ClientSecret": "vaultguard-dev-secret"
+}
+```
+
+```json
+// VaultGuard.WPF/appsettings.json (or an appsettings.Development.json override, if you add one)
+{
+  "Id": "keycloak",
+  "DisplayName": "Keycloak (dev)",
+  "Authority": "http://localhost:8081/realms/vaultguard",
+  "ClientId": "vaultguard-desktop"
+}
+```
+
+Then sign in as `testuser@example.com` - this exercises the full **SP-initiated** flow (VaultGuard is the
+Service Provider: it starts the request by redirecting to Keycloak) end to end: challenge, Keycloak login
+page, callback, verified `sub`/`email` claims, profile-picker match, master-password step, and (on success)
+the `AspNetUserLogins` link getting persisted so the next sign-in resolves via the link instead of email.
 
 ## SAML / classic ADFS (not yet implemented)
 

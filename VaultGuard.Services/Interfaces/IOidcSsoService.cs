@@ -27,5 +27,8 @@ public class OidcSsoResult
 {
     public bool Success { get; set; }
     public string? Email { get; set; }
+
+    /// <summary>The IdP's stable "sub" claim for this identity - use this (not Email) as the key for a persisted account link, since it can't change the way an email address can.</summary>
+    public string? Subject { get; set; }
     public string? ErrorMessage { get; set; }
 }

@@ -163,11 +163,11 @@ public class OidcSsoService : IOidcSsoService
         if (string.IsNullOrEmpty(idToken))
             return Fail($"{provider.DisplayName} did not return an ID token.");
 
-        var email = TryGetVerifiedEmailFromIdToken(idToken);
+        var (email, subject) = TryGetVerifiedIdentityFromIdToken(idToken);
         if (string.IsNullOrWhiteSpace(email))
             return Fail($"{provider.DisplayName}'s ID token did not include a verified email address.");
 
-        return new OidcSsoResult { Success = true, Email = email };
+        return new OidcSsoResult { Success = true, Email = email, Subject = subject };
     }
 
     // Discovers the authorization/token endpoints from the IdP's standard OIDC discovery document
@@ -203,13 +203,14 @@ public class OidcSsoService : IOidcSsoService
         }
     }
 
-    // The id_token is a JWT; we only need the payload for the "email"/"email_verified" claims to
-    // speed up profile selection (not a security decision), so we read it without verifying the
-    // signature - the same trust boundary the Blazor host's OIDC callback uses.
-    private static string? TryGetVerifiedEmailFromIdToken(string idToken)
+    // The id_token is a JWT; we only need the payload for the "sub"/"email"/"email_verified" claims
+    // to identify the account and speed up profile selection (not a security decision on its own),
+    // so we read it without verifying the signature - the same trust boundary the Blazor host's OIDC
+    // callback uses.
+    private static (string? Email, string? Subject) TryGetVerifiedIdentityFromIdToken(string idToken)
     {
         var parts = idToken.Split('.');
-        if (parts.Length < 2) return null;
+        if (parts.Length < 2) return (null, null);
 
         var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(parts[1]));
         using var doc = JsonDocument.Parse(payloadJson);
@@ -222,9 +223,11 @@ public class OidcSsoService : IOidcSsoService
         var emailVerified = !emailVerifiedClaimPresent ||
                              ev.ValueKind == JsonValueKind.True ||
                              (ev.ValueKind == JsonValueKind.String && ev.GetString() == "true");
-        if (!emailVerified) return null;
+        if (!emailVerified) return (null, null);
 
-        return root.TryGetProperty("email", out var e) ? e.GetString() : null;
+        var email = root.TryGetProperty("email", out var e) ? e.GetString() : null;
+        var subject = root.TryGetProperty("sub", out var s) ? s.GetString() : null;
+        return (email, subject);
     }
 
     private static byte[] Base64UrlDecode(string input)
