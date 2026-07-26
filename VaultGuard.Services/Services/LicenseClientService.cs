@@ -164,6 +164,37 @@ public class LicenseClientService : ILicenseClientService
         _settings.Save();
     }
 
+    public async Task<bool> TryActivateAssignedAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var client = CreateClient();
+            var response = await client.GetAsync("api/license/mine", cancellationToken);
+            if (!response.IsSuccessStatusCode) return false; // not authenticated against the API, etc.
+
+            var mine = await response.Content.ReadFromJsonAsync<MyLicenseResponse>(cancellationToken: cancellationToken);
+            if (mine is null || !mine.HasLicense || string.IsNullOrWhiteSpace(mine.KeyCode)) return false;
+
+            // Nothing to do if we're already activated on this device with that exact key.
+            if (string.Equals(ActiveKeyCode, mine.KeyCode, StringComparison.OrdinalIgnoreCase) && IsProUnlocked)
+                return true;
+
+            await ActivateAsync(mine.KeyCode, cancellationToken);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogInformation(ex, "Assigned-license check skipped (offline, unauthenticated, or server unreachable).");
+            return false;
+        }
+    }
+
+    private class MyLicenseResponse
+    {
+        public bool HasLicense { get; set; }
+        public string? KeyCode { get; set; }
+    }
+
     private LicensePayload OpenAndValidate(SignedLicenseCertificate certificate)
     {
         var aesKey = Convert.FromBase64String(_licensing.AesKeyBase64!);
@@ -202,6 +233,18 @@ public class LicenseClientService : ILicenseClientService
             var baseUrl = _settings.Get("ApiBaseUrl", "https://vaultguardapi.dotnetappdevni.com");
             client.BaseAddress = new Uri(baseUrl);
         }
+
+        // Activate/validate are anonymous and don't need this, but GetMyAssignedLicenseAsync calls an
+        // [Authorize] endpoint. The Blazor Web app's named "VaultGuardAPI" client already carries these
+        // headers (set once at startup in Program.cs); WPF never registers that named client, so add them
+        // here too, freshly from settings each call, guarded against double-adding on the Web client.
+        var apiKey = _settings.Get("ApiKey");
+        if (!string.IsNullOrWhiteSpace(apiKey) && !client.DefaultRequestHeaders.Contains("X-Api-Key"))
+            client.DefaultRequestHeaders.TryAddWithoutValidation("X-Api-Key", apiKey);
+        var clientId = _settings.Get("ApiClientId");
+        if (!string.IsNullOrWhiteSpace(clientId) && !client.DefaultRequestHeaders.Contains("X-Client-Id"))
+            client.DefaultRequestHeaders.TryAddWithoutValidation("X-Client-Id", clientId);
+
         return client;
     }
 

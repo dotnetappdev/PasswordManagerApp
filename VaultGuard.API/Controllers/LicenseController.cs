@@ -284,6 +284,43 @@ public class LicenseController : ControllerBase
         return await GetSettings();
     }
 
+    // ── Clients: self-service lookup, activate & validate ───────────────────────────────────────
+
+    /// <summary>Lets a signed-in user's own client discover a license a SuperAdmin assigned to their
+    /// account (directly, or via their tenant), without needing to be typed in. Returns the actual
+    /// KeyCode — safe here since it's the caller's own license — so the client can just feed it straight
+    /// into the existing <see cref="Activate"/> flow for that device. Works under any authentication
+    /// VaultGuard.API accepts (bearer token or X-Api-Key), since both populate the same NameIdentifier
+    /// claim this looks up by.</summary>
+    [Authorize]
+    [HttpGet("mine")]
+    public async Task<ActionResult<MyLicenseResponse>> GetMyLicense()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var now = DateTime.UtcNow;
+
+        var license = await _dbContext.LicenseKeys
+            .Where(k => !k.IsRevoked && (k.ExpiresAt == null || k.ExpiresAt > now))
+            .Where(k => k.UserId == userId || (user != null && user.TenantId != null && k.TenantId == user.TenantId))
+            .OrderByDescending(k => k.IssuedAt)
+            .FirstOrDefaultAsync();
+
+        if (license is null) return Ok(new MyLicenseResponse { HasLicense = false });
+
+        return Ok(new MyLicenseResponse
+        {
+            HasLicense = true,
+            KeyCode = license.KeyCode,
+            Plan = license.Plan,
+            Features = license.Features,
+            ExpiresAt = license.ExpiresAt,
+            AssignedVia = license.UserId == userId ? "user" : "tenant"
+        });
+    }
+
     // ── Clients: activate & validate ────────────────────────────────────────────────────────────
 
     [AllowAnonymous]
@@ -544,6 +581,17 @@ public class LicenseKeyResponse
     public DateTime? RevokedAt { get; set; }
     public string? RevokedReason { get; set; }
     public string? Notes { get; set; }
+}
+
+public class MyLicenseResponse
+{
+    public bool HasLicense { get; set; }
+    public string? KeyCode { get; set; }
+    public LicensePlan? Plan { get; set; }
+    public LicenseFeature? Features { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    /// <summary>"user" (assigned directly) or "tenant" (inherited via the caller's organization).</summary>
+    public string? AssignedVia { get; set; }
 }
 
 public class LicensingSettingsResponse

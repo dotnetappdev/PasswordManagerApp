@@ -807,13 +807,19 @@ public sealed partial class SettingsPage : Page
 
     // ── Licensing (CD keys / Pro feature unlock) — see docs/LICENSING.md ───────────────────────
 
-    private void RefreshLicenseStatus()
+    private async void RefreshLicenseStatus()
     {
         if (_serviceProvider == null || LicenseStatusText == null) return;
         try
         {
             var licenseClient = _serviceProvider.GetService<ILicenseClientService>();
             licenseClient?.LoadCached();
+
+            // No license activated on this machine yet — check once whether a SuperAdmin assigned one
+            // to this account (or its tenant) and, if so, activate it automatically. See docs/LICENSING.md.
+            if (licenseClient != null && licenseClient.ActiveKeyCode is null)
+                await licenseClient.TryActivateAssignedAsync();
+
             LicenseStatusText.Text = DescribeLicenseStatus(licenseClient);
         }
         catch (Exception ex)

@@ -1970,7 +1970,16 @@
         try
         {
             LicenseClient.LoadCached();
-            _ = LicenseClient.TryRefreshAsync(); // best-effort background re-check; ignore result
+            if (LicenseClient.ActiveKeyCode is null)
+            {
+                // No license activated on this device yet — check once whether a SuperAdmin assigned
+                // one to this account (or its tenant) and, if so, activate it automatically.
+                await LicenseClient.TryActivateAssignedAsync();
+            }
+            else
+            {
+                _ = LicenseClient.TryRefreshAsync(); // best-effort background re-check; ignore result
+            }
         }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }

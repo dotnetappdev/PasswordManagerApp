@@ -82,12 +82,28 @@ license straight to an existing account or to a whole tenant (org-wide):
    `TenantId` matching) — the assignment shows up right away, without waiting for anyone to type the CD
    key into a device.
 
-The CD key is still generated and still needs to be activated on a device (`POST /api/license/activate`)
-for that specific install to actually unlock Pro features locally — assignment establishes who the
-license belongs to and reflects it in Subscriptions/Users immediately; it doesn't remotely unlock an
-already-running client. Give the admin-visible key to the user (or, since they're a known account, you
-could extend this with an authenticated "my license" endpoint the client calls with the signed-in user's
-own credentials instead of a typed key — not built in this pass, see Known limitations).
+The CD key is still generated, but the user doesn't have to type it — see "Self-service activation" below.
+
+## Self-service activation (no CD key to type)
+
+Once a license is assigned to a user (directly, or inherited via their tenant), their own client can
+find and activate it automatically:
+
+```
+GET /api/license/mine            [Authorize] — any authenticated caller (bearer token or X-Api-Key)
+  → { hasLicense, keyCode, plan, features, expiresAt, assignedVia: "user"|"tenant" }
+```
+
+`ILicenseClientService.TryActivateAssignedAsync()` calls this, and if a license is found, feeds its
+`keyCode` straight into the existing, already-tested `ActivateAsync` path (`POST /api/license/activate`)
+for that device — no new activation logic, no CD key for the user to see or type. WPF's Settings page and
+Blazor Web's Settings/API-Key-Management pages call this automatically once, whenever no license is
+cached yet on that device.
+
+This only works once the client is already authenticated against the API somehow — a configured API key
+(`Settings → API Connection`) or a signed-in bearer session. An install with **no** API connection
+configured has no way to know which account it is, so self-service activation silently does nothing
+(falls back to "type a CD key manually") — this is expected, not a bug, for a purely local/offline install.
 
 ## CD key format
 
@@ -166,9 +182,31 @@ Manager in production, never committed) and `Licensing:AesKeyBase64` (`openssl r
 - **Key rotation is all-or-nothing.** "Regenerate Signing Keys" replaces the single active key pair —
   certificates issued afterward won't verify against a client still configured with the old public key
   until that client's config is updated too. There's no grace-period/multi-key overlap support.
-- Assigning a license to a user (above) makes the assignment visible immediately (Subscriptions, Users),
-  but a device still has to activate the CD key (`POST /api/license/activate`) to actually unlock Pro
-  features locally — there's no "push unlock to an already-running signed-in client" endpoint yet.
+- Self-service activation (above) still requires the device to be online at least once and already
+  authenticated against the API somehow; there's no way to "push" an unlock into a client that's fully
+  offline and never configured an API connection.
 - `GET /api/license/settings` is a convenience for distributing client config; it isn't a substitute for
   hardcoding the public key at build time for a hostile-client threat model (a MITM'd or compromised
   server could otherwise hand out a different "public key" — pin it at build time if that risk matters to you).
+
+## Bugs found and fixed while building this
+
+`ApiKeyAuthenticationMiddleware` (`VaultGuard.API/Middleware`) gates every request behind a valid API
+key or an authenticated session, with a manually-maintained list of path prefixes it lets through
+un-gated for endpoints that are intentionally `[AllowAnonymous]` on their controller — the middleware
+runs before MVC resolves that attribute, so it has no way to know about it automatically. That list had
+drifted out of sync with the controllers in a few places, all fixed here since they directly blocked
+testing this feature (or would have blocked it in production):
+- `POST /api/license/activate` and `/validate` — the actual CD-key activation flow. This would have
+  meant **no client could ever activate a license**, full stop.
+- `POST /api/apikeys/issue` — the "generate an API key from the server" flow WPF/Web already had.
+- `POST /login` / `POST /register` — .NET's built-in Identity API endpoints, which VaultGuard.Admin's
+  login/signup depend on (see docs/ADMIN_MULTITENANCY.md).
+- `/api/auth/qr/generate-anonymous`, `/qr/submit-handoff`, `/qr/handoff/{token}` — the QR login flow,
+  found incidentally while auditing the rest (same root cause, unrelated to licensing).
+
+Also, the built-in Identity bearer-token scheme (`IdentityConstants.BearerScheme`) was registered for
+issuing tokens (`AddApiEndpoints()`) but never wired up for the framework to actually *authenticate*
+incoming bearer tokens (`AddBearerToken(...)`), and `ApiKeyAuthenticationMiddleware` only checked the
+framework's default (cookie) scheme — so a valid bearer token was silently treated as unauthenticated.
+Fixed by registering the scheme and having the middleware explicitly try it as a fallback.

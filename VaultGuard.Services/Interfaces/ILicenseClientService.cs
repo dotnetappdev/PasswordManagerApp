@@ -27,6 +27,13 @@ public interface ILicenseClientService
     /// <summary>Clears the cached license (e.g. "deactivate this device" in Settings).</summary>
     void ClearCached();
 
+    /// <summary>Checks whether a SuperAdmin has assigned a license to the signed-in account (directly,
+    /// or via their tenant) via <c>GET /api/license/mine</c>, and if so activates it for this device
+    /// automatically — no CD key to type. Requires the app to already be authenticated against the API
+    /// (a configured API key, or a signed-in session using bearer auth); returns false without error if
+    /// there's no assigned license, the app isn't authenticated against the API, or it's offline.</summary>
+    Task<bool> TryActivateAssignedAsync(CancellationToken cancellationToken = default);
+
     bool IsProUnlocked { get; }
     bool HasFeature(LicenseFeature feature);
     LicensePlan CurrentPlan { get; }

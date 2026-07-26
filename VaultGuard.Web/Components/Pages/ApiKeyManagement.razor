@@ -191,7 +191,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        try { LicenseClient.LoadCached(); }
+        try
+        {
+            LicenseClient.LoadCached();
+            if (LicenseClient.ActiveKeyCode is null)
+                await LicenseClient.TryActivateAssignedAsync();
+        }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
         await LoadApiKeys();
