@@ -10,9 +10,13 @@
         {
             <MudAlert Severity="Severity.Success" Class="mb-3">
                 License issued: <code>@_issued.KeyCode</code>
-                @if (_assignToUser)
+                @if (_mode == AssignMode.User)
                 {
                     <span> and assigned to @_selectedUser?.Email — an active subscription was created for them automatically.</span>
+                }
+                else if (_mode == AssignMode.Tenant)
+                {
+                    <span> for tenant @_selectedTenant?.Name — an org-wide license.</span>
                 }
                 else
                 {
@@ -22,14 +26,29 @@
         }
         else
         {
-            <MudSwitch T="bool" @bind-Value="_assignToUser" Label="Assign directly to an existing VaultGuard account" Color="Color.Primary" Class="mb-3" />
+            <MudText Typo="Typo.subtitle2" Class="mb-1">Who is this license for?</MudText>
+            <MudRadioGroup T="AssignMode" @bind-Value="_mode" Class="mb-3">
+                <MudRadio T="AssignMode" Value="AssignMode.Email" Dense="true">By email (self-activate)</MudRadio>
+                <MudRadio T="AssignMode" Value="AssignMode.User" Dense="true">An existing account</MudRadio>
+                <MudRadio T="AssignMode" Value="AssignMode.Tenant" Dense="true">A tenant (org-wide)</MudRadio>
+            </MudRadioGroup>
 
-            @if (_assignToUser)
+            @if (_mode == AssignMode.User)
             {
                 <MudAutocomplete T="UserDto" Label="User" @bind-Value="_selectedUser"
                                  SearchFunc="SearchUsers" ToStringFunc="@(u => u == null ? "" : $"{u.Email} ({u.FirstName} {u.LastName})")"
                                  Variant="Variant.Outlined" Class="mb-3" Required="true"
                                  ResetValueOnEmptyText="true" CoerceText="false" />
+            }
+            else if (_mode == AssignMode.Tenant)
+            {
+                <MudSelect T="TenantResponse" @bind-Value="_selectedTenant" Label="Tenant" Variant="Variant.Outlined" Class="mb-3" Required="true"
+                           ToStringFunc="@(t => t?.Name ?? "")">
+                    @foreach (var tenant in _tenants)
+                    {
+                        <MudSelectItem T="TenantResponse" Value="@tenant">@tenant.Name (@tenant.Slug)</MudSelectItem>
+                    }
+                </MudSelect>
             }
             else
             {
@@ -56,8 +75,7 @@
         else
         {
             <MudButton OnClick="Cancel">Cancel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Issue"
-                       Disabled="@(_issuing || (_assignToUser ? _selectedUser is null : string.IsNullOrWhiteSpace(_customerEmail)))">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Issue" Disabled="@(_issuing || !CanIssue)">
                 Issue
             </MudButton>
         }
@@ -66,10 +84,15 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public TenantResponse? PreselectedTenant { get; set; }
 
-    private bool _assignToUser;
+    private enum AssignMode { Email, User, Tenant }
+
+    private AssignMode _mode = AssignMode.Email;
     private List<UserDto> _users = new();
     private UserDto? _selectedUser;
+    private List<TenantResponse> _tenants = new();
+    private TenantResponse? _selectedTenant;
     private string _customerEmail = "";
     private string? _customerName;
     private LicensePlan _plan = LicensePlan.Pro;
@@ -80,9 +103,24 @@
     private string? _error;
     private LicenseKeyResponse? _issued;
 
+    private bool CanIssue => _mode switch
+    {
+        AssignMode.User => _selectedUser is not null,
+        AssignMode.Tenant => _selectedTenant is not null,
+        _ => !string.IsNullOrWhiteSpace(_customerEmail)
+    };
+
     protected override async Task OnInitializedAsync()
     {
         _users = await Api.GetUsersAsync();
+        _tenants = await Api.GetTenantsAsync();
+
+        if (PreselectedTenant is not null)
+        {
+            _mode = AssignMode.Tenant;
+            _selectedTenant = _tenants.FirstOrDefault(t => t.Id == PreselectedTenant.Id) ?? PreselectedTenant;
+        }
+
         var settings = await Api.GetLicensingSettingsAsync();
         if (settings is not null)
         {
@@ -105,9 +143,10 @@
         _error = null;
         var (success, license, error) = await Api.IssueLicenseAsync(new IssueLicenseRequest
         {
-            CustomerEmail = _assignToUser ? null : _customerEmail,
-            CustomerName = _assignToUser ? null : _customerName,
-            UserId = _assignToUser ? _selectedUser?.Id : null,
+            CustomerEmail = _mode == AssignMode.Email ? _customerEmail : null,
+            CustomerName = _mode == AssignMode.Email ? _customerName : null,
+            UserId = _mode == AssignMode.User ? _selectedUser?.Id : null,
+            TenantId = _mode == AssignMode.Tenant ? _selectedTenant?.Id : null,
             Plan = _plan,
             MaxActivations = _maxActivations,
             ExpiresAt = _expiresAt,

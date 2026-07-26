@@ -56,7 +56,7 @@ the SuperAdmin account with `CommonMasterKey` as its actual Identity password to
 | Users | Lists all users (`UserProfileController`); a "Manage" dialog toggles roles, assigns a tenant, shows/assigns licenses, and can deactivate/reactivate/delete. |
 | License Keys | Full CRUD (issue/edit/delete/revoke) for CD keys, including assigning a key directly to an existing account — see `docs/LICENSING.md`. |
 | Subscriptions | Create/cancel billing-plan records (`SubscriptionsController`) for a user or a whole tenant. |
-| Tenants & Domains | Create tenants, set a custom domain, and walk through DNS verification (below). |
+| Tenants & Domains | Create tenants, set a custom domain and walk through DNS verification (below), and assign/manage org-wide license keys per tenant. |
 | API Keys | Cross-account oversight of every API key ever issued (`GET /api/admin/api-keys`) — the per-user `ApiKeysController` only ever sees the calling user's own keys. |
 | Settings | Licensing signing-key status, one-click key generation, and issuance defaults (default plan / max activations) — see `docs/LICENSING.md` "Settings". |
 

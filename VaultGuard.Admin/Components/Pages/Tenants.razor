@@ -60,6 +60,7 @@ else
             <MudTd DataLabel="Status">@context.Status</MudTd>
             <MudTd>
                 <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ManageDomain(context))">Domain</MudButton>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ManageLicenses(context))">Licenses</MudButton>
                 @if (!context.CustomDomainVerified && !string.IsNullOrEmpty(context.CustomDomain))
                 {
                     <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Text" OnClick="@(() => Verify(context))">Verify</MudButton>
@@ -99,6 +100,12 @@ else
             _tenants = await Api.GetTenantsAsync();
             StateHasChanged();
         }
+    }
+
+    private async Task ManageLicenses(TenantResponse tenant)
+    {
+        var parameters = new DialogParameters<TenantLicensesDialog> { { d => d.Tenant, tenant } };
+        await DialogService.ShowAsync<TenantLicensesDialog>($"Licenses — {tenant.Name}", parameters);
     }
 
     private async Task Verify(TenantResponse tenant)

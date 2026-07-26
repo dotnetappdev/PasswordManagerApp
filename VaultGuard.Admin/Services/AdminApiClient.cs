@@ -148,6 +148,9 @@ public class AdminApiClient
     public async Task<List<LicenseKeyResponse>> GetLicensesForUserAsync(string userId) =>
         await CreateClient().GetFromJsonAsync<List<LicenseKeyResponse>>($"api/license?userId={Uri.EscapeDataString(userId)}") ?? new();
 
+    public async Task<List<LicenseKeyResponse>> GetLicensesForTenantAsync(Guid tenantId) =>
+        await CreateClient().GetFromJsonAsync<List<LicenseKeyResponse>>($"api/license?tenantId={tenantId}") ?? new();
+
     public async Task<(bool Success, LicenseKeyResponse? License, string? Error)> IssueLicenseAsync(IssueLicenseRequest request)
     {
         var resp = await CreateClient().PostAsJsonAsync("api/license", request);

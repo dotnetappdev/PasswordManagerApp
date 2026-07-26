@@ -24,7 +24,7 @@ else
         <HeaderContent>
             <MudTh>Key</MudTh>
             <MudTh>Customer</MudTh>
-            <MudTh>Assigned User</MudTh>
+            <MudTh>Assigned To</MudTh>
             <MudTh>Plan</MudTh>
             <MudTh>Activations</MudTh>
             <MudTh>Expires</MudTh>
@@ -34,14 +34,20 @@ else
         <RowTemplate>
             <MudTd DataLabel="Key"><code>@context.KeyCode</code></MudTd>
             <MudTd DataLabel="Customer">@context.CustomerEmail</MudTd>
-            <MudTd DataLabel="Assigned User">
-                @if (string.IsNullOrEmpty(context.UserId))
+            <MudTd DataLabel="Assigned To">
+                @if (!string.IsNullOrEmpty(context.UserId))
                 {
-                    <span class="mud-text-secondary">—</span>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Person">User</MudChip>
+                }
+                else if (context.TenantId.HasValue)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Tertiary" Icon="@Icons.Material.Filled.Domain">
+                        @(_tenantNames.GetValueOrDefault(context.TenantId.Value, "Tenant"))
+                    </MudChip>
                 }
                 else
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Person">Linked</MudChip>
+                    <span class="mud-text-secondary">—</span>
                 }
             </MudTd>
             <MudTd DataLabel="Plan">@context.Plan</MudTd>
@@ -75,10 +81,12 @@ else
 
 @code {
     private List<LicenseKeyResponse>? _licenses;
+    private Dictionary<Guid, string> _tenantNames = new();
 
     protected override async Task OnInitializedAsync()
     {
         _licenses = await Api.GetLicensesAsync();
+        _tenantNames = (await Api.GetTenantsAsync()).ToDictionary(t => t.Id, t => t.Name);
     }
 
     private async Task IssueLicense()

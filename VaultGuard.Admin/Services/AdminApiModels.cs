@@ -87,6 +87,7 @@ public class UpdateLicenseRequest
     public string? CustomerName { get; set; }
     public string? UserId { get; set; }
     public Guid? TenantId { get; set; }
+    public bool ClearTenant { get; set; }
     public LicensePlan? Plan { get; set; }
     public LicenseFeature? Features { get; set; }
     public int? MaxActivations { get; set; }

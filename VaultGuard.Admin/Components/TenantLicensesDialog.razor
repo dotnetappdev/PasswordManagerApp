@@ -1,0 +1,91 @@
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        @if (_licenses is null)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else if (_licenses.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">No org-wide license assigned to this tenant yet.</MudText>
+        }
+        else
+        {
+            @foreach (var license in _licenses)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                    <MudChip T="string" Size="Size.Small" Color="@(license.IsRevoked ? Color.Error : Color.Success)">@license.Plan</MudChip>
+                    <MudText Typo="Typo.body2"><code>@license.KeyCode</code></MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                        @license.ActiveActivations / @license.MaxActivations activations · @(license.ExpiresAt?.ToString("yyyy-MM-dd") ?? "Perpetual")
+                    </MudText>
+                    @if (!license.IsRevoked)
+                    {
+                        <MudButton Size="Size.Small" Color="Color.Warning" Variant="Variant.Text" OnClick="@(() => Revoke(license))">Revoke</MudButton>
+                    }
+                </MudStack>
+            }
+        }
+        <MudButton Class="mt-1" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.WorkspacePremium" OnClick="AssignLicense" Disabled="_assigning">
+            Assign New License
+        </MudButton>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public TenantResponse Tenant { get; set; } = null!;
+
+    private List<LicenseKeyResponse>? _licenses;
+    private bool _assigning;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _licenses = await Api.GetLicensesForTenantAsync(Tenant.Id);
+    }
+
+    private async Task AssignLicense()
+    {
+        _assigning = true;
+        var settings = await Api.GetLicensingSettingsAsync();
+        var (success, _, error) = await Api.IssueLicenseAsync(new IssueLicenseRequest
+        {
+            TenantId = Tenant.Id,
+            Plan = settings?.DefaultPlan ?? LicensePlan.Pro,
+            MaxActivations = settings?.DefaultMaxActivations ?? 1
+        });
+        _assigning = false;
+
+        if (success)
+        {
+            Snackbar.Add($"License assigned to {Tenant.Name}.", Severity.Success);
+            _licenses = await Api.GetLicensesForTenantAsync(Tenant.Id);
+        }
+        else
+        {
+            Snackbar.Add(error ?? "Could not assign license.", Severity.Error);
+        }
+    }
+
+    private async Task Revoke(LicenseKeyResponse license)
+    {
+        if (await Api.RevokeLicenseAsync(license.Id, $"Revoked from VaultGuard.Admin (tenant {Tenant.Name})"))
+        {
+            Snackbar.Add("License revoked.", Severity.Success);
+            _licenses = await Api.GetLicensesForTenantAsync(Tenant.Id);
+        }
+        else
+        {
+            Snackbar.Add("Could not revoke license.", Severity.Error);
+        }
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

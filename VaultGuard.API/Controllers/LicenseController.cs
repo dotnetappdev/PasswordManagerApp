@@ -11,6 +11,7 @@ using VaultGuard.Models;
 using VaultGuard.Models.Authorization;
 using VaultGuard.Models.Configuration;
 using VaultGuard.Models.Licensing;
+using VaultGuard.Models.Tenancy;
 
 namespace VaultGuard.API.Controllers;
 
@@ -55,22 +56,30 @@ public class LicenseController : ControllerBase
             if (assignedUser is null) return BadRequest("User not found.");
         }
 
+        Tenant? assignedTenant = null;
+        if (request.TenantId.HasValue)
+        {
+            assignedTenant = await _dbContext.Tenants.FindAsync(request.TenantId.Value);
+            if (assignedTenant is null) return BadRequest("Tenant not found.");
+        }
+
+        // A tenant-only (org-wide, no specific user) license has no natural "customer email" — fall
+        // back to a synthetic, clearly-labelled placeholder so CustomerEmail (required on the row) still
+        // reads sensibly in the Licenses list instead of being blank.
         var customerEmail = !string.IsNullOrWhiteSpace(request.CustomerEmail)
             ? request.CustomerEmail.Trim()
-            : assignedUser?.Email;
+            : assignedUser?.Email ?? (assignedTenant is not null ? $"tenant:{assignedTenant.Slug}" : null);
         if (string.IsNullOrWhiteSpace(customerEmail))
-            return BadRequest("CustomerEmail is required (or assign the license to a user).");
-
-        if (request.TenantId.HasValue && !await _dbContext.Tenants.AnyAsync(t => t.Id == request.TenantId.Value))
-            return BadRequest("Tenant not found.");
+            return BadRequest("CustomerEmail is required (or assign the license to a user or tenant).");
 
         var license = new LicenseKey
         {
             KeyCode = _licenseCrypto.GenerateCdKey(),
             CustomerEmail = customerEmail,
-            CustomerName = request.CustomerName ?? (assignedUser is null ? null : $"{assignedUser.FirstName} {assignedUser.LastName}".Trim()),
+            CustomerName = request.CustomerName
+                ?? (assignedUser is not null ? $"{assignedUser.FirstName} {assignedUser.LastName}".Trim() : assignedTenant?.Name),
             UserId = assignedUser?.Id,
-            TenantId = request.TenantId,
+            TenantId = assignedTenant?.Id,
             Plan = request.Plan,
             Features = request.Features ?? LicensePlans.DefaultFeatures(request.Plan),
             MaxActivations = request.MaxActivations is > 0 ? request.MaxActivations.Value : 1,
@@ -82,14 +91,15 @@ public class LicenseController : ControllerBase
         _dbContext.LicenseKeys.Add(license);
         await _dbContext.SaveChangesAsync();
 
-        // Assigning to a user is more than just handing them a key: reflect it immediately as an
-        // active subscription too, so the Subscriptions page and any "current plan" checks see it
-        // right away rather than only after the user manually activates a device.
-        if (assignedUser is not null)
+        // Assigning to a user or tenant is more than just handing over a key: reflect it immediately as
+        // an active subscription too, so the Subscriptions page and any "current plan" checks see it
+        // right away rather than only after someone manually activates a device.
+        if (assignedUser is not null || assignedTenant is not null)
         {
             _dbContext.Subscriptions.Add(new Subscription
             {
-                UserId = assignedUser.Id,
+                UserId = assignedUser?.Id,
+                TenantId = assignedTenant?.Id,
                 Plan = license.Plan,
                 Status = SubscriptionStatus.Active,
                 SeatCount = 1,
@@ -101,7 +111,8 @@ public class LicenseController : ControllerBase
 
         _logger.LogInformation("SuperAdmin {Admin} issued license {LicenseId} ({Plan}) for {Email}{AssignedTo}",
             license.IssuedByAdminUserId, license.Id, license.Plan, license.CustomerEmail,
-            assignedUser is null ? "" : $" (assigned to user {assignedUser.Id})");
+            assignedUser is not null ? $" (assigned to user {assignedUser.Id})"
+                : assignedTenant is not null ? $" (assigned to tenant {assignedTenant.Id})" : "");
 
         return CreatedAtAction(nameof(GetLicense), new { id = license.Id }, ToResponse(license));
     }
@@ -159,7 +170,8 @@ public class LicenseController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(request.CustomerEmail)) license.CustomerEmail = request.CustomerEmail.Trim();
         if (request.CustomerName is not null) license.CustomerName = request.CustomerName;
-        if (request.TenantId.HasValue) license.TenantId = request.TenantId;
+        if (request.ClearTenant) license.TenantId = null;
+        else if (request.TenantId.HasValue) license.TenantId = request.TenantId;
         if (request.Plan.HasValue) license.Plan = request.Plan.Value;
         if (request.Features.HasValue) license.Features = request.Features.Value;
         if (request.MaxActivations is > 0) license.MaxActivations = request.MaxActivations.Value;
@@ -489,6 +501,9 @@ public class UpdateLicenseRequest
     /// leave the current assignment untouched.</summary>
     public string? UserId { get; set; }
     public Guid? TenantId { get; set; }
+    /// <summary>Set true to explicitly clear the tenant assignment (TenantId alone can't distinguish
+    /// "leave untouched" from "clear", since both look like null/absent in a partial update).</summary>
+    public bool ClearTenant { get; set; }
     public LicensePlan? Plan { get; set; }
     public LicenseFeature? Features { get; set; }
     public int? MaxActivations { get; set; }

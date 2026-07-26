@@ -14,6 +14,14 @@
                          SearchFunc="SearchUsers" ToStringFunc="@(u => u == null ? "" : $"{u.Email} ({u.FirstName} {u.LastName})")"
                          Variant="Variant.Outlined" Class="mb-3" Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
 
+        <MudSelect T="TenantResponse" @bind-Value="_selectedTenant" Label="Assigned Tenant (optional)" Variant="Variant.Outlined" Class="mb-3"
+                   Clearable="true" ToStringFunc="@(t => t?.Name ?? "")">
+            @foreach (var tenant in _tenants)
+            {
+                <MudSelectItem T="TenantResponse" Value="@tenant">@tenant.Name (@tenant.Slug)</MudSelectItem>
+            }
+        </MudSelect>
+
         <MudSelect T="LicensePlan" @bind-Value="_plan" Label="Plan" Variant="Variant.Outlined" Class="mb-3">
             @foreach (var plan in Enum.GetValues<LicensePlan>())
             {
@@ -36,6 +44,8 @@
 
     private List<UserDto> _users = new();
     private UserDto? _selectedUser;
+    private List<TenantResponse> _tenants = new();
+    private TenantResponse? _selectedTenant;
     private string _customerEmail = "";
     private string? _customerName;
     private LicensePlan _plan;
@@ -48,6 +58,7 @@
     protected override async Task OnInitializedAsync()
     {
         _users = await Api.GetUsersAsync();
+        _tenants = await Api.GetTenantsAsync();
 
         _customerEmail = License.CustomerEmail;
         _customerName = License.CustomerName;
@@ -56,6 +67,7 @@
         _expiresAt = License.ExpiresAt;
         _notes = License.Notes;
         _selectedUser = string.IsNullOrEmpty(License.UserId) ? null : _users.FirstOrDefault(u => u.Id == License.UserId);
+        _selectedTenant = License.TenantId.HasValue ? _tenants.FirstOrDefault(t => t.Id == License.TenantId.Value) : null;
     }
 
     private Task<IEnumerable<UserDto>> SearchUsers(string value, CancellationToken token)
@@ -76,6 +88,8 @@
             CustomerEmail = _customerEmail,
             CustomerName = _customerName,
             UserId = _selectedUser?.Id ?? "",
+            TenantId = _selectedTenant?.Id,
+            ClearTenant = _selectedTenant is null,
             Plan = _plan,
             MaxActivations = _maxActivations,
             ExpiresAt = _expiresAt,

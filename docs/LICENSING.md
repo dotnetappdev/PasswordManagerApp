@@ -60,18 +60,27 @@ the database.
 
 The Admin UI's Licenses page has Edit and Delete actions per row, plus an "Assigned User" column.
 
-## Assigning a license directly to a user
+## Assigning a license directly to a user or tenant
 
 Besides issuing a freeform CD key by email for someone to self-activate, a SuperAdmin can assign a
-license straight to an existing VaultGuard account — from the Licenses page ("Issue License Key" →
-toggle "Assign directly to an existing VaultGuard account" → pick the user from the autocomplete), or
-from the Users page (Manage → "Assign New License", using the configured defaults).
+license straight to an existing account or to a whole tenant (org-wide):
 
-`POST /api/license` with `UserId` set:
-1. Pulls `CustomerEmail`/`CustomerName` from that account if not explicitly overridden.
-2. Sets `LicenseKey.UserId`, so `GET /api/license?userId=…` and the Users page's "Manage" dialog show it.
-3. Immediately creates a linked, **Active** `Subscription` row (`LicenseKeyId` set) — the assignment shows
-   up right away, without waiting for the user to type the CD key into a device.
+- From the Licenses page: "Issue License Key" has a "Who is this license for?" choice — by email, an
+  existing account (autocomplete), or a tenant (dropdown).
+- From the Users page: Manage → "Assign New License" (uses the configured defaults).
+- From the Tenants page: "Licenses" → "Assign New License" (same idea, org-wide).
+- Editing an existing key (Licenses page → Edit) can reassign or clear either the user or the tenant
+  independently at any time.
+
+`POST /api/license` with `UserId` or `TenantId` set:
+1. Pulls `CustomerEmail`/`CustomerName` from the account (or the tenant's name, for a tenant-only
+   license with no specific user — `CustomerEmail` falls back to a synthetic `tenant:<slug>` label since
+   the column is required but there's no natural email for an org-wide key).
+2. Sets `LicenseKey.UserId`/`TenantId`, so `GET /api/license?userId=…`/`?tenantId=…` and the
+   Users/Tenants "Manage" dialogs show it.
+3. Immediately creates a linked, **Active** `Subscription` row (`LicenseKeyId` set, `UserId` or
+   `TenantId` matching) — the assignment shows up right away, without waiting for anyone to type the CD
+   key into a device.
 
 The CD key is still generated and still needs to be activated on a device (`POST /api/license/activate`)
 for that specific install to actually unlock Pro features locally — assignment establishes who the
