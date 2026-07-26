@@ -28,6 +28,14 @@ public class LicenseKey
     [MaxLength(100)]
     public string? CustomerName { get; set; }
 
+    /// <summary>Direct assignment to an existing VaultGuard account, set when a SuperAdmin assigns this
+    /// license to a user from VaultGuard.Admin (rather than just issuing a key by email for someone to
+    /// activate themselves). Null for a freeform/by-email license with no linked account yet.</summary>
+    [MaxLength(450)]
+    public string? UserId { get; set; }
+    [ForeignKey(nameof(UserId))]
+    public virtual ApplicationUser? User { get; set; }
+
     /// <summary>Optional tenant this license belongs to (org-wide license). Null for an individual license.</summary>
     public Guid? TenantId { get; set; }
     [ForeignKey(nameof(TenantId))]

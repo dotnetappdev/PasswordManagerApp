@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VaultGuard.DAL;
 
@@ -11,9 +12,11 @@ using VaultGuard.DAL;
 namespace VaultGuard.DAL.SqlServer.Migrations
 {
     [DbContext(typeof(VaultGuardDbContext))]
-    partial class VaultGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260726000813_AddLicenseUserAssignmentAndSettings")]
+    partial class AddLicenseUserAssignmentAndSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -28,6 +28,35 @@
 
             <MudDivider Class="my-4" />
 
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Licenses</MudText>
+            @if (_licenses is null)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else if (_licenses.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">No license assigned to this account.</MudText>
+            }
+            else
+            {
+                @foreach (var license in _licenses)
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-1">
+                        <MudChip T="string" Size="Size.Small" Color="@(license.IsRevoked ? Color.Error : Color.Success)">@license.Plan</MudChip>
+                        <MudText Typo="Typo.body2"><code>@license.KeyCode</code></MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            @(license.ExpiresAt?.ToString("yyyy-MM-dd") ?? "Perpetual")
+                        </MudText>
+                    </MudStack>
+                }
+            }
+            <MudButton Class="mt-1" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.WorkspacePremium" OnClick="AssignLicense" Disabled="_assigningLicense">
+                Assign New License
+            </MudButton>
+
+            <MudDivider Class="my-4" />
+
             <MudStack Row="true" Spacing="2">
                 @if (User.IsActive)
                 {
@@ -54,12 +83,38 @@
     private List<string> _userRoles = new();
     private List<TenantResponse> _tenants = new();
     private Guid? _tenantId;
+    private List<LicenseKeyResponse>? _licenses;
+    private bool _assigningLicense;
 
     protected override async Task OnInitializedAsync()
     {
         _allRoles = await Api.GetAllRolesAsync();
         _userRoles = await Api.GetUserRolesAsync(User.Id);
         _tenants = await Api.GetTenantsAsync();
+        _licenses = await Api.GetLicensesForUserAsync(User.Id);
+    }
+
+    private async Task AssignLicense()
+    {
+        _assigningLicense = true;
+        var settings = await Api.GetLicensingSettingsAsync();
+        var (success, _, error) = await Api.IssueLicenseAsync(new IssueLicenseRequest
+        {
+            UserId = User.Id,
+            Plan = settings?.DefaultPlan ?? LicensePlan.Pro,
+            MaxActivations = settings?.DefaultMaxActivations ?? 1
+        });
+        _assigningLicense = false;
+
+        if (success)
+        {
+            Snackbar.Add($"License assigned to {User.Email}.", Severity.Success);
+            _licenses = await Api.GetLicensesForUserAsync(User.Id);
+        }
+        else
+        {
+            Snackbar.Add(error ?? "Could not assign license.", Severity.Error);
+        }
     }
 
     private async Task ToggleRole(string role, bool isChecked)

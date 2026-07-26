@@ -1,0 +1,92 @@
+@inject AdminApiClient Api
+
+<MudDialog>
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+        }
+
+        <MudTextField T="string" @bind-Value="_customerEmail" Label="Customer Email" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField T="string" @bind-Value="_customerName" Label="Customer Name" Variant="Variant.Outlined" Class="mb-3" />
+
+        <MudAutocomplete T="UserDto" Label="Assigned User (optional)" @bind-Value="_selectedUser"
+                         SearchFunc="SearchUsers" ToStringFunc="@(u => u == null ? "" : $"{u.Email} ({u.FirstName} {u.LastName})")"
+                         Variant="Variant.Outlined" Class="mb-3" Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+
+        <MudSelect T="LicensePlan" @bind-Value="_plan" Label="Plan" Variant="Variant.Outlined" Class="mb-3">
+            @foreach (var plan in Enum.GetValues<LicensePlan>())
+            {
+                <MudSelectItem T="LicensePlan" Value="@plan">@plan</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="_maxActivations" Label="Max Activations (devices)" Variant="Variant.Outlined" Min="1" Class="mb-3" />
+        <MudDatePicker @bind-Date="_expiresAt" Label="Expires (leave blank for perpetual)" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField T="string" @bind-Value="_notes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save" Disabled="_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public LicenseKeyResponse License { get; set; } = null!;
+
+    private List<UserDto> _users = new();
+    private UserDto? _selectedUser;
+    private string _customerEmail = "";
+    private string? _customerName;
+    private LicensePlan _plan;
+    private int _maxActivations;
+    private DateTime? _expiresAt;
+    private string? _notes;
+    private bool _saving;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _users = await Api.GetUsersAsync();
+
+        _customerEmail = License.CustomerEmail;
+        _customerName = License.CustomerName;
+        _plan = License.Plan;
+        _maxActivations = License.MaxActivations;
+        _expiresAt = License.ExpiresAt;
+        _notes = License.Notes;
+        _selectedUser = string.IsNullOrEmpty(License.UserId) ? null : _users.FirstOrDefault(u => u.Id == License.UserId);
+    }
+
+    private Task<IEnumerable<UserDto>> SearchUsers(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return Task.FromResult(_users.Take(20));
+        return Task.FromResult(_users.Where(u =>
+            u.Email.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+            $"{u.FirstName} {u.LastName}".Contains(value, StringComparison.OrdinalIgnoreCase)).Take(20));
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        _error = null;
+
+        var (success, _, error) = await Api.UpdateLicenseAsync(License.Id, new UpdateLicenseRequest
+        {
+            CustomerEmail = _customerEmail,
+            CustomerName = _customerName,
+            UserId = _selectedUser?.Id ?? "",
+            Plan = _plan,
+            MaxActivations = _maxActivations,
+            ExpiresAt = _expiresAt,
+            ClearExpiry = _expiresAt is null,
+            Notes = _notes
+        });
+        _saving = false;
+
+        if (success) MudDialog.Close(DialogResult.Ok(true));
+        else _error = error ?? "Could not update license.";
+    }
+
+    private void Cancel() => MudDialog.Close(DialogResult.Cancel());
+}

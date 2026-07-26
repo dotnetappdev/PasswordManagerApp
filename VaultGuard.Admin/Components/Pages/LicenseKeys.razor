@@ -24,6 +24,7 @@ else
         <HeaderContent>
             <MudTh>Key</MudTh>
             <MudTh>Customer</MudTh>
+            <MudTh>Assigned User</MudTh>
             <MudTh>Plan</MudTh>
             <MudTh>Activations</MudTh>
             <MudTh>Expires</MudTh>
@@ -33,6 +34,16 @@ else
         <RowTemplate>
             <MudTd DataLabel="Key"><code>@context.KeyCode</code></MudTd>
             <MudTd DataLabel="Customer">@context.CustomerEmail</MudTd>
+            <MudTd DataLabel="Assigned User">
+                @if (string.IsNullOrEmpty(context.UserId))
+                {
+                    <span class="mud-text-secondary">—</span>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Person">Linked</MudChip>
+                }
+            </MudTd>
             <MudTd DataLabel="Plan">@context.Plan</MudTd>
             <MudTd DataLabel="Activations">@context.ActiveActivations / @context.MaxActivations</MudTd>
             <MudTd DataLabel="Expires">@(context.ExpiresAt?.ToString("yyyy-MM-dd") ?? "Perpetual")</MudTd>
@@ -51,10 +62,12 @@ else
                 }
             </MudTd>
             <MudTd>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => Edit(context))">Edit</MudButton>
                 @if (!context.IsRevoked)
                 {
-                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="@(() => Revoke(context))">Revoke</MudButton>
+                    <MudButton Size="Size.Small" Color="Color.Warning" Variant="Variant.Text" OnClick="@(() => Revoke(context))">Revoke</MudButton>
                 }
+                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="@(() => Delete(context))">Delete</MudButton>
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -79,6 +92,18 @@ else
         }
     }
 
+    private async Task Edit(LicenseKeyResponse license)
+    {
+        var parameters = new DialogParameters<EditLicenseDialog> { { d => d.License, license } };
+        var dialog = await DialogService.ShowAsync<EditLicenseDialog>($"Edit license {license.KeyCode}", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _licenses = await Api.GetLicensesAsync();
+            StateHasChanged();
+        }
+    }
+
     private async Task Revoke(LicenseKeyResponse license)
     {
         var ok = await Api.RevokeLicenseAsync(license.Id, "Revoked from VaultGuard.Admin");
@@ -90,6 +115,25 @@ else
         else
         {
             Snackbar.Add("Could not revoke license.", Severity.Error);
+        }
+    }
+
+    private async Task Delete(LicenseKeyResponse license)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete license",
+            $"Permanently delete license {license.KeyCode}? This also removes its device activations. This cannot be undone.",
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirmed != true) return;
+
+        if (await Api.DeleteLicenseAsync(license.Id))
+        {
+            Snackbar.Add("License deleted.", Severity.Success);
+            _licenses = await Api.GetLicensesAsync();
+        }
+        else
+        {
+            Snackbar.Add("Could not delete license.", Severity.Error);
         }
     }
 }

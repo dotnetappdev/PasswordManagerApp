@@ -56,6 +56,7 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
     public DbSet<LicenseKey> LicenseKeys { get; set; } = null!;
     public DbSet<LicenseActivation> LicenseActivations { get; set; } = null!;
     public DbSet<Subscription> Subscriptions { get; set; } = null!;
+    public DbSet<LicensingSettings> LicensingSettings { get; set; } = null!;
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -534,6 +535,18 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
                   .HasForeignKey(e => e.TenantId)
                   .IsRequired(false)
                   .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure LicensingSettings (single row)
+        modelBuilder.Entity<LicensingSettings>(entity =>
+        {
+            entity.HasKey(e => e.Id);
         });
 
         // Configure LicenseActivation

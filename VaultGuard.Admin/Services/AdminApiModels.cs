@@ -54,6 +54,7 @@ public class LicenseKeyResponse
     public string KeyCode { get; set; } = "";
     public string CustomerEmail { get; set; } = "";
     public string? CustomerName { get; set; }
+    public string? UserId { get; set; }
     public Guid? TenantId { get; set; }
     public LicensePlan Plan { get; set; }
     public LicenseFeature Features { get; set; }
@@ -69,14 +70,46 @@ public class LicenseKeyResponse
 
 public class IssueLicenseRequest
 {
-    public string CustomerEmail { get; set; } = "";
+    public string? CustomerEmail { get; set; }
     public string? CustomerName { get; set; }
+    public string? UserId { get; set; }
     public Guid? TenantId { get; set; }
     public LicensePlan Plan { get; set; } = LicensePlan.Pro;
     public LicenseFeature? Features { get; set; }
     public int? MaxActivations { get; set; } = 1;
     public DateTime? ExpiresAt { get; set; }
     public string? Notes { get; set; }
+}
+
+public class UpdateLicenseRequest
+{
+    public string? CustomerEmail { get; set; }
+    public string? CustomerName { get; set; }
+    public string? UserId { get; set; }
+    public Guid? TenantId { get; set; }
+    public LicensePlan? Plan { get; set; }
+    public LicenseFeature? Features { get; set; }
+    public int? MaxActivations { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public bool ClearExpiry { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class LicensingSettingsResponse
+{
+    public bool Configured { get; set; }
+    public string Source { get; set; } = "None";
+    public string? SigningPublicKeyPem { get; set; }
+    public string? AesKeyBase64 { get; set; }
+    public int DefaultMaxActivations { get; set; }
+    public LicensePlan DefaultPlan { get; set; }
+    public DateTime? GeneratedAt { get; set; }
+}
+
+public class UpdateLicensingDefaultsRequest
+{
+    public int? DefaultMaxActivations { get; set; }
+    public LicensePlan? DefaultPlan { get; set; }
 }
 
 public class TenantResponse
@@ -103,13 +136,6 @@ public class CustomDomainSetupResponse
     public string Domain { get; set; } = "";
     public string TxtRecordName { get; set; } = "";
     public string TxtRecordValue { get; set; } = "";
-}
-
-public class SigningConfigResponse
-{
-    public string? SigningPublicKeyPem { get; set; }
-    public string? AesKeyBase64 { get; set; }
-    public bool Configured { get; set; }
 }
 
 public class SubscriptionResponse

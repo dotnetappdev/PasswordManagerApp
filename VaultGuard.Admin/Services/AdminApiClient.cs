@@ -145,6 +145,9 @@ public class AdminApiClient
         await CreateClient().GetFromJsonAsync<List<LicenseKeyResponse>>(
             string.IsNullOrWhiteSpace(customerEmail) ? "api/license" : $"api/license?customerEmail={Uri.EscapeDataString(customerEmail)}") ?? new();
 
+    public async Task<List<LicenseKeyResponse>> GetLicensesForUserAsync(string userId) =>
+        await CreateClient().GetFromJsonAsync<List<LicenseKeyResponse>>($"api/license?userId={Uri.EscapeDataString(userId)}") ?? new();
+
     public async Task<(bool Success, LicenseKeyResponse? License, string? Error)> IssueLicenseAsync(IssueLicenseRequest request)
     {
         var resp = await CreateClient().PostAsJsonAsync("api/license", request);
@@ -152,11 +155,34 @@ public class AdminApiClient
         return (true, await resp.Content.ReadFromJsonAsync<LicenseKeyResponse>(), null);
     }
 
+    public async Task<(bool Success, LicenseKeyResponse? License, string? Error)> UpdateLicenseAsync(Guid id, UpdateLicenseRequest request)
+    {
+        var resp = await CreateClient().PutAsJsonAsync($"api/license/{id}", request);
+        if (!resp.IsSuccessStatusCode) return (false, null, await resp.Content.ReadAsStringAsync());
+        return (true, await resp.Content.ReadFromJsonAsync<LicenseKeyResponse>(), null);
+    }
+
+    public async Task<bool> DeleteLicenseAsync(Guid id) =>
+        (await CreateClient().DeleteAsync($"api/license/{id}")).IsSuccessStatusCode;
+
     public async Task<bool> RevokeLicenseAsync(Guid id, string? reason) =>
         (await CreateClient().PostAsJsonAsync($"api/license/{id}/revoke", new { reason })).IsSuccessStatusCode;
 
-    public async Task<SigningConfigResponse?> GetSigningConfigAsync() =>
-        await CreateClient().GetFromJsonAsync<SigningConfigResponse>("api/license/signing-config");
+    public async Task<LicensingSettingsResponse?> GetLicensingSettingsAsync() =>
+        await CreateClient().GetFromJsonAsync<LicensingSettingsResponse>("api/license/settings");
+
+    public async Task<LicensingSettingsResponse?> UpdateLicensingDefaultsAsync(UpdateLicensingDefaultsRequest request)
+    {
+        var resp = await CreateClient().PutAsJsonAsync("api/license/settings", request);
+        return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<LicensingSettingsResponse>() : null;
+    }
+
+    public async Task<(bool Success, LicensingSettingsResponse? Settings, string? Error)> GenerateSigningKeysAsync()
+    {
+        var resp = await CreateClient().PostAsync("api/license/settings/generate-keys", null);
+        if (!resp.IsSuccessStatusCode) return (false, null, await resp.Content.ReadAsStringAsync());
+        return (true, await resp.Content.ReadFromJsonAsync<LicensingSettingsResponse>(), null);
+    }
 
     // ── Tenants ──────────────────────────────────────────────────────────────────────────────────
 

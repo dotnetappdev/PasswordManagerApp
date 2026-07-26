@@ -1,0 +1,159 @@
+@page "/settings"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = VaultGuard.Models.ApplicationRoles.SuperAdmin)]
+@inject AdminApiClient Api
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Settings - VaultGuard Admin</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Settings</MudText>
+
+@if (_settings is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-1" Style="font-weight:600;">Licensing — Signing Keys</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                    The keys used to encrypt-then-sign every license certificate. See docs/LICENSING.md
+                    for the full design.
+                </MudText>
+
+                @if (_settings.Configured)
+                {
+                    <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true">
+                        Configured (source: @_settings.Source)
+                        @if (_settings.GeneratedAt.HasValue)
+                        {
+                            <span> — generated @_settings.GeneratedAt.Value.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                        }
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true">
+                        Not configured yet — CD-key activation will fail until you generate keys below.
+                    </MudAlert>
+                }
+
+                <MudTextField T="string" Value="@(_settings.SigningPublicKeyPem ?? "")" Label="Public Key (PEM) — safe to distribute to clients"
+                              Variant="Variant.Outlined" Lines="4" ReadOnly="true" Class="mb-3" />
+                <MudTextField T="string" Value="@(_settings.AesKeyBase64 ?? "")" Label="AES Key (Base64) — ships inside clients"
+                              Variant="Variant.Outlined" ReadOnly="true" Class="mb-3" />
+
+                <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
+                    Paste both values into each client build's <code>appsettings.json</code> under
+                    <code>Licensing</code> (WPF, Blazor Web, MAUI) — never the private key, which stays
+                    server-side only and is never shown here.
+                </MudText>
+
+                <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Key"
+                           OnClick="GenerateKeys" Disabled="_generating">
+                    @(_settings.Configured ? "Regenerate Signing Keys" : "Generate Signing Keys")
+                </MudButton>
+                @if (_settings.Configured)
+                {
+                    <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary" Style="display:block;">
+                        Regenerating invalidates verification for any client still configured with the
+                        old public key/AES key — update their config too, or new activations will fail
+                        signature checks on those clients.
+                    </MudText>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-4 rounded-lg" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-1" Style="font-weight:600;">Issuance Defaults</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                    Pre-filled when you open "Issue License Key" — doesn't affect existing licenses.
+                </MudText>
+
+                <MudSelect T="LicensePlan" @bind-Value="_defaultPlan" Label="Default Plan" Variant="Variant.Outlined" Class="mb-3">
+                    @foreach (var plan in Enum.GetValues<LicensePlan>())
+                    {
+                        <MudSelectItem T="LicensePlan" Value="@plan">@plan</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudNumericField @bind-Value="_defaultMaxActivations" Label="Default Max Activations" Variant="Variant.Outlined" Min="1" Class="mb-3" />
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+                           OnClick="SaveDefaults" Disabled="_savingDefaults">
+                    Save Defaults
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private LicensingSettingsResponse? _settings;
+    private LicensePlan _defaultPlan = LicensePlan.Pro;
+    private int _defaultMaxActivations = 1;
+    private bool _generating;
+    private bool _savingDefaults;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettings();
+    }
+
+    private async Task LoadSettings()
+    {
+        _settings = await Api.GetLicensingSettingsAsync();
+        if (_settings is not null)
+        {
+            _defaultPlan = _settings.DefaultPlan;
+            _defaultMaxActivations = _settings.DefaultMaxActivations;
+        }
+    }
+
+    private async Task GenerateKeys()
+    {
+        var message = _settings?.Configured == true
+            ? "Regenerate the signing keys? Clients still configured with the current public key/AES key will fail to verify certificates issued after this."
+            : "Generate a new ECDSA signing key pair and AES key for licensing?";
+        var confirmed = await DialogService.ShowMessageBox("Generate Signing Keys", message, yesText: "Generate", cancelText: "Cancel");
+        if (confirmed != true) return;
+
+        _generating = true;
+        var (success, settings, error) = await Api.GenerateSigningKeysAsync();
+        _generating = false;
+
+        if (success)
+        {
+            _settings = settings;
+            Snackbar.Add("Signing keys generated. Copy the public key + AES key into your client builds.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add(error ?? "Could not generate signing keys.", Severity.Error);
+        }
+    }
+
+    private async Task SaveDefaults()
+    {
+        _savingDefaults = true;
+        var settings = await Api.UpdateLicensingDefaultsAsync(new UpdateLicensingDefaultsRequest
+        {
+            DefaultPlan = _defaultPlan,
+            DefaultMaxActivations = _defaultMaxActivations
+        });
+        _savingDefaults = false;
+
+        if (settings is not null)
+        {
+            _settings = settings;
+            Snackbar.Add("Defaults saved.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Could not save defaults.", Severity.Error);
+        }
+    }
+}

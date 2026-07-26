@@ -1,5 +1,4 @@
 @inject AdminApiClient Api
-@inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
@@ -10,13 +9,34 @@
         @if (_issued is not null)
         {
             <MudAlert Severity="Severity.Success" Class="mb-3">
-                License issued: <code>@_issued.KeyCode</code> — copy this now and send it to the customer.
+                License issued: <code>@_issued.KeyCode</code>
+                @if (_assignToUser)
+                {
+                    <span> and assigned to @_selectedUser?.Email — an active subscription was created for them automatically.</span>
+                }
+                else
+                {
+                    <span> — copy this now and send it to the customer.</span>
+                }
             </MudAlert>
         }
         else
         {
-            <MudTextField T="string" @bind-Value="_customerEmail" Label="Customer Email" Variant="Variant.Outlined" Class="mb-3" Required="true" />
-            <MudTextField T="string" @bind-Value="_customerName" Label="Customer Name (optional)" Variant="Variant.Outlined" Class="mb-3" />
+            <MudSwitch T="bool" @bind-Value="_assignToUser" Label="Assign directly to an existing VaultGuard account" Color="Color.Primary" Class="mb-3" />
+
+            @if (_assignToUser)
+            {
+                <MudAutocomplete T="UserDto" Label="User" @bind-Value="_selectedUser"
+                                 SearchFunc="SearchUsers" ToStringFunc="@(u => u == null ? "" : $"{u.Email} ({u.FirstName} {u.LastName})")"
+                                 Variant="Variant.Outlined" Class="mb-3" Required="true"
+                                 ResetValueOnEmptyText="true" CoerceText="false" />
+            }
+            else
+            {
+                <MudTextField T="string" @bind-Value="_customerEmail" Label="Customer Email" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+                <MudTextField T="string" @bind-Value="_customerName" Label="Customer Name (optional)" Variant="Variant.Outlined" Class="mb-3" />
+            }
+
             <MudSelect T="LicensePlan" @bind-Value="_plan" Label="Plan" Variant="Variant.Outlined" Class="mb-3">
                 @foreach (var plan in Enum.GetValues<LicensePlan>())
                 {
@@ -36,7 +56,8 @@
         else
         {
             <MudButton OnClick="Cancel">Cancel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Issue" Disabled="@(_issuing || string.IsNullOrWhiteSpace(_customerEmail))">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Issue"
+                       Disabled="@(_issuing || (_assignToUser ? _selectedUser is null : string.IsNullOrWhiteSpace(_customerEmail)))">
                 Issue
             </MudButton>
         }
@@ -46,6 +67,9 @@
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
 
+    private bool _assignToUser;
+    private List<UserDto> _users = new();
+    private UserDto? _selectedUser;
     private string _customerEmail = "";
     private string? _customerName;
     private LicensePlan _plan = LicensePlan.Pro;
@@ -56,14 +80,34 @@
     private string? _error;
     private LicenseKeyResponse? _issued;
 
+    protected override async Task OnInitializedAsync()
+    {
+        _users = await Api.GetUsersAsync();
+        var settings = await Api.GetLicensingSettingsAsync();
+        if (settings is not null)
+        {
+            _plan = settings.DefaultPlan;
+            _maxActivations = settings.DefaultMaxActivations;
+        }
+    }
+
+    private Task<IEnumerable<UserDto>> SearchUsers(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return Task.FromResult(_users.Take(20));
+        return Task.FromResult(_users.Where(u =>
+            u.Email.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+            $"{u.FirstName} {u.LastName}".Contains(value, StringComparison.OrdinalIgnoreCase)).Take(20));
+    }
+
     private async Task Issue()
     {
         _issuing = true;
         _error = null;
         var (success, license, error) = await Api.IssueLicenseAsync(new IssueLicenseRequest
         {
-            CustomerEmail = _customerEmail,
-            CustomerName = _customerName,
+            CustomerEmail = _assignToUser ? null : _customerEmail,
+            CustomerName = _assignToUser ? null : _customerName,
+            UserId = _assignToUser ? _selectedUser?.Id : null,
             Plan = _plan,
             MaxActivations = _maxActivations,
             ExpiresAt = _expiresAt,
