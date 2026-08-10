@@ -17,49 +17,74 @@ public static class SqliteSchemaGuard
 {
     /// <summary>
     /// Applies additive schema fixes to bring an existing SQLite vault up to the current model. Safe to
-    /// call on every startup: each change is guarded by a table/column existence check. Only runs when the
-    /// context is backed by SQLite; other providers return immediately.
+    /// call on every startup: each fix is independently guarded (existence check + its own try/catch), so
+    /// one fix throwing on an unusual database can never prevent the others from running. Only runs when
+    /// the context is backed by SQLite; other providers return immediately.
     /// </summary>
     public static async Task EnsureVaultSchemaAsync(VaultGuardDbContext dbContext, ILogger? logger = null)
     {
         if (!dbContext.Database.IsSqlite())
             return;
 
+        System.Data.Common.DbConnection conn;
         try
         {
-            var conn = dbContext.Database.GetDbConnection();
+            conn = dbContext.Database.GetDbConnection();
             if (conn.State != ConnectionState.Open)
                 await conn.OpenAsync();
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "EnsureVaultSchemaAsync could not open the SQLite connection — skipping schema fixes");
+            return;
+        }
 
-            // Helper: check whether a table exists
-            async Task<bool> TableExists(string name)
+        // Helper: check whether a table exists
+        async Task<bool> TableExists(string name)
+        {
+            using var c = conn.CreateCommand();
+            c.CommandText = $"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='{name}'";
+            return Convert.ToInt64(await c.ExecuteScalarAsync() ?? 0) > 0;
+        }
+
+        // Helper: check whether a column exists in a table
+        async Task<bool> ColumnExists(string table, string column)
+        {
+            using var c = conn.CreateCommand();
+            c.CommandText = $"PRAGMA table_info({table})";
+            using var r = await c.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+                if (string.Equals(r["name"]?.ToString(), column, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
+
+        // Helper: run DDL silently
+        async Task Exec(string sql)
+        {
+            using var c = conn.CreateCommand();
+            c.CommandText = sql;
+            await c.ExecuteNonQueryAsync();
+        }
+
+        // Runs one guarded fix in isolation — a failure here is logged and skipped, but never stops the
+        // remaining fixes from being attempted (each earlier version of this method shared one try/catch
+        // for everything, so a single throwing fix silently skipped every fix listed after it).
+        async Task Step(string description, Func<Task> fix)
+        {
+            try
             {
-                using var c = conn.CreateCommand();
-                c.CommandText = $"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='{name}'";
-                return Convert.ToInt64(await c.ExecuteScalarAsync() ?? 0) > 0;
+                await fix();
             }
-
-            // Helper: check whether a column exists in a table
-            async Task<bool> ColumnExists(string table, string column)
+            catch (Exception ex)
             {
-                using var c = conn.CreateCommand();
-                c.CommandText = $"PRAGMA table_info({table})";
-                using var r = await c.ExecuteReaderAsync();
-                while (await r.ReadAsync())
-                    if (string.Equals(r["name"]?.ToString(), column, StringComparison.OrdinalIgnoreCase))
-                        return true;
-                return false;
+                logger?.LogWarning(ex, "Schema fix failed: {Description} — app will continue but some features may be unavailable", description);
             }
+        }
 
-            // Helper: run DDL silently
-            async Task Exec(string sql)
-            {
-                using var c = conn.CreateCommand();
-                c.CommandText = sql;
-                await c.ExecuteNonQueryAsync();
-            }
-
-            // ── 1. Vault table ───────────────────────────────────────────────
+        // ── 1. Vault table ───────────────────────────────────────────────
+        await Step("create Vault table", async () =>
+        {
             if (!await TableExists("Vault"))
             {
                 logger?.LogInformation("Schema fix: creating Vault table");
@@ -74,16 +99,22 @@ public static class SqliteSchemaGuard
                     UpdatedAt   TEXT    NOT NULL,
                     UserId      TEXT    NOT NULL)");
             }
+        });
 
-            // ── 2. VaultId column on Collections ─────────────────────────────
+        // ── 2. VaultId column on Collections ─────────────────────────────
+        await Step("add Collections.VaultId", async () =>
+        {
             if (await TableExists("Collections") && !await ColumnExists("Collections", "VaultId"))
             {
                 logger?.LogInformation("Schema fix: adding VaultId to Collections");
                 await Exec("ALTER TABLE Collections ADD COLUMN VaultId INTEGER NULL");
             }
+        });
 
-            // ── 3. PasswordItemTags join table (PasswordItem ↔ Tag) ──────────
-            // EF Core column convention: PasswordItemsId and TagsId
+        // ── 3. PasswordItemTags join table (PasswordItem ↔ Tag) ──────────
+        // EF Core column convention: PasswordItemsId and TagsId
+        await Step("create PasswordItemTags table", async () =>
+        {
             if (!await TableExists("PasswordItemTags"))
             {
                 logger?.LogInformation("Schema fix: creating PasswordItemTags join table");
@@ -92,8 +123,11 @@ public static class SqliteSchemaGuard
                     TagsId          INTEGER NOT NULL,
                     PRIMARY KEY (PasswordItemsId, TagsId))");
             }
+        });
 
-            // ── 4. PasskeyItems table (if missing from older databases) ───────
+        // ── 4. PasskeyItems table (if missing from older databases) ───────
+        await Step("create PasskeyItems table", async () =>
+        {
             if (!await TableExists("PasskeyItems"))
             {
                 logger?.LogInformation("Schema fix: creating PasskeyItems table");
@@ -121,8 +155,11 @@ public static class SqliteSchemaGuard
                     CredentialIdNonce      TEXT,
                     CredentialIdAuthTag    TEXT)");
             }
+        });
 
-            // ── 5. AuditLogs table ────────────────────────────────────────────
+        // ── 5. AuditLogs table ────────────────────────────────────────────
+        await Step("create AuditLogs table", async () =>
+        {
             if (!await TableExists("AuditLogs"))
             {
                 logger?.LogInformation("Schema fix: creating AuditLogs table");
@@ -138,8 +175,11 @@ public static class SqliteSchemaGuard
                     CreatedAt   TEXT    NOT NULL DEFAULT '',
                     IsSuccess   INTEGER NOT NULL DEFAULT 1)");
             }
+        });
 
-            // ── 6. Devices table ──────────────────────────────────────────────
+        // ── 6. Devices table ──────────────────────────────────────────────
+        await Step("create Devices table", async () =>
+        {
             if (!await TableExists("Devices"))
             {
                 logger?.LogInformation("Schema fix: creating Devices table");
@@ -155,8 +195,11 @@ public static class SqliteSchemaGuard
                     CreatedAt    TEXT    NOT NULL DEFAULT '',
                     UpdatedAt    TEXT    NOT NULL DEFAULT '')");
             }
+        });
 
-            // ── 7. UserBackupSettings table ───────────────────────────────────
+        // ── 7. UserBackupSettings table ───────────────────────────────────
+        await Step("create UserBackupSettings table", async () =>
+        {
             if (!await TableExists("UserBackupSettings"))
             {
                 logger?.LogInformation("Schema fix: creating UserBackupSettings table");
@@ -170,19 +213,25 @@ public static class SqliteSchemaGuard
                     CreatedAt           TEXT    NOT NULL DEFAULT '',
                     UpdatedAt           TEXT    NOT NULL DEFAULT '')");
             }
+        });
 
-            // ── 8. ExpiresAt column on UserTwoFactorBackupCodes (recovery-code expiry) ──
+        // ── 8. ExpiresAt column on UserTwoFactorBackupCodes (recovery-code expiry) ──
+        await Step("add UserTwoFactorBackupCodes.ExpiresAt", async () =>
+        {
             if (await TableExists("UserTwoFactorBackupCodes") && !await ColumnExists("UserTwoFactorBackupCodes", "ExpiresAt"))
             {
                 logger?.LogInformation("Schema fix: adding ExpiresAt to UserTwoFactorBackupCodes");
                 await Exec("ALTER TABLE UserTwoFactorBackupCodes ADD COLUMN ExpiresAt TEXT NULL");
             }
+        });
 
-            // ── 9. Licensing / multi-tenancy tables (added after the initial SQLite schema, so any vault
-            // created before this pass is missing them entirely — see docs/ADMIN_MULTITENANCY.md). These
-            // only ship as EF migrations for SQL Server (VaultGuard.DAL.SqlServer); SQLite relies on
-            // EnsureCreated, which is a no-op once the database file already exists, so existing installs
-            // never pick the new tables up without this guard. ────────────────────────────────────────
+        // ── 9. Licensing / multi-tenancy tables (added after the initial SQLite schema, so any vault
+        // created before this pass is missing them entirely — see docs/ADMIN_MULTITENANCY.md). These
+        // only ship as EF migrations for SQL Server (VaultGuard.DAL.SqlServer); SQLite relies on
+        // EnsureCreated, which is a no-op once the database file already exists, so existing installs
+        // never pick the new tables up without this guard. ────────────────────────────────────────
+        await Step("create Tenants table", async () =>
+        {
             if (!await TableExists("Tenants"))
             {
                 logger?.LogInformation("Schema fix: creating Tenants table");
@@ -200,7 +249,10 @@ public static class SqliteSchemaGuard
                 await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_Tenants_Slug ON Tenants (Slug)");
                 await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_Tenants_CustomDomain ON Tenants (CustomDomain) WHERE CustomDomain IS NOT NULL");
             }
+        });
 
+        await Step("create Subscriptions table", async () =>
+        {
             if (!await TableExists("Subscriptions"))
             {
                 logger?.LogInformation("Schema fix: creating Subscriptions table");
@@ -219,7 +271,10 @@ public static class SqliteSchemaGuard
                 await Exec("CREATE INDEX IF NOT EXISTS IX_Subscriptions_UserId ON Subscriptions (UserId)");
                 await Exec("CREATE INDEX IF NOT EXISTS IX_Subscriptions_TenantId ON Subscriptions (TenantId)");
             }
+        });
 
+        await Step("create LicenseKeys table", async () =>
+        {
             if (!await TableExists("LicenseKeys"))
             {
                 logger?.LogInformation("Schema fix: creating LicenseKeys table");
@@ -245,7 +300,10 @@ public static class SqliteSchemaGuard
                 await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_TenantId ON LicenseKeys (TenantId)");
                 await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_UserId ON LicenseKeys (UserId)");
             }
+        });
 
+        await Step("create LicenseActivations table", async () =>
+        {
             if (!await TableExists("LicenseActivations"))
             {
                 logger?.LogInformation("Schema fix: creating LicenseActivations table");
@@ -262,7 +320,10 @@ public static class SqliteSchemaGuard
                     DeactivatedAt   TEXT)");
                 await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_LicenseActivations_LicenseKeyId_DeviceId ON LicenseActivations (LicenseKeyId, DeviceId)");
             }
+        });
 
+        await Step("create LicensingSettings table", async () =>
+        {
             if (!await TableExists("LicensingSettings"))
             {
                 logger?.LogInformation("Schema fix: creating LicensingSettings table");
@@ -276,18 +337,17 @@ public static class SqliteSchemaGuard
                     GeneratedAt           TEXT,
                     UpdatedAt             TEXT)");
             }
+        });
 
-            // ── 10. TenantId column on AspNetUsers (nullable — null means "single-tenant install") ────
+        // ── 10. TenantId column on AspNetUsers (nullable — null means "single-tenant install") ────
+        await Step("add AspNetUsers.TenantId", async () =>
+        {
             if (await TableExists("AspNetUsers") && !await ColumnExists("AspNetUsers", "TenantId"))
             {
                 logger?.LogInformation("Schema fix: adding TenantId to AspNetUsers");
                 await Exec("ALTER TABLE AspNetUsers ADD COLUMN TenantId TEXT NULL");
                 await Exec("CREATE INDEX IF NOT EXISTS IX_AspNetUsers_TenantId ON AspNetUsers (TenantId)");
             }
-        }
-        catch (Exception ex)
-        {
-            logger?.LogWarning(ex, "EnsureVaultSchemaAsync encountered an error — app will continue but some features may be unavailable");
-        }
+        });
     }
 }
