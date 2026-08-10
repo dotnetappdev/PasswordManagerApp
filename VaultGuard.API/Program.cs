@@ -9,6 +9,7 @@ using VaultGuard.API.Middleware;
 using VaultGuard.DAL.Interfaces;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Identity;
 using VaultGuard.Models;
 using VaultGuard.Models.Configuration;
@@ -475,6 +476,19 @@ using (var scope = app.Services.CreateScope())
             Log.Warning(exEnsure, "Failed to ensure PasswordItemTags table via migration service");
         }
 
+        // Reconcile an existing SQLite database with the current model (Tenants, LicenseKeys,
+        // Subscriptions, etc.) — EnsureCreated is a no-op once the file already exists, so an install
+        // predating multi-tenancy would otherwise be missing these tables entirely. No-op on other
+        // providers. Same guard the Blazor Web/WPF/MAUI apps apply — see SqliteSchemaGuard.
+        try
+        {
+            await SqliteSchemaGuard.EnsureVaultSchemaAsync(context, scope.ServiceProvider.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()?.CreateLogger("SqliteSchemaGuard"));
+        }
+        catch (Exception exEnsure)
+        {
+            Log.Warning(exEnsure, "Failed to reconcile SQLite tenancy/licensing schema");
+        }
+
         // Seed the same default accounts + "Personal" vault as every other client, so a fresh SQL Server
         // (or any provider) behaves identically to the local SQLite build. Idempotent.
         try
@@ -489,6 +503,19 @@ using (var scope = app.Services.CreateScope())
         catch (Exception seedEx)
         {
             Log.Warning(seedEx, "Identity seeding warning");
+        }
+
+        // Seed demo tenants + their licensed clients/subscriptions so VaultGuard.Admin's Tenants/License
+        // Keys/Subscriptions pages aren't empty on a fresh install. Idempotent — no-op once any Tenant
+        // row exists.
+        try
+        {
+            await VaultGuard.DAL.Seed.TenancyDataSeeder.SeedAsync(context);
+            Log.Information("Demo tenants/clients seeded");
+        }
+        catch (Exception seedEx)
+        {
+            Log.Warning(seedEx, "Tenancy seeding warning");
         }
 
         // Seed demo vault data once, matching the web app's first-run behaviour.

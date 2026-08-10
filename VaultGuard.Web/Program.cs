@@ -424,6 +424,20 @@ using (var scope = app.Services.CreateScope())
             VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Identity seeding warning", seedEx);
         }
 
+        // Seed demo tenants + their licensed clients/subscriptions so VaultGuard.Admin's Tenants/License
+        // Keys/Subscriptions pages aren't empty on a fresh install. Idempotent — no-op once any Tenant
+        // row exists.
+        try
+        {
+            var tenancyDbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
+            await VaultGuard.DAL.Seed.TenancyDataSeeder.SeedAsync(tenancyDbContext);
+            VaultGuard.Services.Logging.AppLogger.Info("Demo tenants/clients seeded");
+        }
+        catch (Exception seedEx)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Tenancy seeding warning", seedEx);
+        }
+
         try
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();

@@ -177,6 +177,113 @@ public static class SqliteSchemaGuard
                 logger?.LogInformation("Schema fix: adding ExpiresAt to UserTwoFactorBackupCodes");
                 await Exec("ALTER TABLE UserTwoFactorBackupCodes ADD COLUMN ExpiresAt TEXT NULL");
             }
+
+            // ── 9. Licensing / multi-tenancy tables (added after the initial SQLite schema, so any vault
+            // created before this pass is missing them entirely — see docs/ADMIN_MULTITENANCY.md). These
+            // only ship as EF migrations for SQL Server (VaultGuard.DAL.SqlServer); SQLite relies on
+            // EnsureCreated, which is a no-op once the database file already exists, so existing installs
+            // never pick the new tables up without this guard. ────────────────────────────────────────
+            if (!await TableExists("Tenants"))
+            {
+                logger?.LogInformation("Schema fix: creating Tenants table");
+                await Exec(@"CREATE TABLE IF NOT EXISTS Tenants (
+                    Id                      TEXT    NOT NULL PRIMARY KEY,
+                    Name                    TEXT    NOT NULL,
+                    Slug                    TEXT    NOT NULL,
+                    CustomDomain            TEXT,
+                    CustomDomainVerified    INTEGER NOT NULL DEFAULT 0,
+                    DomainVerificationToken TEXT,
+                    Status                  INTEGER NOT NULL DEFAULT 0,
+                    SubscriptionId          TEXT,
+                    CreatedAt               TEXT    NOT NULL DEFAULT '',
+                    UpdatedAt               TEXT)");
+                await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_Tenants_Slug ON Tenants (Slug)");
+                await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_Tenants_CustomDomain ON Tenants (CustomDomain) WHERE CustomDomain IS NOT NULL");
+            }
+
+            if (!await TableExists("Subscriptions"))
+            {
+                logger?.LogInformation("Schema fix: creating Subscriptions table");
+                await Exec(@"CREATE TABLE IF NOT EXISTS Subscriptions (
+                    Id                  TEXT    NOT NULL PRIMARY KEY,
+                    UserId              TEXT,
+                    TenantId            TEXT,
+                    Plan                INTEGER NOT NULL DEFAULT 0,
+                    Status              INTEGER NOT NULL DEFAULT 1,
+                    SeatCount           INTEGER NOT NULL DEFAULT 1,
+                    StartedAt           TEXT    NOT NULL DEFAULT '',
+                    CurrentPeriodEnd    TEXT,
+                    CancelledAt         TEXT,
+                    ExternalProviderRef TEXT,
+                    LicenseKeyId        TEXT)");
+                await Exec("CREATE INDEX IF NOT EXISTS IX_Subscriptions_UserId ON Subscriptions (UserId)");
+                await Exec("CREATE INDEX IF NOT EXISTS IX_Subscriptions_TenantId ON Subscriptions (TenantId)");
+            }
+
+            if (!await TableExists("LicenseKeys"))
+            {
+                logger?.LogInformation("Schema fix: creating LicenseKeys table");
+                await Exec(@"CREATE TABLE IF NOT EXISTS LicenseKeys (
+                    Id                  TEXT    NOT NULL PRIMARY KEY,
+                    KeyCode             TEXT    NOT NULL,
+                    CustomerEmail       TEXT    NOT NULL,
+                    CustomerName        TEXT,
+                    UserId              TEXT,
+                    TenantId            TEXT,
+                    Plan                INTEGER NOT NULL DEFAULT 1,
+                    Features            INTEGER NOT NULL DEFAULT 0,
+                    MaxActivations      INTEGER NOT NULL DEFAULT 1,
+                    IssuedAt            TEXT    NOT NULL DEFAULT '',
+                    ExpiresAt           TEXT,
+                    IsRevoked           INTEGER NOT NULL DEFAULT 0,
+                    RevokedAt           TEXT,
+                    RevokedReason       TEXT,
+                    IssuedByAdminUserId TEXT,
+                    Notes               TEXT)");
+                await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_LicenseKeys_KeyCode ON LicenseKeys (KeyCode)");
+                await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_CustomerEmail ON LicenseKeys (CustomerEmail)");
+                await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_TenantId ON LicenseKeys (TenantId)");
+                await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_UserId ON LicenseKeys (UserId)");
+            }
+
+            if (!await TableExists("LicenseActivations"))
+            {
+                logger?.LogInformation("Schema fix: creating LicenseActivations table");
+                await Exec(@"CREATE TABLE IF NOT EXISTS LicenseActivations (
+                    Id              TEXT    NOT NULL PRIMARY KEY,
+                    LicenseKeyId    TEXT    NOT NULL,
+                    DeviceId        TEXT    NOT NULL,
+                    DeviceName      TEXT,
+                    AppVersion      TEXT,
+                    Platform        TEXT,
+                    ActivatedAt     TEXT    NOT NULL DEFAULT '',
+                    LastValidatedAt TEXT,
+                    IsActive        INTEGER NOT NULL DEFAULT 1,
+                    DeactivatedAt   TEXT)");
+                await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_LicenseActivations_LicenseKeyId_DeviceId ON LicenseActivations (LicenseKeyId, DeviceId)");
+            }
+
+            if (!await TableExists("LicensingSettings"))
+            {
+                logger?.LogInformation("Schema fix: creating LicensingSettings table");
+                await Exec(@"CREATE TABLE IF NOT EXISTS LicensingSettings (
+                    Id                    INTEGER NOT NULL PRIMARY KEY,
+                    SigningPrivateKeyPem  TEXT,
+                    SigningPublicKeyPem   TEXT,
+                    AesKeyBase64          TEXT,
+                    DefaultMaxActivations INTEGER NOT NULL DEFAULT 1,
+                    DefaultPlan           INTEGER NOT NULL DEFAULT 1,
+                    GeneratedAt           TEXT,
+                    UpdatedAt             TEXT)");
+            }
+
+            // ── 10. TenantId column on AspNetUsers (nullable — null means "single-tenant install") ────
+            if (await TableExists("AspNetUsers") && !await ColumnExists("AspNetUsers", "TenantId"))
+            {
+                logger?.LogInformation("Schema fix: adding TenantId to AspNetUsers");
+                await Exec("ALTER TABLE AspNetUsers ADD COLUMN TenantId TEXT NULL");
+                await Exec("CREATE INDEX IF NOT EXISTS IX_AspNetUsers_TenantId ON AspNetUsers (TenantId)");
+            }
         }
         catch (Exception ex)
         {
