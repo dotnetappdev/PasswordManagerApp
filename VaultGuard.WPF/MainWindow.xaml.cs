@@ -191,44 +191,23 @@ public sealed partial class MainWindow : Window
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
+    // Help ▸ Check for Updates: check → (if newer) offer a vault backup → download → install.
     private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)
     {
-        var svc = _serviceProvider?.GetService<Services.UpdateService>();
-        if (svc == null) return;
-        try
-        {
-            var info = await svc.CheckManifestAsync(ReadUpdateManifestUrl());
-            if (info == null)
-            {
-                await ShowInfoMessage("Check for Updates", $"You're up to date (v{svc.GetCurrentVersion()}).");
-                return;
-            }
-
-            var features = info.Features is { Count: > 0 }
-                ? "\n\nWhat's new:\n" + string.Join("\n", info.Features.Select(f => "  •  " + f))
-                : string.Empty;
-            var appName = string.IsNullOrWhiteSpace(info.AppName) ? "Vault Guard" : info.AppName;
-
-            var dlg = new ModernWpf.Controls.ContentDialog
-            {
-                Title = "Update available",
-                Content = MakeDialogMessage(
-                    $"{appName} v{info.Version} is available (you have v{svc.GetCurrentVersion()})."
-                    + (info.RequiresRestart ? " A restart is required to apply it." : string.Empty)
-                    + features),
-                PrimaryButtonText = "Open Settings",
-                CloseButtonText = "Later",
-                DefaultButton = ModernWpf.Controls.ContentDialogButton.Primary
-            };
-            ApplyDialogStyle(dlg);
-            if (await Helpers.DialogManager.ShowAsync(dlg) == ModernWpf.Controls.ContentDialogResult.Primary)
-                NavigateToPage("Settings");
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorMessage("Check for Updates", $"Could not check for updates: {ex.Message}");
-        }
+        if (_serviceProvider == null) return;
+        try { await Helpers.UpgradeAssistant.CheckForUpdatesAsync(_serviceProvider, ReadUpdateManifestUrl()); }
+        catch (Exception ex) { await ShowErrorMessage("Check for Updates", $"Could not check for updates: {ex.Message}"); }
     }
+
+    // Help ▸ Back Up Vault Now.
+    private async void MenuBackUpVault_Click(object sender, RoutedEventArgs e)
+    {
+        if (_serviceProvider == null) return;
+        var version = _serviceProvider.GetService<Services.UpdateService>()?.GetCurrentVersion() ?? "current";
+        await Helpers.UpgradeAssistant.BackUpNowAsync(_serviceProvider, version);
+    }
+
+    private void MenuOpenBackups_Click(object sender, RoutedEventArgs e) => Helpers.UpgradeAssistant.OpenBackupFolder();
 
     // Reads the configured update-manifest URL from the same local settings file the Settings page
     // writes, so the menu's quick check honours the user's configured update source.

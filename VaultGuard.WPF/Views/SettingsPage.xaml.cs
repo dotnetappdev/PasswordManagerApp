@@ -2991,7 +2991,9 @@ public sealed partial class SettingsPage : Page
             };
             restartDialog.Style = restartDialog.TryFindResource("Modern1PasswordDialogStyle") as Style;
 
-            if (await Helpers.DialogManager.ShowAsync(restartDialog) == ModernWpf.Controls.ContentDialogResult.Primary)
+            if (await Helpers.DialogManager.ShowAsync(restartDialog) == ModernWpf.Controls.ContentDialogResult.Primary
+                && _serviceProvider != null
+                && await Helpers.UpgradeAssistant.OfferBackupBeforeInstallAsync(_serviceProvider, _pendingUpdate, updateService.GetCurrentVersion()))
             {
                 UpdateStatusText.Text = "Launching installer…";
                 await Task.Delay(400);

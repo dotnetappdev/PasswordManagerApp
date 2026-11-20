@@ -65,6 +65,14 @@
                         <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Header="_Back Up Vault Now…" Click="MenuBackUpVault_Click"
+                          ToolTip="Save a verified copy of your vault, e.g. before upgrading">
+                    <MenuItem.Icon>
+                        <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open Back_ups Folder" Click="MenuOpenBackups_Click"/>
+                <Separator/>
                 <MenuItem Header="_Documentation" Click="MenuDocumentation_Click"/>
                 <Separator/>
                 <MenuItem Header="_About Vault Guard" Click="MenuAbout_Click"/>
