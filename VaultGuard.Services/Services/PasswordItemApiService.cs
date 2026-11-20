@@ -446,28 +446,32 @@ public class PasswordItemApiService : IPasswordItemApiService
 
     public async Task<IReadOnlyDictionary<string, string>?> RevealSecretsAsync(int id, string masterPassword)
     {
-        var item = await (await OwnedAsync())
-            .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
-            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem).Include(p => p.CustomFields)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
-        if (item == null) return null;
+        var owner = await (await OwnedAsync()).Where(p => p.Id == id && !p.IsDeleted).Select(p => p.UserId).FirstOrDefaultAsync();
+        if (owner == null) return null;
         if (_crypto == null) throw new VaultGuard.Services.Security.VaultKeyRequiredException("Encryption is not available on this server.");
 
-        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == item.UserId);
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == owner);
         if (user == null || string.IsNullOrEmpty(masterPassword) || string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterPasswordHash)
             || !_crypto.VerifyMasterPassword(masterPassword, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
             throw new VaultGuard.Services.Security.VaultKeyRequiredException("Invalid master password.");
 
         using var cipher = VaultGuard.Services.Security.VaultCipher.ForMasterPassword(_crypto, masterPassword, Convert.FromBase64String(user.UserSalt));
-        if (await VaultGuard.Services.Security.VaultSecretsMigrator.MigrateAsync(_context, user.Id, cipher) > 0)
-        {
-            // Legacy plaintext was just encrypted — reload so the response includes it.
-            item = await _context.PasswordItems.AsNoTracking()
-                .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
-                .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem).Include(p => p.CustomFields)
-                .FirstAsync(p => p.Id == id);
-        }
+        return await RevealSecretsAsync(id, cipher);
+    }
+
+    public async Task<IReadOnlyDictionary<string, string>?> RevealSecretsAsync(int id, VaultGuard.Services.Security.VaultCipher cipher)
+    {
+        var owner = await (await OwnedAsync()).Where(p => p.Id == id && !p.IsDeleted).Select(p => p.UserId).FirstOrDefaultAsync();
+        if (owner == null) return null;
+
+        // Upgrade any legacy plaintext of this user's while we hold the key, then read the item fresh.
+        await VaultGuard.Services.Security.VaultSecretsMigrator.MigrateAsync(_context, owner, cipher);
+        var item = await (await OwnedAsync())
+            .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
+            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem).Include(p => p.CustomFields)
+            .AsNoTracking()
+            .FirstAsync(p => p.Id == id);
+
         var failed = cipher.Open(item);
         if (failed.Count > 0)
             _logger.LogWarning("Item {Id}: {Count} secret field(s) could not be decrypted", id, failed.Count); // never log values

@@ -29,4 +29,7 @@ public interface IPasswordItemApiService
     /// VaultKeyRequiredException for a wrong master password.
     /// </summary>
     Task<IReadOnlyDictionary<string, string>?> RevealSecretsAsync(int id, string masterPassword);
+
+    /// <summary>Same, using an already-unlocked vault session's cipher (the caller's own session).</summary>
+    Task<IReadOnlyDictionary<string, string>?> RevealSecretsAsync(int id, VaultGuard.Services.Security.VaultCipher cipher);
 }

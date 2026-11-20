@@ -237,7 +237,13 @@ builder.Services.AddScoped<IDatabaseContextFactory, VaultGuard.Services.Services
 builder.Services.AddScoped<IPasswordEncryptionService, VaultGuard.Services.Services.PasswordEncryptionService>();
 builder.Services.AddScoped<IJwtService, VaultGuard.Services.Services.JwtService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<IVaultSessionService, VaultGuard.Services.Services.VaultSessionService>();
+// Vault sessions must outlive a single request — this was registered as scoped, so every request got a
+// fresh, empty store and the session-based /decrypt and /reveal endpoints could never find a session.
+// Idle sessions are wiped (master key zeroed) after 8 hours, matching the token lifetime.
+builder.Services.AddSingleton<IVaultSessionService>(sp => new VaultGuard.Services.Services.VaultSessionService(
+    sp.GetRequiredService<VaultGuard.Crypto.Interfaces.IPasswordCryptoService>(),
+    sp.GetRequiredService<ILogger<VaultGuard.Services.Services.VaultSessionService>>())
+{ IdleTimeout = TimeSpan.FromHours(8) });
 builder.Services.AddScoped<IQrLoginService, VaultGuard.Services.Services.QrLoginService>();
 builder.Services.AddScoped<IApiKeySqliteMirror, VaultGuard.Services.Services.ApiKeySqliteMirrorService>();
 builder.Services.AddScoped<IApiKeyService, VaultGuard.Services.Services.ApiKeyService>();

@@ -485,105 +485,65 @@ public class PasswordItemsController : ControllerBase
     [HttpPost("{id}/decrypt")]
     public async Task<ActionResult<ApiDtos.DecryptedPasswordItemDto>> DecryptPassword(int id)
     {
-        try
+        // Decrypts one of the caller's own items with their unlocked vault session (from login/masterkey).
+        // The session id comes from "X-Vault-Session" (or, for older clients, "Authorization: Bearer").
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+        if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.ViewSensitive)
+            || await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
+            return StatusCode(StatusCodes.Status403Forbidden, "You don't have permission to view password details");
+
+        var sessionId = VaultSessionIdFromRequest();
+        // A session only works for the user it belongs to.
+        if (string.IsNullOrEmpty(sessionId) || !_vaultSessionService.IsVaultUnlocked(sessionId)
+            || _vaultSessionService.GetSessionUserId(sessionId) != userId)
+            return Unauthorized("An unlocked vault session for this user is required");
+
+        // RevealSecretsAsync only finds the caller's own items (owner-scoped), so it is the ownership check.
+        var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, sessionId)!;
+        var secrets = await _passwordItemService.RevealSecretsAsync(id, cipher);
+        var item = secrets == null ? null : await _passwordItemService.GetByIdAsync(id);
+        if (secrets == null || item == null) return NotFound($"Password item with ID {id} not found");
+        string? S(string key) => secrets.TryGetValue(key, out var v) ? v : null;
+
+        return Ok(new ApiDtos.DecryptedPasswordItemDto
         {
-            // Get session ID from Authorization header
-            var sessionId = HttpContext.Request.Headers["Authorization"]
-                .FirstOrDefault()?.Replace("Bearer ", "");
-
-            if (string.IsNullOrEmpty(sessionId))
-                return Unauthorized("Session token required");
-
-            // Get the password item from database
-            var item = await _passwordItemService.GetByIdAsync(id);
-            if (item == null)
-                return NotFound($"Password item with ID {id} not found");
-
-            if (item.LoginItem != null)
+            Id = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            Type = item.Type,
+            CreatedAt = item.CreatedAt,
+            LastModified = item.LastModified,
+            IsFavorite = item.IsFavorite,
+            IsArchived = item.IsArchived,
+            IsDeleted = item.IsDeleted,
+            UserId = item.UserId,
+            CategoryId = item.CategoryId ?? 0,
+            CollectionId = item.CollectionId ?? 0,
+            LoginItem = item.LoginItem == null ? null : new ApiDtos.DecryptedLoginItemDto
             {
-                // Convert the stored LoginItem to our model
-                var loginItem = new Models.LoginItem
-                {
-                    Id = item.LoginItem.Id,
-                    PasswordItemId = item.LoginItem.PasswordItemId,
-                    Website = item.LoginItem.Website,
-                    Username = item.LoginItem.Username,
-                    Email = item.LoginItem.Email,
-                    PhoneNumber = item.LoginItem.PhoneNumber,
-                    TwoFactorType = item.LoginItem.TwoFactorType,
-                    Password = item.LoginItem.Password, // This will be the encrypted password
-                    TotpSecret = item.LoginItem.TotpSecret,
-                    SecurityAnswer1 = item.LoginItem.SecurityAnswer1,
-                    SecurityAnswer2 = item.LoginItem.SecurityAnswer2,
-                    SecurityAnswer3 = item.LoginItem.SecurityAnswer3,
-                    Notes = item.LoginItem.Notes
-                };
-
-                // Decrypt the login item using session-based approach
-                var decryptedLoginItem = await _passwordEncryptionService.DecryptLoginItemAsync(
-                    loginItem, sessionId);
-
-                // Return decrypted data
-                return Ok(new ApiDtos.DecryptedPasswordItemDto
-                {
-                    Id = item.Id,
-                    Title = item.Title,
-                    Description = item.Description,
-                    Type = item.Type,
-                    CreatedAt = item.CreatedAt,
-                    LastModified = item.LastModified,
-                    IsFavorite = item.IsFavorite,
-                    IsArchived = item.IsArchived,
-                    IsDeleted = item.IsDeleted,
-                    UserId = item.UserId,
-                    CategoryId = item.CategoryId ?? 0,
-                    CollectionId = item.CollectionId ?? 0,
-                    LoginItem = new ApiDtos.DecryptedLoginItemDto
-                    {
-                        Id = decryptedLoginItem.Id,
-                        Website = decryptedLoginItem.Website,
-                        Username = decryptedLoginItem.Username,
-                        Password = decryptedLoginItem.Password,
-                        Email = decryptedLoginItem.Email,
-                        PhoneNumber = decryptedLoginItem.PhoneNumber,
-                        TotpSecret = decryptedLoginItem.TotpSecret,
-                        TwoFactorType = decryptedLoginItem.TwoFactorType,
-                        SecurityQuestion1 = decryptedLoginItem.SecurityQuestion1,
-                        SecurityAnswer1 = decryptedLoginItem.SecurityAnswer1,
-                        SecurityQuestion2 = decryptedLoginItem.SecurityQuestion2,
-                        SecurityAnswer2 = decryptedLoginItem.SecurityAnswer2,
-                        SecurityQuestion3 = decryptedLoginItem.SecurityQuestion3,
-                        SecurityAnswer3 = decryptedLoginItem.SecurityAnswer3,
-                        RecoveryEmail = decryptedLoginItem.RecoveryEmail,
-                        RecoveryPhone = decryptedLoginItem.RecoveryPhone,
-                        LoginUrl = decryptedLoginItem.LoginUrl,
-                        SupportUrl = decryptedLoginItem.SupportUrl,
-                        AdminConsoleUrl = decryptedLoginItem.AdminConsoleUrl,
-                        PasswordLastChanged = decryptedLoginItem.PasswordLastChanged,
-                        RequiresPasswordChange = decryptedLoginItem.RequiresPasswordChange,
-                        LastUsed = decryptedLoginItem.LastUsed,
-                        UsageCount = decryptedLoginItem.UsageCount,
-                        CompanyName = decryptedLoginItem.CompanyName,
-                        Department = decryptedLoginItem.Department,
-                        JobTitle = decryptedLoginItem.JobTitle,
-                        Notes = decryptedLoginItem.Notes
-                    },
-                    Tags = item.Tags?.Select(t => new ApiDtos.ApiTagDto 
-                    { 
-                        Id = t.Id, 
-                        Name = t.Name, 
-                        Color = t.Color 
-                    }).ToList() ?? new List<ApiDtos.ApiTagDto>()
-                });
+                Id = item.LoginItem.Id,
+                Website = item.LoginItem.Website,
+                Username = item.LoginItem.Username,
+                Email = item.LoginItem.Email,
+                PhoneNumber = item.LoginItem.PhoneNumber,
+                TwoFactorType = item.LoginItem.TwoFactorType,
+                Password = S("Login.Password"),
+                TotpSecret = S("Login.TotpSecret") ?? S("Custom.TOTP Secret"),
+                SecurityAnswer1 = S("Login.SecurityAnswer1"),
+                SecurityAnswer2 = S("Login.SecurityAnswer2"),
+                SecurityAnswer3 = S("Login.SecurityAnswer3"),
+                Notes = S("Login.Notes")
             }
+        });
+    }
 
-            return BadRequest("Password item does not contain login data");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error decrypting password for item ID {Id}", id);
-            return StatusCode(500, "An error occurred while decrypting the password");
-        }
+    private string? VaultSessionIdFromRequest()
+    {
+        var header = HttpContext.Request.Headers["X-Vault-Session"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(header)) return header;
+        var auth = HttpContext.Request.Headers["Authorization"].FirstOrDefault();
+        return auth != null && auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? auth.Substring(7).Trim() : null;
     }
 
     /// <summary>
@@ -741,87 +701,25 @@ public class PasswordItemsController : ControllerBase
     [RestrictedFromChildren]
     public async Task<ActionResult<ApiDtos.RevealPasswordResponseDto>> RevealPassword(int id, [FromBody] ApiDtos.RevealPasswordRequestDto request)
     {
+        // Reveals the login password of one of the caller's own items, using their master password.
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+        if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.ViewSensitive))
+            return StatusCode(StatusCodes.Status403Forbidden, "You don't have permission to reveal passwords");
+        if (await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
+            return StatusCode(StatusCodes.Status403Forbidden, "Children are not allowed to reveal password details");
+
         try
         {
-            // Get session ID from Authorization header
-            var sessionId = HttpContext.Request.Headers["Authorization"]
-                .FirstOrDefault()?.Replace("Bearer ", "");
-
-            if (string.IsNullOrEmpty(sessionId))
-                return Unauthorized("Session token required");
-
-            // Get user ID from session
-            var userId = _vaultSessionService.GetSessionUserId(sessionId);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized("Invalid session");
-
-            // Check if user has permission to view sensitive password data
-            if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.ViewSensitive))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, "You don't have permission to reveal passwords");
-            }
-
-            // Additional check for child users - they should never be able to reveal passwords
-            if (await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, "Children are not allowed to reveal password details");
-            }
-
-            // Get user from database
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-                return Unauthorized("User not found");
-
-            // Verify master password using PBKDF2 with 600,000 iterations
-            if (!_passwordCryptoService.VerifyMasterPassword(
-                request.MasterPassword, 
-                user.MasterPasswordHash, 
-                Convert.FromBase64String(user.UserSalt), 
-                user.MasterPasswordIterations))
-            {
-                return Unauthorized("Invalid master password");
-            }
-
-            // Get the password item from database
-            var item = await _passwordItemService.GetByIdAsync(id);
-            if (item == null)
-                return NotFound($"Password item with ID {id} not found");
-
-            // Check resource access permissions
-            if (!await _permissionService.CanAccessResourceAsync(userId, item.UserId, Permissions.Passwords.ViewSensitive))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, "Access denied to this password item");
-            }
-
-            if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.EncryptedPassword))
-            {
-                // Decrypt the password using master password and user salt
-                var encryptedPasswordData = new EncryptedPasswordData
-                {
-                    EncryptedPassword = item.LoginItem.EncryptedPassword,
-                    Nonce = item.LoginItem.PasswordNonce,
-                    AuthenticationTag = item.LoginItem.PasswordAuthTag
-                };
-
-                var decryptedPassword = _passwordCryptoService.DecryptPassword(
-                    encryptedPasswordData, 
-                    request.MasterPassword, 
-                    Convert.FromBase64String(user.UserSalt));
-
-                return Ok(new ApiDtos.RevealPasswordResponseDto
-                {
-                    Password = decryptedPassword,
-                    ItemId = id,
-                    RevealedAt = DateTime.UtcNow
-                });
-            }
-
-            return BadRequest("Password item does not contain encrypted password data");
+            var secrets = await _passwordItemService.RevealSecretsAsync(id, request.MasterPassword);
+            if (secrets == null) return NotFound($"Password item with ID {id} not found");
+            if (!secrets.TryGetValue("Login.Password", out var password))
+                return BadRequest("Password item does not contain a password");
+            return Ok(new ApiDtos.RevealPasswordResponseDto { Password = password, ItemId = id, RevealedAt = DateTime.UtcNow });
         }
-        catch (Exception ex)
+        catch (VaultGuard.Services.Security.VaultKeyRequiredException)
         {
-            _logger.LogError(ex, "Error revealing password for item ID {Id} for user {UserId}", id, _vaultSessionService.GetSessionUserId(HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "")));
-            return StatusCode(500, "An error occurred while revealing the password");
+            return Unauthorized("Invalid master password");
         }
     }
 

@@ -23,14 +23,50 @@ public class VaultSessionService : IVaultSessionService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    private readonly ConcurrentDictionary<string, DateTime> _lastUsed = new();
+
+    /// <summary>
+    /// When set, a session unused for this long is wiped (its master key zeroed) and stops working. The
+    /// server (API) sets it so vault keys don't accumulate in memory forever; the desktop apps leave it null
+    /// and rely on their own lock/auto-lock.
+    /// </summary>
+    public TimeSpan? IdleTimeout { get; init; }
+
+    private bool TryGet(string sessionId, out (string userId, byte[]? masterKey, bool unlocked) session)
+    {
+        if (!_sessions.TryGetValue(sessionId, out session)) return false;
+        if (IdleTimeout is { } idle)
+        {
+            var now = DateTime.UtcNow;
+            if (_lastUsed.TryGetValue(sessionId, out var last) && now - last > idle)
+            {
+                ClearSession(sessionId);
+                session = default;
+                return false;
+            }
+            _lastUsed[sessionId] = now;
+        }
+        return true;
+    }
+
+    private void PurgeExpired()
+    {
+        if (IdleTimeout is not { } idle) return;
+        var cutoff = DateTime.UtcNow - idle;
+        foreach (var kv in _lastUsed)
+            if (kv.Value < cutoff) ClearSession(kv.Key);
+    }
+
     public string InitializeSession(string userId, byte[] masterKey)
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
         if (masterKey == null || masterKey.Length == 0)
             throw new ArgumentException("Master key cannot be null or empty", nameof(masterKey));
+        PurgeExpired();
         var sessionId = Guid.NewGuid().ToString();
         _sessions[sessionId] = (userId, masterKey, true);
+        _lastUsed[sessionId] = DateTime.UtcNow;
         _logger.LogInformation("Session initialized for user {UserId}", userId);
         return sessionId;
     }
@@ -39,7 +75,7 @@ public class VaultSessionService : IVaultSessionService
     {
         if (string.IsNullOrEmpty(sessionId))
             return null;
-        if (_sessions.TryGetValue(sessionId, out var session))
+        if (TryGet(sessionId, out var session))
         {
             return session.userId;
         }
@@ -50,6 +86,7 @@ public class VaultSessionService : IVaultSessionService
     {
         if (string.IsNullOrEmpty(sessionId))
             return;
+        _lastUsed.TryRemove(sessionId, out _);
         if (_sessions.TryRemove(sessionId, out var session))
         {
             if (session.masterKey != null)
@@ -64,7 +101,7 @@ public class VaultSessionService : IVaultSessionService
             throw new ArgumentException("Password cannot be null or empty", nameof(password));
         if (string.IsNullOrEmpty(sessionId))
             throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
-        if (!_sessions.TryGetValue(sessionId, out var session))
+        if (!TryGet(sessionId, out var session))
             throw new InvalidOperationException("Invalid or expired session");
         if (!session.unlocked || session.masterKey == null)
             throw new InvalidOperationException("Vault is locked");
@@ -78,7 +115,7 @@ public class VaultSessionService : IVaultSessionService
             throw new ArgumentException("Encrypted password cannot be null or empty", nameof(encryptedPassword));
         if (string.IsNullOrEmpty(sessionId))
             throw new ArgumentException("Session ID cannot be null or empty", nameof(sessionId));
-        if (!_sessions.TryGetValue(sessionId, out var session))
+        if (!TryGet(sessionId, out var session))
             throw new InvalidOperationException("Invalid or expired session");
         if (!session.unlocked || session.masterKey == null)
             throw new InvalidOperationException("Vault is locked");
@@ -98,7 +135,7 @@ public class VaultSessionService : IVaultSessionService
     {
         if (string.IsNullOrEmpty(sessionId))
             return false;
-        if (_sessions.TryGetValue(sessionId, out var session))
+        if (TryGet(sessionId, out var session))
         {
             return session.unlocked;
         }
@@ -109,7 +146,7 @@ public class VaultSessionService : IVaultSessionService
     {
         if (string.IsNullOrEmpty(sessionId))
             return;
-        if (_sessions.TryGetValue(sessionId, out var session))
+        if (TryGet(sessionId, out var session))
         {
             // Clear the master key from memory before setting to null
             if (session.masterKey != null)
@@ -124,7 +161,7 @@ public class VaultSessionService : IVaultSessionService
     {
         if (string.IsNullOrEmpty(sessionId) || masterKey == null || masterKey.Length == 0)
             return false;
-        if (_sessions.TryGetValue(sessionId, out var session))
+        if (TryGet(sessionId, out var session))
         {
             // Clear old master key from memory if it exists
             if (session.masterKey != null)
@@ -141,7 +178,7 @@ public class VaultSessionService : IVaultSessionService
     {
         if (string.IsNullOrEmpty(sessionId))
             return null;
-        if (_sessions.TryGetValue(sessionId, out var session))
+        if (TryGet(sessionId, out var session))
         {
             return session.unlocked ? session.masterKey : null;
         }
@@ -150,6 +187,7 @@ public class VaultSessionService : IVaultSessionService
 
     public string? GetActiveSessionId()
     {
+        PurgeExpired();
         foreach (var kvp in _sessions)
         {
             if (kvp.Value.unlocked && kvp.Value.masterKey != null)
