@@ -339,6 +339,12 @@
                     @DetailNoteField("Notes", selectedItem.Description)
                 }
 
+                @* Notes imported from other password managers (stored encrypted on the login; decrypted on open). *@
+                @if (!string.IsNullOrWhiteSpace(selectedItem.LoginItem?.Notes) && selectedItem.LoginItem.Notes != selectedItem.Description)
+                {
+                    @DetailNoteField("Imported notes", selectedItem.LoginItem.Notes)
+                }
+
                 @* ── Tags ── *@
                 @if (selectedItem.Tags.Any())
                 {

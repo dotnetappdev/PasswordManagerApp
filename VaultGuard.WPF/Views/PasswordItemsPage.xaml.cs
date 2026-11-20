@@ -1002,11 +1002,12 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var notesText = GetElement<System.Windows.Controls.TextBlock>("DetailNotesText");
             if (notesText != null)
             {
+                // Notes imported from other managers live (encrypted) on the login and are decrypted when the item
+                // is opened — show them alongside the item's own description instead of only when it is empty.
                 var notes = item.Type == ItemType.CreditCard
                             ? (item.CreditCardItem?.Notes ?? item.Description)
-                            : (item.Description
-                               ?? item.SecureNoteItem?.Content
-                               ?? item.LoginItem?.Notes);
+                            : string.Join("\n\n", new[] { item.Description, item.SecureNoteItem?.Content, item.LoginItem?.Notes }
+                                  .Where(n => !string.IsNullOrWhiteSpace(n)).Distinct());
                 notes ??= string.Empty;
 
                 // Protected notes are masked until the user reveals them (Windows Hello gated).
