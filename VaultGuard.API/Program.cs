@@ -525,10 +525,13 @@ using (var scope = app.Services.CreateScope())
             {
                 var seedUserId =
                     await context.Users.Where(u => u.Email == "user@passwordmanager.local").Select(u => u.Id).FirstOrDefaultAsync()
-                    ?? await context.Users.Select(u => u.Id).FirstOrDefaultAsync()
-                    ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
-                VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(context, seedUserId);
-                Log.Information("Demo vault data seeded");
+                    ?? await context.Users.Select(u => u.Id).FirstOrDefaultAsync();
+                // No account yet: a placeholder id would fail the Vault.UserId foreign key, so wait for a real user.
+                if (seedUserId != null)
+                {
+                    VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(context, seedUserId);
+                    Log.Information("Demo vault data seeded");
+                }
             }
         }
         catch (Exception seedEx)

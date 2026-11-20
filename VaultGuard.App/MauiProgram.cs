@@ -198,6 +198,22 @@ public static class MauiProgram
 			var dbContext = sp.GetRequiredService<VaultGuardDbContext>();
 			await dbContext.Database.EnsureCreatedAsync();
 
+			// EnsureCreated is a no-op on an existing database, so a local DB created by an older build is
+			// missing newer columns/tables (e.g. AspNetUsers.TenantId, Tenants, LicenseKeys). Every Identity
+			// query then throws "no such column" and the BlazorWebView shows "An unhandled error has occurred".
+			// Apply the same idempotent schema upgrade WPF and the Web host run on every startup. Kept in its
+			// own try/catch so a guard failure is logged without skipping seeding.
+			try
+			{
+				await SqliteSchemaGuard.EnsureVaultSchemaAsync(
+					dbContext,
+					sp.GetService<ILoggerFactory>()?.CreateLogger("SqliteSchemaGuard"));
+			}
+			catch (Exception guardEx)
+			{
+				VaultGuard.Services.Logging.AppLogger.Error("MAUI schema upgrade failed", guardEx);
+			}
+
 			var migrationService = sp.GetService<IDatabaseMigrationService>();
 			if (migrationService != null)
 			{

@@ -448,11 +448,16 @@ using (var scope = app.Services.CreateScope())
                         .Where(u => u.Email == "user@passwordmanager.local")
                         .Select(u => u.Id)
                         .FirstOrDefaultAsync()
-                    ?? await dbContext.Users.Select(u => u.Id).FirstOrDefaultAsync()
-                    ?? VaultGuard.DAL.Seed.TestDataSeeder.TestUserId;
+                    ?? await dbContext.Users.Select(u => u.Id).FirstOrDefaultAsync();
 
-                VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(dbContext, seedUserId);
-                VaultGuard.Services.Logging.AppLogger.Info("Demo password data seeded successfully");
+                // The web host seeds roles only, so on a fresh DB there's no account until "Create default
+                // accounts" is used. Seeding against a placeholder id fails the Vault.UserId foreign key, so
+                // skip until a real user exists (the next startup seeds it).
+                if (seedUserId != null)
+                {
+                    VaultGuard.DAL.Seed.TestDataSeeder.SeedTestData(dbContext, seedUserId);
+                    VaultGuard.Services.Logging.AppLogger.Info("Demo password data seeded successfully");
+                }
             }
         }
         catch (Exception seedEx)

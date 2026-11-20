@@ -27,6 +27,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     private IServiceProvider? _serviceProvider;
     private int? _pendingVaultIdForNewItems;
     private PasswordItem? _selectedItem;
+    // Decrypted password for the item currently shown in the details panel, so reveal/copy
+    // don't run the (slow, KDF-backed) decrypt again every time. Cleared whenever the details change.
+    private int? _decryptedPasswordItemId;
+    private string? _decryptedPassword;
     private ICategoryInterface? _categoryService;
     private List<Category> _categories = new();
     private ITagService? _tagService;
@@ -527,17 +531,12 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 try
                 {
-                    var sessionId = await GetSessionIdAsync();
-                    if (!string.IsNullOrEmpty(sessionId))
+                    var decrypted = await GetDecryptedSelectedPasswordAsync();
+                    if (!string.IsNullOrEmpty(decrypted))
                     {
-                        var svc = _serviceProvider.GetService<IPasswordRevealService>();
-                        var decrypted = svc != null ? await svc.RevealPasswordAsync(_selectedItem.LoginItem, sessionId) : null;
-                        if (!string.IsNullOrEmpty(decrypted))
-                        {
-                            detailPassword.Text     = decrypted;
-                            detailPassword.CopyText = decrypted;
-                            return;
-                        }
+                        detailPassword.Text     = decrypted;
+                        detailPassword.CopyText = decrypted;
+                        return;
                     }
                 }
                 catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to reveal decrypted password for detail view", ex); }
@@ -553,22 +552,47 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
     }
 
+    /// <summary>
+    /// Decrypts the selected login's password once and caches it for the lifetime of the details view.
+    /// </summary>
+    private async Task<string?> GetDecryptedSelectedPasswordAsync()
+    {
+        var item = _selectedItem;
+        if (item?.LoginItem == null || _serviceProvider == null) return null;
+        if (_decryptedPasswordItemId == item.Id && !string.IsNullOrEmpty(_decryptedPassword))
+            return _decryptedPassword;
+
+        var sessionId = await GetSessionIdAsync();
+        if (string.IsNullOrEmpty(sessionId)) return null;
+        var svc = _serviceProvider.GetService<IPasswordRevealService>();
+        var decrypted = svc != null ? await svc.RevealPasswordAsync(item.LoginItem, sessionId) : null;
+
+        // Only cache if the selection didn't change while we were decrypting.
+        if (!string.IsNullOrEmpty(decrypted) && ReferenceEquals(item, _selectedItem))
+        {
+            _decryptedPasswordItemId = item.Id;
+            _decryptedPassword = decrypted;
+        }
+        return decrypted;
+    }
+
+    private void ClearDecryptedPasswordCache()
+    {
+        _decryptedPasswordItemId = null;
+        _decryptedPassword = null;
+    }
+
     private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedItem?.LoginItem == null) return;
         try
         {
-            var sessionId = await GetSessionIdAsync();
-            if (!string.IsNullOrEmpty(sessionId))
+            var pwd = await GetDecryptedSelectedPasswordAsync();
+            if (!string.IsNullOrEmpty(pwd))
             {
-                var svc = _serviceProvider?.GetService<IPasswordRevealService>();
-                var pwd = svc != null ? await svc.RevealPasswordAsync(_selectedItem.LoginItem, sessionId) : null;
-                if (!string.IsNullOrEmpty(pwd))
-                {
-                    System.Windows.Clipboard.SetText(pwd);
-                    ToastService.Instance.Success("Password copied to clipboard");
-                    return;
-                }
+                System.Windows.Clipboard.SetText(pwd);
+                ToastService.Instance.Success("Password copied to clipboard");
+                return;
             }
             await ShowTemporaryMessageAsync("No password available — vault may be locked");
         }
@@ -777,6 +801,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private void ShowItemDetails(PasswordItem item)
     {
+        ClearDecryptedPasswordCache();
         if (item == null) return;
 
         // Safe lookups for all named XAML elements to avoid compile-time errors when XAML g.i.cs is missing
@@ -1036,6 +1061,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 // It's no longer deleted — drop it from the Recently Deleted list and clear the detail.
                 if (_viewModel != null) await _viewModel.RefreshAsync();
                 _selectedItem = null;
+                ClearDecryptedPasswordCache();
                 var detail = GetElement<StackPanel>("DetailPanel");
                 if (detail != null) detail.Visibility = Visibility.Collapsed;
             }
@@ -1073,6 +1099,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 ToastService.Instance.Success($"'{_selectedItem.Title}' permanently deleted");
                 if (_viewModel != null) await _viewModel.RefreshAsync();
                 _selectedItem = null;
+                ClearDecryptedPasswordCache();
                 var detail = GetElement<StackPanel>("DetailPanel");
                 if (detail != null) detail.Visibility = Visibility.Collapsed;
             }
@@ -1590,6 +1617,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             if (_selectedItem?.Id == item.Id)
             {
                 _selectedItem = null;
+                ClearDecryptedPasswordCache();
                 var detail = GetElement<StackPanel>("DetailPanel");
                 if (detail != null) detail.Visibility = Visibility.Collapsed;
             }
