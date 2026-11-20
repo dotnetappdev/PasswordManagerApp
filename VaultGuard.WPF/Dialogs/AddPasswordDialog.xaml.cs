@@ -24,6 +24,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     private readonly IVaultService? _vaultService;
     private readonly IPasswordRevealService? _passwordRevealService;
     private readonly ISecureStorageService? _secureStorage;
+    private readonly IServiceProvider _serviceProvider;
+    // False while an existing passkey's encrypted notes haven't been decrypted into the form.
+    private bool _passkeyNotesLoaded = true;
     private readonly Services.IWindowsHelloService _windowsHello = new Services.WindowsHelloService();
     private PasswordItem? _editingItem;
     private bool _isReadOnly = false;
@@ -56,6 +59,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         _vaultService = serviceProvider.GetService<IVaultService>();
         _passwordRevealService = serviceProvider.GetService<IPasswordRevealService>();
         _secureStorage = serviceProvider.GetService<ISecureStorageService>();
+        _serviceProvider = serviceProvider;
         _editingItem = editingItem;
         _isReadOnly = isReadOnly;
 
@@ -492,6 +496,20 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to decrypt password for editing", ex); }
     }
 
+    private async Task LoadPasskeyNotesAsync(PasskeyItem pk)
+    {
+        try
+        {
+            await PasskeySecrets.HydrateAsync(pk, _serviceProvider);
+            if (pk.Notes != null)
+            {
+                if (string.IsNullOrEmpty(PasskeyNotesTextBox.Text)) PasskeyNotesTextBox.Text = pk.Notes;
+                _passkeyNotesLoaded = true;
+            }
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to decrypt passkey notes", ex); }
+    }
+
     private void GenerateUsernameButton_Click(object sender, RoutedEventArgs e)
     {
         UsernameTextBox.Text = GenerateRedditStyleUsername();
@@ -535,6 +553,11 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             PasskeyRequiresVerificationCheckBox.IsChecked = _editingItem.PasskeyItem.RequiresUserVerification;
             PasskeyIsBackedUpCheckBox.IsChecked = _editingItem.PasskeyItem.IsBackedUp;
             PasskeyNotesTextBox.Text = _editingItem.PasskeyItem.Notes ?? string.Empty;
+            if (string.IsNullOrEmpty(_editingItem.PasskeyItem.Notes) && !string.IsNullOrEmpty(_editingItem.PasskeyItem.EncryptedNotes))
+            {
+                _passkeyNotesLoaded = false;
+                _ = LoadPasskeyNotesAsync(_editingItem.PasskeyItem);
+            }
         }
 
         // Set credit card-specific fields if applicable
@@ -1272,6 +1295,10 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             // be re-opened/verified later.
             var keyName = BuildPasskeyKeyName(item.PasskeyItem);
             item.PasskeyItem.CredentialId = keyName;
+
+            // CredentialId and Notes aren't database columns — encrypt them into the stored fields,
+            // or the Windows Hello key name and the notes are lost on save.
+            await PasskeySecrets.ProtectAsync(item.PasskeyItem, _serviceProvider, _passkeyNotesLoaded);
 
             try
             {

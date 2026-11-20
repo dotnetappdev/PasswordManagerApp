@@ -24,6 +24,18 @@ public interface IPasswordRevealService
     bool TryEncryptLoginPassword(LoginItem loginItem, string sessionId);
 
     /// <summary>
+    /// Decrypts any vault-encrypted field stored either pipe-joined ("cipher|nonce|tag") or split
+    /// across ciphertext/nonce/tag columns. Returns null when locked or on failure.
+    /// </summary>
+    string? RevealField(string? encrypted, string? nonce, string? tag, string sessionId);
+
+    /// <summary>
+    /// Encrypts a value with the caller's own vault session into the pipe-joined format, or returns
+    /// null if that session isn't unlocked. Never falls back to another session.
+    /// </summary>
+    string? ProtectField(string plaintext, string sessionId);
+
+    /// <summary>
     /// Reveals the authenticator (TOTP) secret for a login item. This is where TOTP secrets
     /// imported from other managers (1Password, etc.) are stored — encrypted at rest in
     /// <see cref="LoginItem.EncryptedTotpSecret"/> — so the verification-code UI can read them.

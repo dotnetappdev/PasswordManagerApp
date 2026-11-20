@@ -78,6 +78,24 @@ public class PasswordRevealService : IPasswordRevealService
         return null;
     }
 
+    public string? RevealField(string? encrypted, string? nonce, string? tag, string sessionId)
+    {
+        if (string.IsNullOrEmpty(encrypted)) return string.Empty;
+        var sid = ResolveSessionId(sessionId);
+        if (!CanRevealPasswords(sid)) return null;
+        var payload = ToCipherPayload(encrypted, nonce, tag);
+        if (payload == null) return null;
+        try { return _vaultSessionService.DecryptPassword(payload, sid); }
+        catch (Exception ex) { _logger.LogError(ex, "Error decrypting field"); return null; }
+    }
+
+    public string? ProtectField(string plaintext, string sessionId)
+    {
+        if (string.IsNullOrEmpty(plaintext) || !CanRevealPasswords(sessionId)) return null;
+        try { return _vaultSessionService.EncryptPassword(plaintext, sessionId); }
+        catch (Exception ex) { _logger.LogError(ex, "Error encrypting field"); return null; }
+    }
+
     public bool TryEncryptLoginPassword(LoginItem loginItem, string sessionId)
     {
         if (string.IsNullOrEmpty(loginItem.Password)) return false;

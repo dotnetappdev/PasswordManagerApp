@@ -541,6 +541,13 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 }
                 catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to reveal decrypted password for detail view", ex); }
             }
+            // Passkey credential is stored encrypted; decrypt it on first reveal.
+            if (string.IsNullOrEmpty(detailPassword.CopyText) && _selectedItem?.PasskeyItem != null && _serviceProvider != null)
+            {
+                await PasskeySecrets.HydrateAsync(_selectedItem.PasskeyItem, _serviceProvider);
+                detailPassword.CopyText = _selectedItem.PasskeyItem.CredentialId ?? string.Empty;
+            }
+
             // Fallback: show plaintext CopyText (passkey credential, WiFi password, …) if there's no
             // login to decrypt or the decrypt failed. Never ciphertext — see ShowItemDetails.
             var raw = detailPassword.CopyText ?? string.Empty;
@@ -928,7 +935,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             {
                 // The reveal button (RevealPasswordButton_Click) falls back to CopyText when there is
                 // no LoginItem, so it reveals the passkey credential here.
-                detailPassword.Text     = string.IsNullOrEmpty(credential) ? "—" : "••••••••";
+                var hasCredential = !string.IsNullOrEmpty(credential) || !string.IsNullOrEmpty(item.PasskeyItem?.EncryptedCredentialId);
+                detailPassword.Text     = hasCredential ? "••••••••" : "—";
                 detailPassword.CopyText = credential;
             }
         }

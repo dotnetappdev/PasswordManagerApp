@@ -119,6 +119,9 @@ public sealed partial class PasskeysPage : Page
                 {
                     foreach (var pk in _passkeys)
                     {
+                        // CredentialId isn't stored in plaintext; decrypt it from EncryptedCredentialId.
+                        if (_serviceProvider != null)
+                            await VaultGuard.WPF.Helpers.PasskeySecrets.HydrateAsync(pk.Source.PasskeyItem, _serviceProvider);
                         var credentialId = pk.Source.PasskeyItem?.CredentialId;
                         if (!string.IsNullOrWhiteSpace(credentialId))
                             pk.IsInWindows = await _hello.KeyExistsAsync(credentialId!);
