@@ -9,6 +9,7 @@ namespace VaultGuard.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")] // anonymous: strict per-IP limit
     public class AuthenticationController : ControllerBase
     {
         private readonly IApiKeyService _apiKeyService;
@@ -16,8 +17,10 @@ namespace VaultGuard.API.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IPasswordCryptoService _passwordCryptoService;
         private readonly ILogger<AuthenticationController> _logger;
+        private readonly VaultGuard.API.Security.AccountLockout _lockout;
 
         public AuthenticationController(
+            VaultGuard.API.Security.AccountLockout lockout,
             IApiKeyService apiKeyService,
             IUserProfileService userProfileService,
             UserManager<ApplicationUser> userManager,
@@ -29,6 +32,7 @@ namespace VaultGuard.API.Controllers
             _userManager = userManager;
             _passwordCryptoService = passwordCryptoService;
             _logger = logger;
+            _lockout = lockout;
         }
 
         /// <summary>
@@ -45,14 +49,15 @@ namespace VaultGuard.API.Controllers
                     return BadRequest(ModelState);
 
                 // Verify the account with email + master password before issuing a key.
+                if (_lockout.LockedFor(request.Email) is { } wait)
+                    return StatusCode(StatusCodes.Status429TooManyRequests, $"Too many failed attempts. Try again in {Math.Ceiling(wait.TotalMinutes)} minutes.");
                 var user = await _userManager.FindByEmailAsync(request.Email);
-                if (user == null || string.IsNullOrEmpty(user.MasterPasswordHash) || string.IsNullOrEmpty(user.UserSalt) ||
-                    !_passwordCryptoService.VerifyMasterPassword(
-                        request.MasterPassword, user.MasterPasswordHash,
-                        Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
+                if (!VaultGuard.API.Security.MasterPasswordCheck.Verify(_passwordCryptoService, user, request.MasterPassword))
                 {
+                    _lockout.RecordFailure(request.Email);
                     return Unauthorized("Invalid email or master password.");
                 }
+                _lockout.RecordSuccess(request.Email);
 
                 // Create API key bound to the verified user.
                 var apiKey = await _apiKeyService.CreateApiKeyAsync(request.Name, user.Id);

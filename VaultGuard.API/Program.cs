@@ -214,6 +214,8 @@ builder.Services.AddScoped<IVaultGuardDbContext>(provider =>
 });
 // Every vault query is scoped to the authenticated caller (see PasswordItemApiService.OwnedAsync).
 builder.Services.AddHttpContextAccessor();
+// Per-account lockout for master-password checks on anonymous endpoints.
+builder.Services.AddSingleton<VaultGuard.API.Security.AccountLockout>();
 // Authorization policies referenced by [RestrictedFromChildren] / [ChildSafeOperation].
 VaultGuard.API.Authorization.ChildPolicies.AddChildPolicies(builder.Services);
 builder.Services.AddScoped<VaultGuard.Services.Security.ICurrentVaultUser, VaultGuard.API.Services.ClaimsVaultUser>();

@@ -324,6 +324,7 @@ public class LicenseController : ControllerBase
     // ── Clients: activate & validate ────────────────────────────────────────────────────────────
 
     [AllowAnonymous]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")] // anonymous: strict per-IP limit (key guessing)
     [HttpPost("activate")]
     public async Task<ActionResult<SignedLicenseCertificate>> Activate([FromBody] ActivateLicenseRequest request)
     {
@@ -382,6 +383,7 @@ public class LicenseController : ControllerBase
     /// <summary>Clients call this periodically while online to catch revocation and refresh the cached
     /// certificate's expiry; the client keeps using its last-good cached certificate offline in between.</summary>
     [AllowAnonymous]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")] // anonymous: strict per-IP limit (key guessing)
     [HttpPost("validate")]
     public async Task<ActionResult<SignedLicenseCertificate>> Validate([FromBody] ActivateLicenseRequest request)
     {

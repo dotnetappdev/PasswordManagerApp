@@ -17,12 +17,16 @@ namespace VaultGuard.API.Controllers
         private readonly IPasswordCryptoService _passwordCryptoService;
         private readonly ILogger<ApiKeysController> _logger;
 
+        private readonly VaultGuard.API.Security.AccountLockout _lockout;
+
         public ApiKeysController(
             IApiKeyService apiKeyService,
             UserManager<ApplicationUser> userManager,
             IPasswordCryptoService passwordCryptoService,
-            ILogger<ApiKeysController> logger)
+            ILogger<ApiKeysController> logger,
+            VaultGuard.API.Security.AccountLockout? lockout = null)
         {
+            _lockout = lockout ?? new VaultGuard.API.Security.AccountLockout();
             _apiKeyService = apiKeyService;
             _userManager = userManager;
             _passwordCryptoService = passwordCryptoService;
@@ -38,6 +42,7 @@ namespace VaultGuard.API.Controllers
         /// which is why testing it returns 401/403.
         /// </summary>
         [AllowAnonymous]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("auth")] // anonymous: strict per-IP limit
         [HttpPost("issue")]
         public async Task<ActionResult<ApiKeyResponse>> IssueApiKey([FromBody] IssueApiKeyRequest request)
         {
@@ -46,33 +51,19 @@ namespace VaultGuard.API.Controllers
 
             // Validate credentials the same way login does — find the user, verify the master password
             // against the stored hash/salt/iterations. Never reveal which of the two was wrong.
+            // Per-account lockout (the per-IP limiter alone doesn't stop a distributed guesser), and a
+            // constant-cost check so response time doesn't reveal whether the email has an account.
+            if (_lockout.LockedFor(request.Email) is { } wait)
+                return StatusCode(StatusCodes.Status429TooManyRequests, $"Too many failed attempts. Try again in {Math.Ceiling(wait.TotalMinutes)} minutes.");
+
             var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user is null || string.IsNullOrEmpty(user.UserSalt))
+            if (!VaultGuard.API.Security.MasterPasswordCheck.Verify(_passwordCryptoService, user, request.MasterPassword))
             {
-                _logger.LogWarning("API key issue rejected: unknown account for {Email}", request.Email);
+                _lockout.RecordFailure(request.Email);
+                _logger.LogWarning("API key issue rejected for {Email}", request.Email);
                 return Unauthorized("Invalid email or master password.");
             }
-
-            bool valid;
-            try
-            {
-                valid = _passwordCryptoService.VerifyMasterPassword(
-                    request.MasterPassword,
-                    user.MasterPasswordHash,
-                    Convert.FromBase64String(user.UserSalt),
-                    user.MasterPasswordIterations);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "API key issue: master password verification error for {Email}", request.Email);
-                return Unauthorized("Invalid email or master password.");
-            }
-
-            if (!valid)
-            {
-                _logger.LogWarning("API key issue rejected: bad master password for {Email}", request.Email);
-                return Unauthorized("Invalid email or master password.");
-            }
+            _lockout.RecordSuccess(request.Email);
 
             var name = string.IsNullOrWhiteSpace(request.Name) ? $"Test connection ({DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC)" : request.Name;
             var apiKey = await _apiKeyService.CreateApiKeyAsync(name, user.Id);
