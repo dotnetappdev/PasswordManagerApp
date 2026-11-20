@@ -939,9 +939,9 @@
                         <div class="detail-field">
                             <label>Password</label>
                             <div class="field-value">
-                                <span>@(passwordVisible? GetDisplayPassword(selectedItem.LoginItem) : "••••••••••")</span>
+                                <span>@(passwordVisible ? (revealedPassword ?? "Decrypting…") : "••••••••••")</span>
                                 <button class="copy-btn" @onclick="() => CopyPasswordAsync(selectedItem.LoginItem)">📋</button>
-                                <button class="reveal-btn" @onclick="TogglePasswordVisibility">@(passwordVisible ? "🙈" :
+                                <button class="reveal-btn" @onclick="() => TogglePasswordVisibilityAsync(selectedItem.LoginItem)">@(passwordVisible ? "🙈" :
                                                                 "👁️")</button>
                             </div>
                         </div>
@@ -1773,6 +1773,7 @@
     private bool showDeleteCollectionModal = false;
     private bool showImportModal = false;
     private bool passwordVisible = false;
+    private string? revealedPassword;
     private bool showNewPassword = false;
     private bool showPasswordGenerator = false;
 
@@ -2068,6 +2069,7 @@
     private void SelectItem(PasswordItem item)
     {
         selectedItem = item;
+        HidePassword();
         StateHasChanged();
     }
 
@@ -2346,6 +2348,7 @@
         {
             await PasswordItemService.DeleteAsync(selectedItem.Id);
             selectedItem = null;
+            HidePassword();
             await LoadData();
             StateHasChanged();
         }
@@ -2359,10 +2362,24 @@
         }
     }
 
-    private void TogglePasswordVisibility()
+    private async Task TogglePasswordVisibilityAsync(LoginItem? loginItem)
     {
-        passwordVisible = !passwordVisible;
-        StateHasChanged();
+        if (passwordVisible)
+        {
+            HidePassword();
+            return;
+        }
+
+        passwordVisible = true;
+        // Decrypt once per reveal and cache it, instead of decrypting on every render
+        if (loginItem != null)
+            revealedPassword = await GetDisplayPassword(loginItem);
+    }
+
+    private void HidePassword()
+    {
+        passwordVisible = false;
+        revealedPassword = null;
     }
 
     private async Task<string> GetDisplayPassword(LoginItem loginItem)
