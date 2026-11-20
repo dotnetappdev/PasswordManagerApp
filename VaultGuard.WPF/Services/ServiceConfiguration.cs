@@ -90,7 +90,7 @@ public static class ServiceConfiguration
         // Backup/restore services depend on IDatabaseContextFactory. The shared DatabaseContextFactory is
         // connection-string driven and would point at the wrong file, so bind a SQLite factory to the
         // configured app-data database path.
-        services.AddScoped<IDatabaseContextFactory>(_ => new WpfDatabaseContextFactory(dbPath));
+        services.AddScoped<IDatabaseContextFactory>(_ => new VaultGuard.Services.Services.SqliteFileDatabaseContextFactory(dbPath));
 
         services.AddIdentityCore<ApplicationUser>(options =>
         {

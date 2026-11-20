@@ -133,6 +133,17 @@ public static class MauiProgram
 		builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 		builder.Services.AddScoped<ITwoFactorService, TwoFactorService>();
 		builder.Services.AddScoped<IDeviceService, DeviceService>();
+		// Injected by shared pages MAUI routes to (Vault, Settings, ChildManagement) but previously never
+		// registered here, so opening those pages threw "An unhandled error has occurred". Mirrors Web.
+		builder.Services.AddSingleton<ITotpService, TotpService>();
+		builder.Services.AddScoped<IApiKeySqliteMirror, ApiKeySqliteMirrorService>();
+		builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+		builder.Services.AddScoped<IDatabaseResetService, DatabaseResetService>();
+		builder.Services.AddScoped<IPermissionService, PermissionService>();
+		// PasskeyService needs IPasswordEncryptionService and CustomFieldService needs IDatabaseContextFactory;
+		// neither was registered, so the passkey and custom-field screens failed to open.
+		builder.Services.AddScoped<IPasswordEncryptionService, PasswordEncryptionService>();
+		builder.Services.AddScoped<IDatabaseContextFactory>(_ => new SqliteFileDatabaseContextFactory(defaultDbPath));
 
 		// Identity data seeder + the on-demand default-account seeder (used by the shared login screen's
 		// "Create default accounts" button — mirrors VaultGuard.Web's registration exactly).
