@@ -138,16 +138,15 @@ public class PasswordRevealService : IPasswordRevealService
             if (string.IsNullOrEmpty(loginItem.EncryptedTotpSecret))
                 return string.Empty;
 
-            // Same pipe-delimited (cipher|nonce|tag) format used for the password.
-            var parts = loginItem.EncryptedTotpSecret.Split('|');
-            if (parts.Length != 3)
+            // Same storage layouts as the password: pipe-joined, or split across TotpNonce/TotpAuthTag.
+            var payload = ToCipherPayload(loginItem.EncryptedTotpSecret, loginItem.TotpNonce, loginItem.TotpAuthTag);
+            if (payload == null)
             {
                 _logger.LogError("Invalid encrypted TOTP secret format for login item {Id}", loginItem.Id);
                 return null;
             }
 
-            return _vaultSessionService.DecryptPassword(
-                string.Join("|", parts[0], parts[1], parts[2]), sid);
+            return _vaultSessionService.DecryptPassword(payload, sid);
         }
         catch (Exception ex)
         {
