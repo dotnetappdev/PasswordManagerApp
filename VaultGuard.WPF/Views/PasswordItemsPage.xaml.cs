@@ -541,9 +541,11 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 }
                 catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to reveal decrypted password for detail view", ex); }
             }
-            // Fallback: show raw CopyText if decrypt failed
+            // Fallback: show plaintext CopyText (passkey credential, WiFi password, …) if there's no
+            // login to decrypt or the decrypt failed. Never ciphertext — see ShowItemDetails.
             var raw = detailPassword.CopyText ?? string.Empty;
             if (!string.IsNullOrEmpty(raw)) detailPassword.Text = raw;
+            else ToastService.Instance.Show("Couldn't decrypt this password — the vault may be locked.", ToastType.Warning);
         }
         else
         {
@@ -935,13 +937,18 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
             username = item.LoginItem?.Username ?? item.Username ?? string.Empty;
             website  = item.LoginItem?.WebsiteUrl ?? item.LoginItem?.Website ?? item.Website ?? string.Empty;
-            pwd      = item.LoginItem?.Password ?? item.Password ?? item.LoginItem?.EncryptedPassword ?? string.Empty;
+            // Plaintext only. EncryptedPassword is ciphertext: putting it in CopyText meant the field's own
+            // copy button copied the encrypted blob, and a failed reveal displayed it as the "password".
+            // It's still used to decide whether there's a password to mask; the real value is decrypted
+            // on demand by GetDecryptedSelectedPasswordAsync (reveal / copy).
+            pwd      = item.LoginItem?.Password ?? item.Password ?? string.Empty;
+            var hasPassword = !string.IsNullOrEmpty(pwd) || !string.IsNullOrEmpty(item.LoginItem?.EncryptedPassword);
 
             if (detailUsername != null) { detailUsername.Text = username; detailUsername.CopyText = username; }
             if (detailWebsite  != null) { detailWebsite.Text  = website;  detailWebsite.CopyText  = website; }
             if (detailPassword != null)
             {
-                detailPassword.Text     = string.IsNullOrEmpty(pwd) ? "—" : "••••••••";
+                detailPassword.Text     = hasPassword ? "••••••••" : "—";
                 detailPassword.CopyText = pwd;
             }
         }
