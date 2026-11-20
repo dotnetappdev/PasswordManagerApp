@@ -16,6 +16,14 @@ public interface IPasswordRevealService
     Task<string?> RevealPasswordAsync(LoginItem loginItem, string sessionId);
 
     /// <summary>
+    /// Encrypts <see cref="LoginItem.Password"/> (a non-persisted, plaintext-only property) into
+    /// <see cref="LoginItem.EncryptedPassword"/> so it is actually saved. Call before creating or
+    /// updating an item from a form. Returns false (leaving the stored password unchanged) when the
+    /// password is empty or the vault is locked.
+    /// </summary>
+    bool TryEncryptLoginPassword(LoginItem loginItem, string sessionId);
+
+    /// <summary>
     /// Reveals the authenticator (TOTP) secret for a login item. This is where TOTP secrets
     /// imported from other managers (1Password, etc.) are stored — encrypted at rest in
     /// <see cref="LoginItem.EncryptedTotpSecret"/> — so the verification-code UI can read them.

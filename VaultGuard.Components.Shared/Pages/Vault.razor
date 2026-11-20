@@ -10,6 +10,7 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IPasswordRevealService PasswordRevealService
 @inject ISnackbar Snackbar
 @inject ITotpService TotpService
 @inject ITwoFactorService TwoFactorService
@@ -650,6 +651,20 @@
         selectedItem = item;
         revealedFields.Clear();
         StartTotpTimer(item);
+        // The details panel renders LoginItem.Password, which isn't stored — decrypt it once per
+        // selection (DecryptIntoAsync is a no-op once it's populated, so reselecting doesn't redo it).
+        if (item?.LoginItem != null && string.IsNullOrEmpty(item.LoginItem.Password))
+            _ = DecryptSelectedPasswordAsync(item);
+    }
+
+    private async Task DecryptSelectedPasswordAsync(PasswordItem item)
+    {
+        try
+        {
+            await VaultGuard.Components.Shared.Services.LoginPasswordCrypto.DecryptIntoAsync(item, PasswordRevealService, JSRuntime);
+            if (ReferenceEquals(item, selectedItem)) await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't decrypt selected item's password", ex); }
     }
 
     private void ToggleCustomFieldPicker() => _showFieldPicker = !_showFieldPicker;
@@ -702,8 +717,10 @@
             selectedItem.LoginItem.EncryptedPassword = entry.Enc;
             selectedItem.LoginItem.PasswordNonce = entry.Nonce;
             selectedItem.LoginItem.PasswordAuthTag = entry.Tag;
+            selectedItem.LoginItem.Password = null; // drop the old decrypted value so the restored one is shown
             await PasswordItemService.UpdateAsync(selectedItem);
             await LoadItemsAsync();
+            if (selectedItem != null) await DecryptSelectedPasswordAsync(selectedItem);
             Snackbar.Add("Password restored from history.", Severity.Success);
         }
         catch (System.Exception ex)

@@ -22,6 +22,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
     private readonly IAuthService _authService;
     private readonly IPasswordStrengthService _strengthService;
     private readonly IVaultService? _vaultService;
+    private readonly IPasswordRevealService? _passwordRevealService;
+    private readonly ISecureStorageService? _secureStorage;
     private readonly Services.IWindowsHelloService _windowsHello = new Services.WindowsHelloService();
     private PasswordItem? _editingItem;
     private bool _isReadOnly = false;
@@ -52,6 +54,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         _authService = serviceProvider.GetRequiredService<IAuthService>();
         _strengthService = serviceProvider.GetRequiredService<IPasswordStrengthService>();
         _vaultService = serviceProvider.GetService<IVaultService>();
+        _passwordRevealService = serviceProvider.GetService<IPasswordRevealService>();
+        _secureStorage = serviceProvider.GetService<ISecureStorageService>();
         _editingItem = editingItem;
         _isReadOnly = isReadOnly;
 
@@ -469,6 +473,25 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         return $"{adjective}{noun}{number}";
     }
 
+    private async Task<string> GetSessionIdAsync()
+    {
+        try { return (_secureStorage != null ? await _secureStorage.GetAsync("sessionId") : null) ?? string.Empty; }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't read sessionId", ex); return string.Empty; }
+    }
+
+    private async Task LoadDecryptedPasswordAsync(LoginItem loginItem)
+    {
+        if (_passwordRevealService == null || string.IsNullOrEmpty(loginItem.EncryptedPassword)) return;
+        try
+        {
+            var pwd = await _passwordRevealService.RevealPasswordAsync(loginItem, await GetSessionIdAsync());
+            // Don't clobber anything the user already typed while we were decrypting.
+            if (!string.IsNullOrEmpty(pwd) && string.IsNullOrEmpty(PasswordTextBox.Password))
+                PasswordTextBox.Password = pwd;
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to decrypt password for editing", ex); }
+    }
+
     private void GenerateUsernameButton_Click(object sender, RoutedEventArgs e)
     {
         UsernameTextBox.Text = GenerateRedditStyleUsername();
@@ -487,8 +510,12 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         if (_editingItem.LoginItem != null)
         {
             UsernameTextBox.Text = _editingItem.LoginItem.Username;
-            PasswordTextBox.Password = _editingItem.LoginItem.Password;
+            PasswordTextBox.Password = _editingItem.LoginItem.Password ?? string.Empty;
             UrlTextBox.Text = _editingItem.LoginItem.WebsiteUrl ?? string.Empty;
+            // LoginItem.Password isn't persisted, so on a loaded item it's empty — decrypt the stored
+            // password so the edit form shows (and re-saves) the real value.
+            if (string.IsNullOrEmpty(_editingItem.LoginItem.Password))
+                _ = LoadDecryptedPasswordAsync(_editingItem.LoginItem);
         }
 
         // Authenticator (TOTP) secret stored on the item
@@ -1199,6 +1226,17 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             item.LoginItem.Username = UsernameTextBox.Text?.Trim() ?? string.Empty;
             item.LoginItem.Password = PasswordTextBox.Password;
             item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
+
+            // LoginItem.Password is not a database column — without this the typed password was
+            // silently dropped on save. An empty box leaves the stored password unchanged.
+            if (!string.IsNullOrEmpty(item.LoginItem.Password))
+            {
+                if (_passwordRevealService == null
+                    || !_passwordRevealService.TryEncryptLoginPassword(item.LoginItem, await GetSessionIdAsync()))
+                {
+                    throw new InvalidOperationException("Couldn't encrypt the password — the vault may be locked. Unlock it and try again.");
+                }
+            }
 
             // Set user ID for the login item
             if (_authService.CurrentUser != null)

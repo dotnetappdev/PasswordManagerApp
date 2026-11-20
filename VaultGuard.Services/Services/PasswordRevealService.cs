@@ -47,29 +47,62 @@ public class PasswordRevealService : IPasswordRevealService
                 return string.Empty;
             }
 
-            // Parse encrypted data from pipe-delimited string
-            var parts = loginItem.EncryptedPassword.Split('|');
-            if (parts.Length != 3)
+            var payload = ToCipherPayload(loginItem.EncryptedPassword, loginItem.PasswordNonce, loginItem.PasswordAuthTag);
+            if (payload == null)
             {
-                _logger.LogError("Invalid encrypted password format for login item {Id}", loginItem.Id);
-                return null;
+                // Legacy rows (e.g. the demo-data seeder, which runs without a vault session) store the
+                // password as-is in EncryptedPassword with no nonce/tag — there's nothing to decrypt.
+                return loginItem.EncryptedPassword;
             }
-            var encryptedData = new EncryptedPasswordData
-            {
-                EncryptedPassword = parts[0],
-                Nonce = parts[1],
-                AuthenticationTag = parts[2]
-            };
 
-            var decryptedPassword = _vaultSessionService.DecryptPassword(
-                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sid);
-            return decryptedPassword;
+            return _vaultSessionService.DecryptPassword(payload, sid);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error revealing password for login item {Id}", loginItem.Id);
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Login passwords are stored in one of two encrypted layouts: the pipe-joined
+    /// "cipher|nonce|tag" string written by imports and <see cref="TryEncryptLoginPassword"/>, or the
+    /// ciphertext alone in EncryptedPassword with the nonce/tag in their own columns (written by
+    /// PasswordEncryptionService). Returns the pipe-joined form for either, or null when the value
+    /// carries no nonce/tag at all (legacy plaintext).
+    /// </summary>
+    internal static string? ToCipherPayload(string encrypted, string? nonce, string? tag)
+    {
+        if (encrypted.Split('|').Length == 3) return encrypted;
+        if (!string.IsNullOrEmpty(nonce) && !string.IsNullOrEmpty(tag)) return $"{encrypted}|{nonce}|{tag}";
+        return null;
+    }
+
+    public bool TryEncryptLoginPassword(LoginItem loginItem, string sessionId)
+    {
+        if (string.IsNullOrEmpty(loginItem.Password)) return false;
+        // Deliberately no ResolveSessionId fallback: on the multi-user web host "any active session"
+        // could be another user's, and encrypting with their key would make the password unreadable.
+        var sid = sessionId;
+        if (!CanRevealPasswords(sid))
+        {
+            _logger.LogWarning("Cannot encrypt password: vault is locked");
+            return false;
+        }
+
+        try
+        {
+            loginItem.EncryptedPassword = _vaultSessionService.EncryptPassword(loginItem.Password, sid);
+            // The pipe-joined value is self-contained; clear the split-layout columns so a stale
+            // nonce/tag from an older save can't be paired with the new ciphertext.
+            loginItem.PasswordNonce = null;
+            loginItem.PasswordAuthTag = null;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error encrypting password for login item {Id}", loginItem.Id);
+            return false;
         }
     }
 

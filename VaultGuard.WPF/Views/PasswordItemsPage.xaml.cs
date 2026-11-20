@@ -564,8 +564,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (_decryptedPasswordItemId == item.Id && !string.IsNullOrEmpty(_decryptedPassword))
             return _decryptedPassword;
 
-        var sessionId = await GetSessionIdAsync();
-        if (string.IsNullOrEmpty(sessionId)) return null;
+        // A missing stored sessionId isn't fatal: the reveal service falls back to the active
+        // unlocked session (this is a single-user desktop app), as PasswordDetailsDialog already does.
+        var sessionId = await GetSessionIdAsync() ?? string.Empty;
         var svc = _serviceProvider.GetService<IPasswordRevealService>();
         var decrypted = svc != null ? await svc.RevealPasswordAsync(item.LoginItem, sessionId) : null;
 
@@ -632,7 +633,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                   ?? item.LoginItem?.WebsiteUrl
                   ?? item.LoginItem?.Website;
         var username = item.Username ?? item.LoginItem?.Username;
-        var password = item.Password ?? item.LoginItem?.Password ?? item.LoginItem?.EncryptedPassword;
+        // Never fall back to EncryptedPassword here — that would type ciphertext into the site.
+        var password = item.Password ?? item.LoginItem?.Password;
+        if (string.IsNullOrEmpty(password))
+            password = await GetDecryptedSelectedPasswordAsync();
 
         if (string.IsNullOrWhiteSpace(url))
         {

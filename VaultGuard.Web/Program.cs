@@ -195,6 +195,7 @@ builder.Services.AddScoped<IDatabaseContextFactory, VaultGuard.Services.Services
 builder.Services.AddScoped<IDatabaseConfigurationService, VaultGuard.Services.Services.DatabaseConfigurationService>();
 builder.Services.AddScoped<IPlatformService, VaultGuard.Services.Services.DefaultPlatformService>();
 builder.Services.AddScoped<IPasswordEncryptionService, VaultGuard.Services.Services.PasswordEncryptionService>();
+builder.Services.AddScoped<IPasswordRevealService, VaultGuard.Services.Services.PasswordRevealService>();
 builder.Services.AddScoped<IPasskeyService, VaultGuard.Services.Services.PasskeyService>();
 builder.Services.AddScoped<IDatabaseMigrationService, VaultGuard.Services.Services.DatabaseMigrationService>();
 builder.Services.AddScoped<IDatabaseHealthService, VaultGuard.Services.Services.DatabaseHealthService>();
