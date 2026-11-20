@@ -17,10 +17,10 @@ namespace VaultGuard.API.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IPasswordCryptoService _passwordCryptoService;
         private readonly ILogger<AuthenticationController> _logger;
-        private readonly VaultGuard.API.Security.AccountLockout _lockout;
+        private readonly VaultGuard.Services.Security.AccountLockout _lockout;
 
         public AuthenticationController(
-            VaultGuard.API.Security.AccountLockout lockout,
+            VaultGuard.Services.Security.AccountLockout lockout,
             IApiKeyService apiKeyService,
             IUserProfileService userProfileService,
             UserManager<ApplicationUser> userManager,

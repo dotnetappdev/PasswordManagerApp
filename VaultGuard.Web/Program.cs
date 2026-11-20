@@ -267,6 +267,15 @@ builder.Services.AddScoped<Fido2NetLib.IFido2>(provider =>
 // Register Identity data seeder + the on-demand default-account seeder (used by the login screen button)
 builder.Services.AddScoped<VaultGuard.DAL.Seed.IdentityDataSeeder>();
 builder.Services.AddScoped<IDefaultAccountSeeder, VaultGuard.Web.Services.WebDefaultAccountSeeder>();
+// The login page is public. Outside Development, don't list every account (names + emails) or the stored
+// password hint, and don't let visitors create the default accounts — their master key is published in the
+// repository, so on a real server that hands out SuperAdmin. Both can be re-enabled explicitly for a demo.
+builder.Services.AddSingleton<VaultGuard.Services.Security.AccountLockout>(); // master-key guessing on the sign-in form
+builder.Services.AddSingleton(new VaultGuard.Components.Shared.Services.LoginDirectoryOptions
+{
+    ListAccounts = builder.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Login:ShowAccountList"),
+    AllowDefaultAccountSeeding = builder.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Login:AllowDefaultAccountSeeding"),
+});
 
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();

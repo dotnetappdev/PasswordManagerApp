@@ -17,16 +17,16 @@ namespace VaultGuard.API.Controllers
         private readonly IPasswordCryptoService _passwordCryptoService;
         private readonly ILogger<ApiKeysController> _logger;
 
-        private readonly VaultGuard.API.Security.AccountLockout _lockout;
+        private readonly VaultGuard.Services.Security.AccountLockout _lockout;
 
         public ApiKeysController(
             IApiKeyService apiKeyService,
             UserManager<ApplicationUser> userManager,
             IPasswordCryptoService passwordCryptoService,
             ILogger<ApiKeysController> logger,
-            VaultGuard.API.Security.AccountLockout? lockout = null)
+            VaultGuard.Services.Security.AccountLockout? lockout = null)
         {
-            _lockout = lockout ?? new VaultGuard.API.Security.AccountLockout();
+            _lockout = lockout ?? new VaultGuard.Services.Security.AccountLockout();
             _apiKeyService = apiKeyService;
             _userManager = userManager;
             _passwordCryptoService = passwordCryptoService;

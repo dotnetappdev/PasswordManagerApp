@@ -27,6 +27,9 @@ public class AuthService : IAuthService
     private bool _isAuthenticated = false;
     private ApplicationUser? _currentUser;
 
+    // Per-account lockout for master-key guesses on the (public) web sign-in form.
+    private readonly VaultGuard.Services.Security.AccountLockout? _lockout;
+
     public AuthService(
         IJSRuntime jsRuntime,
         IPasswordCryptoService passwordCryptoService,
@@ -34,8 +37,10 @@ public class AuthService : IAuthService
         VaultGuardDbContext dbContext,
         IDatabaseConfigurationService databaseConfigurationService,
         HttpClient httpClient,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        VaultGuard.Services.Security.AccountLockout? lockout = null)
     {
+        _lockout = lockout;
         _jsRuntime = jsRuntime;
         _passwordCryptoService = passwordCryptoService;
         _vaultSessionService = vaultSessionService;
@@ -371,7 +376,14 @@ public class AuthService : IAuthService
             }
             else
             {
-                return await LoginViaLocalDatabaseAsync(email, password);
+                if (_lockout?.LockedFor(email) is { } wait)
+                {
+                    _logger.LogWarning("Sign-in for {Email} refused: locked for {Minutes:F0} more minutes after repeated failures", email, wait.TotalMinutes);
+                    return false;
+                }
+                var ok = await LoginViaLocalDatabaseAsync(email, password);
+                if (ok) _lockout?.RecordSuccess(email); else _lockout?.RecordFailure(email);
+                return ok;
             }
         }
         catch (Exception ex)

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace VaultGuard.API.Security;
+namespace VaultGuard.Services.Security;
 
 /// <summary>
 /// Per-account throttle for master-password checks on anonymous endpoints (API-key issuance). The per-IP

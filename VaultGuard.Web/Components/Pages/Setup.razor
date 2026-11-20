@@ -12,6 +12,18 @@
 
 <PageTitle>Database Setup — Vault Guard</PageTitle>
 
+@if (!_accessChecked || _locked)
+{
+    @* Once the server is configured, this page (database connection, credentials, seeding) is for signed-in
+       administrators only — it used to be open to anyone, who could read the stored connection details and
+       repoint the server at another database. *@
+    <div style="padding:48px; text-align:center;">
+        @if (_locked) { <p>Setup is already complete. Sign in as an administrator to change the database.</p> }
+    </div>
+}
+else
+{
+
 <div class="setup-page">
     <div class="setup-shell">
 
@@ -778,7 +790,34 @@
     }
 </style>
 
+}
+
 @code {
+    private bool _accessChecked;
+    private bool _locked;
+
+    /// <summary>First run (no configuration yet) is open; afterwards only signed-in Admin/SuperAdmin.</summary>
+    private async Task<bool> MayConfigureAsync()
+    {
+        DatabaseConfiguration? existing = null;
+        try { existing = await DatabaseConfigService.GetConfigurationAsync(); } catch { /* treat as first run */ }
+        if (existing == null || existing.IsFirstRun) return true;
+        try
+        {
+            var auth = Services.GetService<IAuthService>();
+            if (auth == null || !await auth.IsAuthenticatedAsync()) return false;
+            var userId = auth.CurrentUser?.Id ?? await auth.GetCurrentUserIdAsync();
+            var users = Services.GetService<Microsoft.AspNetCore.Identity.UserManager<VaultGuard.Models.ApplicationUser>>();
+            var user = userId == null || users == null ? null : await users.FindByIdAsync(userId);
+            return user != null && (await users!.IsInRoleAsync(user, VaultGuard.Models.ApplicationRoles.Admin)
+                                    || await users.IsInRoleAsync(user, VaultGuard.Models.ApplicationRoles.SuperAdmin));
+        }
+        catch { return false; }
+    }
+
+    /// <summary>The default accounts use a master key published in the repository.</summary>
+    private bool SeedingAllowed => Services.GetService<VaultGuard.Components.Shared.Services.LoginDirectoryOptions>() is not { AllowDefaultAccountSeeding: false };
+
     private string _tab = "general";
     private DatabaseProvider _provider = DatabaseProvider.Sqlite;
 
@@ -815,8 +854,10 @@
     private string _apiBaseUrl = "https://vaultguardapi.dotnetappdevni.com";
     private string _apiSavedMessage = string.Empty;
 
-    private void SaveApiSettings()
+    private async Task SaveApiSettings()
     {
+        // Pointing sign-in at another API would send users' master passwords there — admins only.
+        if (_locked || !await MayConfigureAsync()) return;
         AppSettings.Set("AuthMode", _authMode);
         AppSettings.Set("ApiBaseUrl", _apiBaseUrl);
         AppSettings.Save();
@@ -827,6 +868,13 @@
 
     private async Task SeedUsers()
     {
+        if (_locked || !await MayConfigureAsync()) return;
+        if (!SeedingAllowed)
+        {
+            _seedOk = false;
+            _seedMessage = "Creating the default accounts is disabled on this server (their master key is public). Create the first account from the sign-in page instead.";
+            return;
+        }
         _busy = true; _busyAction = "seed-users"; _seedMessage = string.Empty; StateHasChanged();
         try
         {
@@ -847,6 +895,7 @@
 
     private async Task SeedDemo()
     {
+        if (_locked || !await MayConfigureAsync()) return;
         _busy = true; _busyAction = "seed-demo"; _seedMessage = string.Empty; StateHasChanged();
         try
         {
@@ -871,6 +920,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _locked = !await MayConfigureAsync();
+        _accessChecked = true;
+        if (_locked)
+        {
+            try { NavigationManager.NavigateTo("/login"); } catch { /* prerender */ }
+            return; // never load stored connection details for an unauthorised visitor
+        }
         try
         {
             var existing = await DatabaseConfigService.GetConfigurationAsync();
@@ -923,6 +979,7 @@
 
     private async Task TestConnection()
     {
+        if (_locked || !await MayConfigureAsync()) return; // re-checked on every action
         _busy = true;
         _busyAction = "test";
         _statusMessage = string.Empty;
@@ -951,6 +1008,7 @@
 
     private async Task Save()
     {
+        if (_locked || !await MayConfigureAsync()) return; // re-checked on every action
         _busy = true;
         _busyAction = "save";
         _statusMessage = string.Empty;

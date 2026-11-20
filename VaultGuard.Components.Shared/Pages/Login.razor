@@ -169,9 +169,12 @@
                         </div>
 
                         <div class="auth-footer">
-                            <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
-                                @(isSeeding ? "Creating default accounts…" : "Create default accounts")
-                            </button>
+                            @if (Dir.AllowDefaultAccountSeeding)
+                            {
+                                <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
+                                    @(isSeeding ? "Creating default accounts…" : "Create default accounts")
+                                </button>
+                            }
                         </div>
                     }
                     else
@@ -185,6 +188,15 @@
                             </div>
                         }
                         <p class="form-description">Enter your master key to unlock your vault.</p>
+
+                        @if (_selectedProfile == null && !Dir.ListAccounts)
+                        {
+                            <div class="form-group">
+                                <label for="loginEmail">Email</label>
+                                <input type="email" id="loginEmail" @bind="_typedEmail" autocomplete="username"
+                                       placeholder="you@example.com" class="form-input" />
+                            </div>
+                        }
 
                         <div class="form-group">
                             <label for="loginKey">Master key</label>
@@ -202,7 +214,7 @@
                             </div>
                         </div>
 
-                        @if (!string.IsNullOrEmpty(storedHint))
+                        @if (Dir.ListAccounts && !string.IsNullOrEmpty(storedHint))
                         {
                             <div class="hint-section">
                                 <details>
@@ -253,9 +265,12 @@
                             <button type="button" class="link-button" @onclick="ResetVault">
                                 Forgot your master key?
                             </button>
-                            <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
-                                @(isSeeding ? "Creating default accounts…" : "Create default accounts")
-                            </button>
+                            @if (Dir.AllowDefaultAccountSeeding)
+                            {
+                                <button type="button" class="link-button" @onclick="GenerateDefaultAccounts" disabled="@isSeeding">
+                                    @(isSeeding ? "Creating default accounts…" : "Create default accounts")
+                                </button>
+                            }
                         </div>
                     }
                 </div>
@@ -311,6 +326,11 @@
 
     // ── Account picker (mirrors the WPF desktop "Who's unlocking?" screen) ──
     private List<UserDto> _profiles = new();
+    private string _typedEmail = string.Empty;
+    private static readonly VaultGuard.Components.Shared.Services.LoginDirectoryOptions DeviceDefaults = new();
+    private VaultGuard.Components.Shared.Services.LoginDirectoryOptions Dir =>
+        Services.GetService(typeof(VaultGuard.Components.Shared.Services.LoginDirectoryOptions)) as VaultGuard.Components.Shared.Services.LoginDirectoryOptions
+        ?? DeviceDefaults;
     private UserDto? _selectedProfile;
 
     // Fixed hash-based palette — same values WPF uses, so the same profile gets the same colour
@@ -323,6 +343,8 @@
 
     private async Task LoadProfilesAsync()
     {
+        // Public (web) host: never enumerate accounts on the anonymous login page.
+        if (!Dir.ListAccounts) { _profiles = new(); return; }
         try
         {
             var users = await UserProfileService.GetAllUsersAsync();
@@ -382,6 +404,7 @@
     // seeder (e.g. mobile) simply show a friendly message instead of failing.
     private async Task GenerateDefaultAccounts()
     {
+        if (!Dir.AllowDefaultAccountSeeding) return; // not offered on this host
         if (Services.GetService(typeof(IDefaultAccountSeeder)) is not IDefaultAccountSeeder seeder)
         {
             Snackbar.Add("Creating default accounts isn't available in this app.", Severity.Info);
@@ -415,7 +438,8 @@
 
         if (!isFirstTime)
         {
-            storedHint = await AuthService.GetMasterPasswordHintAsync();
+            // Public (web) host: don't show anyone's password hint to anonymous visitors.
+            storedHint = Dir.ListAccounts ? await AuthService.GetMasterPasswordHintAsync() : null;
             await LoadProfilesAsync();
         }
     }
@@ -634,8 +658,16 @@
 
             // When a profile was picked, authenticate as that specific account; otherwise fall back
             // to the original single-account flow (e.g. no profiles were found to pick from).
-            var success = _selectedProfile != null
-                ? await AuthService.LoginAsync(_selectedProfile.Email, loginKey)
+            // Public (web) host: sign in by the typed email — the key-only fallback authenticates against a
+            // single account and must not be used where many users share the server.
+            var email = _selectedProfile?.Email ?? (Dir.ListAccounts ? null : _typedEmail?.Trim());
+            if (!Dir.ListAccounts && string.IsNullOrEmpty(email))
+            {
+                errorMessage = "Enter your email and master key.";
+                return;
+            }
+            var success = email != null
+                ? await AuthService.LoginAsync(email, loginKey)
                 : await AuthService.AuthenticateAsync(loginKey);
 
             if (success)
