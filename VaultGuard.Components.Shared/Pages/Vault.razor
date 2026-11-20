@@ -651,9 +651,9 @@
         selectedItem = item;
         revealedFields.Clear();
         StartTotpTimer(item);
-        // The details panel renders LoginItem.Password, which isn't stored — decrypt it once per
-        // selection (DecryptIntoAsync is a no-op once it's populated, so reselecting doesn't redo it).
-        if (item?.LoginItem != null && string.IsNullOrEmpty(item.LoginItem.Password))
+        // The details panel renders plaintext secrets (password, card number/CVV, Wi-Fi passwords…),
+        // which aren't stored — decrypt them once per selection (already-decrypted fields are skipped).
+        if (item != null)
             _ = DecryptSelectedPasswordAsync(item);
     }
 

@@ -123,6 +123,8 @@ public static class MauiProgram
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
 		builder.Services.AddScoped<IAuthService, IdentityAuthService>();
 		builder.Services.AddScoped<IPasswordRevealService, PasswordRevealService>();
+		// Scope every vault query to the owner of the unlocked session (profiles share this database).
+		builder.Services.AddScoped<VaultGuard.Services.Security.ICurrentVaultUser, VaultGuard.Services.Security.SessionVaultUser>();
 		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
 		builder.Services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();

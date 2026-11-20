@@ -82,7 +82,7 @@ public class ChildManagementController : ControllerBase
             if (!await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Admin) &&
                 !await _permissionService.IsParentOfAsync(userId, childUserId))
             {
-                return Forbid("You are not the parent of this child");
+                return StatusCode(StatusCodes.Status403Forbidden, "You are not the parent of this child");
             }
 
             var config = await _permissionService.GetChildPermissionConfigAsync(childUserId, userId);
@@ -143,7 +143,7 @@ public class ChildManagementController : ControllerBase
             if (!await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Admin) &&
                 !await _permissionService.IsParentOfAsync(userId, childUserId))
             {
-                return Forbid("You are not the parent of this child");
+                return StatusCode(StatusCodes.Status403Forbidden, "You are not the parent of this child");
             }
 
             var config = new ChildPermissionConfig
@@ -272,7 +272,7 @@ public class ChildManagementController : ControllerBase
             if (!await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Admin) &&
                 !await _permissionService.IsParentOfAsync(userId, childUserId))
             {
-                return Forbid("You are not the parent of this child");
+                return StatusCode(StatusCodes.Status403Forbidden, "You are not the parent of this child");
             }
 
             var success = await _permissionService.RemoveParentChildRelationshipAsync(userId, childUserId);

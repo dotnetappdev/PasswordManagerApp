@@ -2071,6 +2071,18 @@
         selectedItem = item;
         HidePassword();
         StateHasChanged();
+        // Card/Wi-Fi/note secrets are stored encrypted; decrypt this one item for its details view.
+        _ = OpenSelectedAsync(item);
+    }
+
+    private async Task OpenSelectedAsync(PasswordItem item)
+    {
+        try
+        {
+            await VaultGuard.Components.Shared.Services.LoginPasswordCrypto.DecryptIntoAsync(item, PasswordRevealService, JSRuntime);
+            if (ReferenceEquals(item, selectedItem)) await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't decrypt selected item", ex); }
     }
 
     private string GetCategoryTitle()
@@ -2668,6 +2680,13 @@
                 {
                     selectedTagsList.Add(tag);
                 }
+            }
+
+            // Encrypt every secret (password, card number/CVV/PIN, note content…) — plaintext is never stored.
+            if (!await VaultGuard.Components.Shared.Services.LoginPasswordCrypto.EncryptForSaveAsync(newItem, PasswordRevealService, JSRuntime))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Couldn't encrypt this item — your vault session may have expired. Sign in again and retry.");
+                return;
             }
 
             if (editingItem != null)

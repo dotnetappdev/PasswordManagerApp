@@ -44,6 +44,9 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
             if (_passwordItem.Id > 0)
                 DeleteItemButton.Visibility = Visibility.Visible;
 
+            // Card number/CVV, Wi-Fi passwords etc. are stored encrypted — decrypt this item for display.
+            _passwordRevealService.OpenItem(_passwordItem, await GetSessionIdAsync() ?? string.Empty);
+
             switch (_passwordItem.Type)
             {
                 case ItemType.CreditCard:

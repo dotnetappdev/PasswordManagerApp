@@ -1826,7 +1826,12 @@ public sealed partial class SettingsPage : Page
                 var ok = await _authService.ChangeMasterPasswordAsync(
                     currentPasswordBox.Password, newPasswordBox.Password, passwordHintBox.Text);
 
-                if (!ok) { Fail("Couldn't change the password — check your current password and try again."); return; }
+                if (!ok)
+                {
+                    Fail((_authService as VaultGuard.WPF.Services.WpfAuthService)?.LastChangePasswordError
+                         ?? "Couldn't change the password — check your current password and try again.");
+                    return;
+                }
             }
             finally { deferral.Complete(); }
         };

@@ -212,6 +212,11 @@ builder.Services.AddScoped<IVaultGuardDbContext>(provider =>
     var dbContext = provider.GetRequiredService<VaultGuardDbContext>();
     return new VaultGuard.API.Services.VaultGuardDbContextWrapper(dbContext);
 });
+// Every vault query is scoped to the authenticated caller (see PasswordItemApiService.OwnedAsync).
+builder.Services.AddHttpContextAccessor();
+// Authorization policies referenced by [RestrictedFromChildren] / [ChildSafeOperation].
+VaultGuard.API.Authorization.ChildPolicies.AddChildPolicies(builder.Services);
+builder.Services.AddScoped<VaultGuard.Services.Security.ICurrentVaultUser, VaultGuard.API.Services.ClaimsVaultUser>();
 builder.Services.AddScoped<IPasswordItemApiService, VaultGuard.Services.Services.PasswordItemApiService>();
 builder.Services.AddScoped<ICategoryApiService, VaultGuard.Services.Services.CategoryApiService>();
 builder.Services.AddScoped<ICollectionApiService, VaultGuard.Services.Services.CollectionApiService>();

@@ -153,19 +153,34 @@ public class CollectionApiService : ICollectionApiService
     private readonly VaultGuardDbContext _context;
     private readonly ILogger<CollectionApiService> _logger;
 
+    // Scoped to the authenticated caller (plus shared rows with no owner). This used to
+    // return/modify every user's collections — a cross-user and cross-tenant leak.
+    private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
+
     public CollectionApiService(
         VaultGuardDbContext context,
-        ILogger<CollectionApiService> logger)
+        ILogger<CollectionApiService> logger,
+        VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null)
     {
         _context = context;
         _logger = logger;
+        _currentUser = currentUser;
+    }
+
+    private async Task<string?> UidAsync() => _currentUser == null ? null : await _currentUser.GetUserIdAsync();
+
+    private async Task<IQueryable<Collection>> MineAsync()
+    {
+        if (_currentUser == null) return _context.Collections;
+        var uid = await UidAsync();
+        return _context.Collections.Where(x => x.UserId == null || x.UserId == uid);
     }
 
     public async Task<IEnumerable<CollectionDto>> GetAllAsync()
     {
         try
         {
-            var collections = await _context.Collections
+            var collections = await (await MineAsync())
                 .Include(c => c.ParentCollection)
                 .ToListAsync();
 
@@ -182,7 +197,7 @@ public class CollectionApiService : ICollectionApiService
     {
         try
         {
-            var collection = await _context.Collections
+            var collection = await (await MineAsync())
                 .Include(c => c.ParentCollection)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
@@ -200,7 +215,7 @@ public class CollectionApiService : ICollectionApiService
         try
         {
             // Get all collections
-            var allCollections = await _context.Collections
+            var allCollections = await (await MineAsync())
                 .Include(c => c.ParentCollection)
                 .Include(c => c.Children)
                 .ToListAsync();
@@ -235,6 +250,8 @@ public class CollectionApiService : ICollectionApiService
                 LastModified = DateTime.UtcNow
             };
 
+            if (_currentUser != null && string.IsNullOrEmpty(collection.UserId)) collection.UserId = await UidAsync();
+
             _context.Collections.Add(collection);
             await _context.SaveChangesAsync();
 
@@ -251,7 +268,7 @@ public class CollectionApiService : ICollectionApiService
     {
         try
         {
-            var collection = await _context.Collections.FindAsync(id);
+            var collection = await (await MineAsync()).FirstOrDefaultAsync(x => x.Id == id);
             if (collection == null)
                 return null;
 
@@ -277,7 +294,7 @@ public class CollectionApiService : ICollectionApiService
     {
         try
         {
-            var collection = await _context.Collections.FindAsync(id);
+            var collection = await (await MineAsync()).FirstOrDefaultAsync(x => x.Id == id);
             if (collection == null)
                 return false;
 
@@ -298,19 +315,34 @@ public class TagApiService : ITagApiService
     private readonly VaultGuardDbContext _context;
     private readonly ILogger<TagApiService> _logger;
 
+    // Scoped to the authenticated caller (plus shared rows with no owner). This used to
+    // return/modify every user's tags — a cross-user and cross-tenant leak.
+    private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
+
     public TagApiService(
         VaultGuardDbContext context,
-        ILogger<TagApiService> logger)
+        ILogger<TagApiService> logger,
+        VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null)
     {
         _context = context;
         _logger = logger;
+        _currentUser = currentUser;
+    }
+
+    private async Task<string?> UidAsync() => _currentUser == null ? null : await _currentUser.GetUserIdAsync();
+
+    private async Task<IQueryable<Tag>> MineAsync()
+    {
+        if (_currentUser == null) return _context.Tags;
+        var uid = await UidAsync();
+        return _context.Tags.Where(x => x.UserId == null || x.UserId == uid);
     }
 
     public async Task<IEnumerable<TagDto>> GetAllAsync()
     {
         try
         {
-            var tags = await _context.Tags.ToListAsync();
+            var tags = await (await MineAsync()).ToListAsync();
             return tags.Select(t => t.ToDto()).ToList();
         }
         catch (Exception ex)
@@ -324,7 +356,7 @@ public class TagApiService : ITagApiService
     {
         try
         {
-            var tag = await _context.Tags.FindAsync(id);
+            var tag = await (await MineAsync()).FirstOrDefaultAsync(x => x.Id == id);
             return tag?.ToDto();
         }
         catch (Exception ex)
@@ -346,6 +378,8 @@ public class TagApiService : ITagApiService
                 LastModified = DateTime.UtcNow
             };
 
+            if (_currentUser != null && string.IsNullOrEmpty(tag.UserId)) tag.UserId = await UidAsync();
+
             _context.Tags.Add(tag);
             await _context.SaveChangesAsync();
 
@@ -362,7 +396,7 @@ public class TagApiService : ITagApiService
     {
         try
         {
-            var tag = await _context.Tags.FindAsync(id);
+            var tag = await (await MineAsync()).FirstOrDefaultAsync(x => x.Id == id);
             if (tag == null)
                 return null;
 
@@ -385,7 +419,7 @@ public class TagApiService : ITagApiService
     {
         try
         {
-            var tag = await _context.Tags.FindAsync(id);
+            var tag = await (await MineAsync()).FirstOrDefaultAsync(x => x.Id == id);
             if (tag == null)
                 return false;
 
@@ -406,12 +440,27 @@ public class VaultApiService : IVaultApiService
     private readonly VaultGuardDbContext _context;
     private readonly ILogger<VaultApiService> _logger;
 
+    // Scoped to the authenticated caller. This used to
+    // return/modify every user's vaults — a cross-user and cross-tenant leak.
+    private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
+
     public VaultApiService(
         VaultGuardDbContext context,
-        ILogger<VaultApiService> logger)
+        ILogger<VaultApiService> logger,
+        VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null)
     {
         _context = context;
         _logger = logger;
+        _currentUser = currentUser;
+    }
+
+    private async Task<string?> UidAsync() => _currentUser == null ? null : await _currentUser.GetUserIdAsync();
+
+    private async Task<IQueryable<Vault>> MineAsync()
+    {
+        if (_currentUser == null) return _context.Vaults;
+        var uid = await UidAsync();
+        return _context.Vaults.Where(x => x.UserId == uid);
     }
 
     // NOTE: This API service does not filter by user. Authorization should be handled
@@ -420,7 +469,7 @@ public class VaultApiService : IVaultApiService
     {
         try
         {
-            var vaults = await _context.Vaults
+            var vaults = await (await MineAsync())
                 .ToListAsync();
 
             return vaults.Select(v => v.ToDto()).ToList();
@@ -436,7 +485,7 @@ public class VaultApiService : IVaultApiService
     {
         try
         {
-            var vault = await _context.Vaults
+            var vault = await (await MineAsync())
                 .FirstOrDefaultAsync(v => v.Id == id);
 
             return vault?.ToDto();
@@ -453,6 +502,7 @@ public class VaultApiService : IVaultApiService
         try
         {
             var vault = createDto.ToEntity();
+            if (_currentUser != null && string.IsNullOrEmpty(vault.UserId)) vault.UserId = await UidAsync();
             _context.Vaults.Add(vault);
             await _context.SaveChangesAsync();
 
@@ -469,7 +519,7 @@ public class VaultApiService : IVaultApiService
     {
         try
         {
-            var existingVault = await _context.Vaults.FindAsync(id);
+            var existingVault = await (await MineAsync()).FirstOrDefaultAsync(x => x.Id == id);
             if (existingVault == null)
                 return null;
 
@@ -489,7 +539,7 @@ public class VaultApiService : IVaultApiService
     {
         try
         {
-            var vault = await _context.Vaults.FindAsync(id);
+            var vault = await (await MineAsync()).FirstOrDefaultAsync(x => x.Id == id);
             if (vault == null)
                 return false;
 
@@ -508,7 +558,7 @@ public class VaultApiService : IVaultApiService
     {
         try
         {
-            var vault = await _context.Vaults
+            var vault = await (await MineAsync())
                 .FirstOrDefaultAsync(v => v.IsDefault);
 
             return vault?.ToDto();

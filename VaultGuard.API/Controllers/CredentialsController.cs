@@ -64,8 +64,13 @@ public class CredentialsController : ControllerBase
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                   ?? User.FindFirst("sub")?.Value ?? string.Empty;
-        var created = await _service.CreateAsync(dto, userId);
-        return CreatedAtAction(nameof(GetByUrl), null, created);
+        try
+        {
+            var created = await _service.CreateAsync(dto, userId);
+            return CreatedAtAction(nameof(GetByUrl), null, created);
+        }
+        catch (VaultGuard.Services.Security.VaultKeyRequiredException e) { return BadRequest(e.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 }
 

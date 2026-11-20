@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
 namespace VaultGuard.Models;
@@ -20,6 +21,7 @@ public class WiFiItem
     public string? NetworkName { get; set; } // SSID
     
     [MaxLength(500)]
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? Password { get; set; }
     
     public SecurityType SecurityType { get; set; }
@@ -58,6 +60,7 @@ public class WiFiItem
     public string? RouterUsername { get; set; }
     
     [MaxLength(500)]
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? RouterPassword { get; set; }
     
     [MaxLength(200)]
@@ -127,6 +130,7 @@ public class WiFiItem
     public string? GuestNetworkName { get; set; }
     
     [MaxLength(500)]
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? GuestNetworkPassword { get; set; }
     
     public bool HasGuestNetwork { get; set; }
@@ -149,4 +153,28 @@ public class WiFiItem
     // Mapping properties
     public bool RequiresMasterPassword { get; set; } // For mapping
     public int? PasswordId { get; set; } // For mapping
+
+    // AES-256-GCM encrypted network password (ciphertext / nonce / tag, Base64)
+    [MaxLength(1000)]
+    public string? EncryptedPassword { get; set; }
+    [MaxLength(200)]
+    public string? PasswordNonce { get; set; }
+    [MaxLength(200)]
+    public string? PasswordAuthTag { get; set; }
+
+    // AES-256-GCM encrypted router admin password (ciphertext / nonce / tag, Base64)
+    [MaxLength(1000)]
+    public string? EncryptedRouterPassword { get; set; }
+    [MaxLength(200)]
+    public string? RouterPasswordNonce { get; set; }
+    [MaxLength(200)]
+    public string? RouterPasswordAuthTag { get; set; }
+
+    // AES-256-GCM encrypted guest network password (ciphertext / nonce / tag, Base64)
+    [MaxLength(1000)]
+    public string? EncryptedGuestNetworkPassword { get; set; }
+    [MaxLength(200)]
+    public string? GuestNetworkPasswordNonce { get; set; }
+    [MaxLength(200)]
+    public string? GuestNetworkPasswordAuthTag { get; set; }
 }

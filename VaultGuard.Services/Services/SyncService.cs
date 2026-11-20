@@ -286,6 +286,8 @@ public class SyncService : VaultGuard.Services.Interfaces.ISyncService
                         PasswordId = newItem.Id
                     };
                     target.LoginItems.Add(loginItem);
+                    // Secrets travel as ciphertext only (the plaintext properties are not stored).
+                    VaultGuard.Services.Security.VaultItemSecrets.CopyStored(new PasswordItem { LoginItem = sourceItem.LoginItem }, new PasswordItem { LoginItem = loginItem });
                 }
                 else if (sourceItem.CreditCardItem != null)
                 {
@@ -303,6 +305,8 @@ public class SyncService : VaultGuard.Services.Interfaces.ISyncService
                         PasswordId = newItem.Id
                     };
                     target.CreditCardItems.Add(creditCardItem);
+                    // Secrets travel as ciphertext only (the plaintext properties are not stored).
+                    VaultGuard.Services.Security.VaultItemSecrets.CopyStored(new PasswordItem { CreditCardItem = sourceItem.CreditCardItem }, new PasswordItem { CreditCardItem = creditCardItem });
                 }
                 else if (sourceItem.SecureNoteItem != null)
                 {
@@ -314,6 +318,8 @@ public class SyncService : VaultGuard.Services.Interfaces.ISyncService
                         PasswordId = newItem.Id
                     };
                     target.SecureNoteItems.Add(secureNoteItem);
+                    // Secrets travel as ciphertext only (the plaintext properties are not stored).
+                    VaultGuard.Services.Security.VaultItemSecrets.CopyStored(new PasswordItem { SecureNoteItem = sourceItem.SecureNoteItem }, new PasswordItem { SecureNoteItem = secureNoteItem });
                 }
                 else if (sourceItem.WiFiItem != null)
                 {
@@ -328,6 +334,8 @@ public class SyncService : VaultGuard.Services.Interfaces.ISyncService
                         PasswordId = newItem.Id
                     };
                     target.WiFiItems.Add(wifiItem);
+                    // Secrets travel as ciphertext only (the plaintext properties are not stored).
+                    VaultGuard.Services.Security.VaultItemSecrets.CopyStored(new PasswordItem { WiFiItem = sourceItem.WiFiItem }, new PasswordItem { WiFiItem = wifiItem });
                 }
 
                 // Handle tags
@@ -410,6 +418,9 @@ public class SyncService : VaultGuard.Services.Interfaces.ISyncService
                     targetItem.WiFiItem.Notes = sourceItem.WiFiItem.Notes;
                     targetItem.WiFiItem.RequiresMasterPassword = sourceItem.WiFiItem.RequiresMasterPassword;
                 }
+
+                // Secrets travel as ciphertext only (the plaintext properties are not stored).
+                VaultGuard.Services.Security.VaultItemSecrets.CopyStored(sourceItem, targetItem);
 
                 // Handle tags
                 targetItem.Tags.Clear();

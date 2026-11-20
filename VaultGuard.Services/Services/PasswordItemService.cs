@@ -8,19 +8,59 @@ namespace VaultGuard.Services;
 public class PasswordItemService : IPasswordItemService
 {
     private readonly VaultGuardDbContext _context;
+    private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
 
-    public PasswordItemService(VaultGuardDbContext context)
+    /// <param name="currentUser">
+    /// When supplied (every app registers one), every read and write is limited to the signed-in user's
+    /// own items — the database is shared between profiles/users, and previously this service returned
+    /// everyone's items. With no signed-in user it returns nothing. Omitted only by tests and tools that
+    /// deliberately operate on the whole database.
+    /// </param>
+    public PasswordItemService(VaultGuardDbContext context, VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null)
     {
         _context = context;
+        _currentUser = currentUser;
+    }
+
+    /// <summary>The items the caller may see: their own, or none if nobody is signed in.</summary>
+    private async Task<IQueryable<PasswordItem>> OwnedAsync()
+    {
+        if (_currentUser == null) return _context.PasswordItems;
+        var userId = await _currentUser.GetUserIdAsync();
+        return userId == null
+            ? _context.PasswordItems.Where(_ => false)
+            : _context.PasswordItems.Where(p => p.UserId == userId);
+    }
+
+    private async Task<PasswordItem?> FindOwnedAsync(int id)
+        => await (await OwnedAsync()).FirstOrDefaultAsync(p => p.Id == id);
+
+    /// <summary>Throws if a write would create or modify an item that isn't the signed-in user's.</summary>
+    private async Task EnsureCanWriteAsync(PasswordItem item, bool isNew)
+    {
+        if (_currentUser == null) return;
+        var userId = await _currentUser.GetUserIdAsync()
+                     ?? throw new UnauthorizedAccessException("Sign in to change vault items.");
+        if (isNew)
+        {
+            if (string.IsNullOrEmpty(item.UserId)) item.UserId = userId;
+        }
+        else
+        {
+            var owner = await _context.PasswordItems.AsNoTracking().Where(p => p.Id == item.Id).Select(p => p.UserId).FirstOrDefaultAsync();
+            if (owner != userId) throw new UnauthorizedAccessException("That item doesn't belong to the signed-in user.");
+        }
+        if (item.UserId != userId) throw new UnauthorizedAccessException("That item doesn't belong to the signed-in user.");
     }
 
     public async Task<IEnumerable<PasswordItem>> GetAllAsync()
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Include(p => p.Category)
@@ -32,11 +72,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<IEnumerable<PasswordItem>> GetByTypeAsync(ItemType type)
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => p.Type == type && !p.IsDeleted)
@@ -46,11 +87,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<PasswordItem?> GetByIdAsync(int id)
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
@@ -58,6 +100,7 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<PasswordItem> CreateAsync(PasswordItem item)
     {
+        await EnsureCanWriteAsync(item, isNew: true);
         item.CreatedAt = DateTime.UtcNow;
         item.LastModified = DateTime.UtcNow;
         
@@ -68,6 +111,7 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<PasswordItem> UpdateAsync(PasswordItem item)
     {
+        await EnsureCanWriteAsync(item, isNew: false);
         item.LastModified = DateTime.UtcNow;
 
         // Snapshot the previous password into the item's rolling history (migration-free reserved custom
@@ -102,7 +146,7 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task DeleteAsync(int id)
     {
-        var item = await _context.PasswordItems.FindAsync(id);
+        var item = await FindOwnedAsync(id);
         if (item != null)
         {
             // Soft delete only — moves the item to Recently Deleted (the trash), recoverable until
@@ -115,7 +159,7 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<bool> RestoreAsync(int id)
     {
-        var item = await _context.PasswordItems.FindAsync(id);
+        var item = await FindOwnedAsync(id);
         if (item == null || !item.IsDeleted) return false;
 
         item.IsDeleted = false;
@@ -126,7 +170,7 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<bool> PermanentlyDeleteAsync(int id)
     {
-        var item = await _context.PasswordItems.FindAsync(id);
+        var item = await FindOwnedAsync(id);
         // Only items already in the trash can be permanently removed — prevents skipping the
         // soft-delete safety net by hard-deleting a live item.
         if (item == null || !item.IsDeleted) return false;
@@ -140,11 +184,12 @@ public class PasswordItemService : IPasswordItemService
     {
         var term = searchTerm.ToLower();
         
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => !p.IsDeleted && (
@@ -160,11 +205,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<IEnumerable<PasswordItem>> GetFavoritesAsync()
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => p.IsFavorite && !p.IsDeleted)
@@ -174,11 +220,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<IEnumerable<PasswordItem>> GetByTagAsync(string tagName)
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => !p.IsDeleted && p.Tags.Any(t => t.Name == tagName))
@@ -188,11 +235,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<IEnumerable<PasswordItem>> GetRecentlyUsedAsync(int count = 10)
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => !p.IsDeleted)
@@ -203,11 +251,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<IEnumerable<PasswordItem>> GetArchivedAsync()
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => p.IsArchived && !p.IsDeleted)
@@ -217,11 +266,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<IEnumerable<PasswordItem>> GetDeletedAsync()
     {
-        return await _context.PasswordItems
+        return await (await OwnedAsync())
             .Include(p => p.LoginItem)
             .Include(p => p.CreditCardItem)
             .Include(p => p.SecureNoteItem)
             .Include(p => p.WiFiItem)
+            .Include(p => p.PasskeyItem)
             .Include(p => p.CustomFields)
             .Include(p => p.Tags)
             .Where(p => p.IsDeleted)
@@ -231,12 +281,12 @@ public class PasswordItemService : IPasswordItemService
 
     public async Task<bool> ExistsAsync(int id)
     {
-        return await _context.PasswordItems.AnyAsync(p => p.Id == id && !p.IsDeleted);
+        return await (await OwnedAsync()).AnyAsync(p => p.Id == id && !p.IsDeleted);
     }
 
     public async Task<bool> ToggleFavoriteAsync(int id)
     {
-        var item = await _context.PasswordItems.FindAsync(id);
+        var item = await FindOwnedAsync(id);
         if (item == null || item.IsDeleted)
         {
             return false;

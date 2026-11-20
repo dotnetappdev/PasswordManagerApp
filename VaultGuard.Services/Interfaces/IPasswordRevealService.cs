@@ -24,6 +24,19 @@ public interface IPasswordRevealService
     bool TryEncryptLoginPassword(LoginItem loginItem, string sessionId);
 
     /// <summary>
+    /// Encrypts every plaintext secret on the item (login, card, Wi-Fi, note, passkey) with the caller's
+    /// own unlocked session before it is saved. Returns false if that session isn't unlocked.
+    /// Empty plaintext leaves the stored value unchanged. See VaultGuard.Services.Security.VaultItemSecrets.
+    /// </summary>
+    bool TrySealItem(PasswordItem item, string sessionId);
+
+    /// <summary>
+    /// Decrypts the item's stored secrets into its (non-persisted) plaintext properties. Returns false if
+    /// the vault is locked or any field failed to decrypt.
+    /// </summary>
+    bool OpenItem(PasswordItem item, string sessionId);
+
+    /// <summary>
     /// Decrypts any vault-encrypted field stored either pipe-joined ("cipher|nonce|tag") or split
     /// across ciphertext/nonce/tag columns. Returns null when locked or on failure.
     /// </summary>

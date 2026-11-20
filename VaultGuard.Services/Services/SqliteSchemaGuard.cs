@@ -349,5 +349,31 @@ public static class SqliteSchemaGuard
                 await Exec("CREATE INDEX IF NOT EXISTS IX_AspNetUsers_TenantId ON AspNetUsers (TenantId)");
             }
         });
+
+        // ── 11. Encrypted-at-rest columns for item secrets (card number/CVV/PIN/online-banking password,
+        // Wi-Fi/router/guest passwords, secure-note content). The plaintext columns are retired — see
+        // VaultGuard.DAL/Security/LegacySecretColumns and VaultSecretsMigrator. ───────────────────────
+        var encryptedColumns = new (string Table, string Prefix)[]
+        {
+            ("CreditCardItems", "CardNumber"), ("CreditCardItems", "Cvv"), ("CreditCardItems", "Pin"),
+            ("CreditCardItems", "OnlineBankingPassword"),
+            ("WiFiItems", "Password"), ("WiFiItems", "RouterPassword"), ("WiFiItems", "GuestNetworkPassword"),
+            ("SecureNoteItems", "Content"),
+        };
+        foreach (var (table, prefix) in encryptedColumns)
+        {
+            await Step($"add encrypted {table}.{prefix} columns", async () =>
+            {
+                if (!await TableExists(table)) return;
+                foreach (var col in new[] { "Encrypted" + prefix, prefix + "Nonce", prefix + "AuthTag" })
+                {
+                    if (!await ColumnExists(table, col))
+                    {
+                        logger?.LogInformation("Schema fix: adding {Table}.{Column}", table, col);
+                        await Exec($"ALTER TABLE {table} ADD COLUMN {col} TEXT NULL");
+                    }
+                }
+            });
+        }
     }
 }

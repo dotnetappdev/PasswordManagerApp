@@ -10,19 +10,30 @@ namespace VaultGuard.Services.Services
         private readonly VaultGuardDbContext _db;
         private readonly VaultGuard.Services.Interfaces.IAuthService _authService;
 
-        public CategoryService(VaultGuardDbContext db, VaultGuard.Services.Interfaces.IAuthService authService)
+        // Owner scoping: shared/default categories (no owner) plus the signed-in user's own — not other users'.
+        private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
+
+        public CategoryService(VaultGuardDbContext db, VaultGuard.Services.Interfaces.IAuthService authService,
+            VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null)
         {
             _db = db;
             _authService = authService;
+            _currentUser = currentUser;
+        }
+
+        private async Task<IQueryable<Category>> VisibleAsync()
+        {
+            if (_currentUser == null) return _db.Categories;
+            var uid = await _currentUser.GetUserIdAsync();
+            return _db.Categories.Where(c => c.UserId == null || c.UserId == uid);
         }
 
         public async Task<List<Category>> GetAllAsync()
         {
             try
             {
-                // Return all non-empty categories without user filtering
-                // This allows categories to be shared across users or show default categories
-                return await _db.Categories
+                // Shared/default categories (no owner) and the caller's own.
+                return await (await VisibleAsync())
                     .Where(c => !string.IsNullOrWhiteSpace(c.Name))
                     .OrderBy(c => c.Name)
                     .ToListAsync();
@@ -36,7 +47,7 @@ namespace VaultGuard.Services.Services
 
         public async Task<Category?> GetByIdAsync(int id)
         {
-            return await _db.Categories.FindAsync(id);
+            return await (await VisibleAsync()).FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<Category> CreateAsync(Category category)
@@ -108,6 +119,12 @@ namespace VaultGuard.Services.Services
 
         public async Task<Category> UpdateAsync(Category category)
         {
+            if (_currentUser != null)
+            {
+                var uid = await _currentUser.GetUserIdAsync();
+                var owner = await _db.Categories.AsNoTracking().Where(c => c.Id == category.Id).Select(c => c.UserId).FirstOrDefaultAsync();
+                if (owner != null && owner != uid) throw new UnauthorizedAccessException("That category doesn't belong to the signed-in user.");
+            }
             category.UpdatedAt = DateTime.UtcNow;
             _db.Categories.Update(category);
             await _db.SaveChangesAsync();
@@ -154,7 +171,7 @@ namespace VaultGuard.Services.Services
 
         public async Task DeleteAsync(int id)
         {
-            var cat = await _db.Categories.FindAsync(id);
+            var cat = await (await VisibleAsync()).FirstOrDefaultAsync(c => c.Id == id);
             if (cat != null)
             {
                 _db.Categories.Remove(cat);

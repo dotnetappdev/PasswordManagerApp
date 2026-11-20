@@ -13,21 +13,33 @@ namespace VaultGuard.Services.Services
     {
         private readonly VaultGuardDbContext _db;
 
-        public CollectionService(VaultGuardDbContext db)
+        public CollectionService(VaultGuardDbContext db, VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null)
         {
             _db = db;
+            _currentUser = currentUser;
         }
+
+        // Owner scoping: shared rows (no owner) plus the signed-in user's own — never another user's.
+        // Previously every user saw (and could edit/delete by id) everyone's collections.
+        private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
+        private async Task<IQueryable<Collection>> VisibleAsync()
+        {
+            if (_currentUser == null) return _db.Collections;
+            var uid = await _currentUser.GetUserIdAsync();
+            return _db.Collections.Where(x => x.UserId == null || x.UserId == uid);
+        }
+
 
         public async Task<List<Collection>> GetAllAsync()
         {
-            return await _db.Collections
+            return await (await VisibleAsync())
                 .Include(c => c.Categories)
                 .ToListAsync();
         }
 
         public async Task<Collection?> GetByIdAsync(int id)
         {
-            return await _db.Collections
+            return await (await VisibleAsync())
                 .Include(c => c.Categories)
                 .Include(c => c.PasswordItems)
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -46,6 +58,8 @@ namespace VaultGuard.Services.Services
                 collection.Icon = "folder"; // default icon
             }
 
+            if (_currentUser != null && string.IsNullOrEmpty(collection.UserId))
+                collection.UserId = await _currentUser.GetUserIdAsync();
             _db.Collections.Add(collection);
             await _db.SaveChangesAsync();
             return collection;
@@ -54,7 +68,7 @@ namespace VaultGuard.Services.Services
         public async Task<Collection> UpdateAsync(Collection collection)
         {
             // Find the existing entity to avoid tracking conflicts
-            var existingCollection = await _db.Collections.FindAsync(collection.Id);
+            var existingCollection = await (await VisibleAsync()).FirstOrDefaultAsync(c => c.Id == collection.Id);
             if (existingCollection != null)
             {
                 // Update the properties manually
@@ -75,7 +89,7 @@ namespace VaultGuard.Services.Services
 
         public async Task DeleteAsync(int id)
         {
-            var collection = await _db.Collections.FindAsync(id);
+            var collection = await (await VisibleAsync()).FirstOrDefaultAsync(c => c.Id == id);
             if (collection != null)
             {
                 // Check if it's the default collection

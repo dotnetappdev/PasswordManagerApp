@@ -84,7 +84,7 @@ public class PasswordItemsController : ControllerBase
             // Check if user has permission to view passwords
             if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.View))
             {
-                return Forbid("You don't have permission to view passwords");
+                return StatusCode(StatusCodes.Status403Forbidden, "You don't have permission to view passwords");
             }
 
             // For child users, check additional restrictions
@@ -92,7 +92,7 @@ public class PasswordItemsController : ControllerBase
             {
                 if (!await _permissionService.ChildCanPerformPasswordOperationAsync(userId, "view"))
                 {
-                    return Forbid("Child access is currently restricted");
+                    return StatusCode(StatusCodes.Status403Forbidden, "Child access is currently restricted");
                 }
             }
 
@@ -240,7 +240,7 @@ public class PasswordItemsController : ControllerBase
             // Check if user has permission to create passwords
             if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.Create))
             {
-                return Forbid("You don't have permission to create passwords");
+                return StatusCode(StatusCodes.Status403Forbidden, "You don't have permission to create passwords");
             }
 
             // Additional check for child users
@@ -248,12 +248,20 @@ public class PasswordItemsController : ControllerBase
             {
                 if (!await _permissionService.ChildCanPerformPasswordOperationAsync(userId, "create"))
                 {
-                    return Forbid("Children are not allowed to create passwords");
+                    return StatusCode(StatusCodes.Status403Forbidden, "Children are not allowed to create passwords");
                 }
             }
 
             var item = await _passwordItemService.CreateAsync(createDto, userId);
             return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+        }
+        catch (VaultGuard.Services.Security.VaultKeyRequiredException e)
+        {
+            return BadRequest(e.Message); // secrets are never stored without being encrypted
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return NotFound(); // don't disclose other users' items
         }
         catch (Exception ex)
         {
@@ -288,7 +296,7 @@ public class PasswordItemsController : ControllerBase
             // Check permissions
             if (!await _permissionService.CanAccessResourceAsync(userId, existingItem.UserId, Permissions.Passwords.Edit))
             {
-                return Forbid("You don't have permission to edit this password");
+                return StatusCode(StatusCodes.Status403Forbidden, "You don't have permission to edit this password");
             }
 
             // Additional check for child users
@@ -296,7 +304,7 @@ public class PasswordItemsController : ControllerBase
             {
                 if (!await _permissionService.ChildCanPerformPasswordOperationAsync(userId, "edit"))
                 {
-                    return Forbid("Children are not allowed to edit passwords");
+                    return StatusCode(StatusCodes.Status403Forbidden, "Children are not allowed to edit passwords");
                 }
             }
 
@@ -305,6 +313,14 @@ public class PasswordItemsController : ControllerBase
                 return NotFound($"Password item with ID {id} not found");
 
             return Ok(item);
+        }
+        catch (VaultGuard.Services.Security.VaultKeyRequiredException e)
+        {
+            return BadRequest(e.Message); // secrets are never stored without being encrypted
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return NotFound(); // don't disclose other users' items
         }
         catch (Exception ex)
         {
@@ -742,13 +758,13 @@ public class PasswordItemsController : ControllerBase
             // Check if user has permission to view sensitive password data
             if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.ViewSensitive))
             {
-                return Forbid("You don't have permission to reveal passwords");
+                return StatusCode(StatusCodes.Status403Forbidden, "You don't have permission to reveal passwords");
             }
 
             // Additional check for child users - they should never be able to reveal passwords
             if (await _permissionService.IsInRoleAsync(userId, ApplicationRoles.Child))
             {
-                return Forbid("Children are not allowed to reveal password details");
+                return StatusCode(StatusCodes.Status403Forbidden, "Children are not allowed to reveal password details");
             }
 
             // Get user from database
@@ -774,7 +790,7 @@ public class PasswordItemsController : ControllerBase
             // Check resource access permissions
             if (!await _permissionService.CanAccessResourceAsync(userId, item.UserId, Permissions.Passwords.ViewSensitive))
             {
-                return Forbid("Access denied to this password item");
+                return StatusCode(StatusCodes.Status403Forbidden, "Access denied to this password item");
             }
 
             if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.EncryptedPassword))
@@ -806,6 +822,31 @@ public class PasswordItemsController : ControllerBase
         {
             _logger.LogError(ex, "Error revealing password for item ID {Id} for user {UserId}", id, _vaultSessionService.GetSessionUserId(HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "")));
             return StatusCode(500, "An error occurred while revealing the password");
+        }
+    }
+
+    /// <summary>
+    /// Decrypt all secrets of one of the caller's items (login password, TOTP secret, card number/CVV/PIN,
+    /// Wi-Fi passwords, note content, passkey id…) using their master password. The server derives the vault
+    /// key for this request only and never stores the master password or the plaintext.
+    /// POST /api/passworditems/{id}/secrets   { "masterPassword": "…" }
+    /// </summary>
+    [HttpPost("{id}/secrets")]
+    [RestrictedFromChildren]
+    public async Task<ActionResult<IReadOnlyDictionary<string, string>>> RevealSecrets(int id, [FromBody] ApiDtos.RevealPasswordRequestDto request)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+        if (!await _permissionService.HasPermissionAsync(userId, Permissions.Passwords.ViewSensitive))
+            return Forbid();
+        try
+        {
+            var secrets = await _passwordItemService.RevealSecretsAsync(id, request.MasterPassword);
+            return secrets == null ? NotFound() : Ok(secrets);
+        }
+        catch (VaultGuard.Services.Security.VaultKeyRequiredException)
+        {
+            return Unauthorized("Invalid master password");
         }
     }
 }

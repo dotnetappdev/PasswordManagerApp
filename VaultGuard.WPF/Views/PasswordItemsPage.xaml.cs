@@ -511,7 +511,26 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         {
             _selectedItem = selectedItem;
             ShowItemDetails(selectedItem);
+            _ = OpenSelectedItemAsync(selectedItem);
         }
+    }
+
+    /// <summary>
+    /// Card/Wi-Fi/note secrets are stored encrypted: decrypt the selected item, then redraw its details
+    /// (only if it's still the selection). Login passwords keep their own reveal-on-demand path.
+    /// </summary>
+    private async Task OpenSelectedItemAsync(PasswordItem item)
+    {
+        if (_serviceProvider == null || item.LoginItem != null && item.CreditCardItem == null && item.WiFiItem == null && item.SecureNoteItem == null)
+            return;
+        try
+        {
+            var reveal = _serviceProvider.GetService<IPasswordRevealService>();
+            if (reveal == null) return;
+            reveal.OpenItem(item, await GetSessionIdAsync() ?? string.Empty);
+            if (ReferenceEquals(item, _selectedItem)) ShowItemDetails(item);
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't decrypt selected item", ex); }
     }
 
     private void PasswordCardsView_SelectionChanged(object sender, SelectionChangedEventArgs e)

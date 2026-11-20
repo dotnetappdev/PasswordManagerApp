@@ -23,35 +23,25 @@ public static class PasskeySecrets
         if (pk == null) return;
         var reveal = sp.GetService<IPasswordRevealService>();
         if (reveal == null) return;
-        var sid = await SessionIdAsync(sp);
-        if (string.IsNullOrEmpty(pk.CredentialId) && !string.IsNullOrEmpty(pk.EncryptedCredentialId))
-            pk.CredentialId = reveal.RevealField(pk.EncryptedCredentialId, pk.CredentialIdNonce, pk.CredentialIdAuthTag, sid);
-        if (string.IsNullOrEmpty(pk.Notes) && !string.IsNullOrEmpty(pk.EncryptedNotes))
-            pk.Notes = reveal.RevealField(pk.EncryptedNotes, pk.NotesNonce, pk.NotesAuthTag, sid);
+        reveal.OpenItem(new PasswordItem { PasskeyItem = pk }, await SessionIdAsync(sp));
     }
 
     /// <summary>
-    /// Encrypts CredentialId/Notes into the stored columns. Throws if there is something to store but
-    /// the vault is locked, so the caller reports it instead of losing the data. When
-    /// <paramref name="notesWereLoaded"/> is false (the existing notes couldn't be decrypted for the
-    /// form), empty Notes means "unknown", not "cleared", so the stored notes are kept.
+    /// Encrypts CredentialId/Notes into the stored columns (split layout, same as every other secret).
+    /// Throws if there is something to store but the vault is locked, so the caller reports it instead of
+    /// losing the data. Empty Notes keeps what's stored unless <paramref name="notesWereLoaded"/> says the
+    /// form really showed the stored notes, in which case the user cleared them.
     /// </summary>
     public static async Task ProtectAsync(PasskeyItem pk, IServiceProvider sp, bool notesWereLoaded = true)
     {
         var reveal = sp.GetService<IPasswordRevealService>()
                      ?? throw new InvalidOperationException("Encryption service unavailable.");
-        var sid = await SessionIdAsync(sp);
+        var holder = new PasswordItem { PasskeyItem = pk };
+        if (VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(holder)
+            && !reveal.TrySealItem(holder, await SessionIdAsync(sp)))
+            throw new InvalidOperationException("Couldn't encrypt the passkey details — the vault may be locked. Unlock it and try again.");
 
-        string? Protect(string? value) => string.IsNullOrEmpty(value) ? null
-            : reveal.ProtectField(value, sid)
-              ?? throw new InvalidOperationException("Couldn't encrypt the passkey details — the vault may be locked. Unlock it and try again.");
-
-        pk.EncryptedCredentialId = Protect(pk.CredentialId);
-        pk.CredentialIdNonce = pk.CredentialIdAuthTag = null;
-        if (!string.IsNullOrEmpty(pk.Notes) || notesWereLoaded)
-        {
-            pk.EncryptedNotes = Protect(pk.Notes);
-            pk.NotesNonce = pk.NotesAuthTag = null;
-        }
+        if (string.IsNullOrEmpty(pk.Notes) && notesWereLoaded)
+            pk.EncryptedNotes = pk.NotesNonce = pk.NotesAuthTag = null;
     }
 }

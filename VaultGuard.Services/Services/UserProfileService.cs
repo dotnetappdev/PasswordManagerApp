@@ -14,12 +14,16 @@ public class UserProfileService : IUserProfileService
     private readonly IVaultService _vaultService;
     private readonly ILogger<UserProfileService> _logger;
 
+    private readonly VaultGuard.DAL.VaultGuardDbContext? _db;
+
     public UserProfileService(
         UserManager<ApplicationUser> userManager,
         IPasswordCryptoService passwordCryptoService,
         IVaultService vaultService,
-        ILogger<UserProfileService> logger)
+        ILogger<UserProfileService> logger,
+        VaultGuard.DAL.VaultGuardDbContext? db = null)
     {
+        _db = db;
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _passwordCryptoService = passwordCryptoService ?? throw new ArgumentNullException(nameof(passwordCryptoService));
         _vaultService = vaultService ?? throw new ArgumentNullException(nameof(vaultService));
@@ -229,6 +233,27 @@ public class UserProfileService : IUserProfileService
             var salt = _passwordCryptoService.GenerateUserSalt();
             var masterKey = _passwordCryptoService.DeriveMasterKey(newPassword, salt);
 
+            // Re-encrypt the vault under the new key in the same transaction as the credential change.
+            // Rotating the salt/key without this left every stored secret permanently unreadable. If the
+            // current password can't decrypt the vault, nothing changes.
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? tx = null;
+            if (_db != null && !string.IsNullOrEmpty(user.UserSalt))
+            {
+                tx = await _db.Database.BeginTransactionAsync();
+                using var oldKey = VaultGuard.Services.Security.VaultCipher.ForMasterPassword(
+                    _passwordCryptoService, currentPassword, Convert.FromBase64String(user.UserSalt));
+                using var newKey = VaultGuard.Services.Security.VaultCipher.ForKey(_passwordCryptoService, (byte[])masterKey.Clone(), ownsKey: true);
+                var rotation = await VaultGuard.Services.Security.VaultKeyRotation.StageAsync(_db, user.Id, oldKey, newKey);
+                if (!rotation.Ok)
+                {
+                    await tx.DisposeAsync();
+                    _logger.LogWarning("Master password change refused for {UserId}: {Reason}", user.Id, rotation.Describe());
+                    return (false, rotation.Describe());
+                }
+                await _db.SaveChangesAsync();
+            }
+            await using var txScope = tx; // rolled back on any failure below unless committed
+
             // Create new authentication hash
             var authHash = _passwordCryptoService.CreateAuthHash(masterKey, newPassword);
 
@@ -262,6 +287,7 @@ public class UserProfileService : IUserProfileService
                 return (false, errors);
             }
 
+            if (tx != null) await tx.CommitAsync();
             _logger.LogInformation("Changed password for user {UserId} successfully", user.Id);
             return (true, null);
         }

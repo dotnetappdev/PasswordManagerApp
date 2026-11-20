@@ -132,9 +132,12 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.CardholderName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.CardNumber).IsRequired().HasMaxLength(500);
             entity.Property(e => e.ExpiryDate).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.CVV).IsRequired().HasMaxLength(100);
+            // Retired plaintext columns (see Security/LegacySecretColumns) — secrets are in Encrypted*.
+            Security.LegacySecretColumns.Map(entity, "CardNumber", 500, required: true);
+            Security.LegacySecretColumns.Map(entity, "CVV", 100, required: true);
+            Security.LegacySecretColumns.Map(entity, "PIN", 6, required: false);
+            Security.LegacySecretColumns.Map(entity, "OnlineBankingPassword", 500, required: false);
             entity.Property(e => e.BankWebsite).HasMaxLength(500);
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.CreatedAt).IsRequired();
@@ -154,7 +157,7 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Content).IsRequired().HasMaxLength(5000);
+            Security.LegacySecretColumns.Map(entity, "Content", 5000, required: true);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
 
@@ -172,7 +175,9 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.NetworkName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Password).IsRequired().HasMaxLength(500);
+            Security.LegacySecretColumns.Map(entity, "Password", 500, required: true);
+            Security.LegacySecretColumns.Map(entity, "RouterPassword", 500, required: false);
+            Security.LegacySecretColumns.Map(entity, "GuestNetworkPassword", 500, required: false);
             entity.Property(e => e.SecurityType).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.CreatedAt).IsRequired();

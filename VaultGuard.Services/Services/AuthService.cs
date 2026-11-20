@@ -157,6 +157,8 @@ public class AuthService : IAuthService
                 
                 // Initialize session with master key
                 var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                // Encrypt any secrets still stored in plaintext / old layouts for this user (no-op once done).
+                await VaultGuard.Services.Security.VaultSecretsMigrator.RunAfterUnlockAsync(_dbContext, _vaultSessionService, user.Id, sessionId, _logger);
                 
                 // Store session ID for later use
                 await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "sessionId", sessionId);
@@ -409,6 +411,8 @@ public class AuthService : IAuthService
                     // though the password was correct.
                     var masterKey = _passwordCryptoService.DeriveMasterKey(password, userSalt);
                     var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                    // Encrypt any secrets still stored in plaintext / old layouts for this user (no-op once done).
+                    await VaultGuard.Services.Security.VaultSecretsMigrator.RunAfterUnlockAsync(_dbContext, _vaultSessionService, user.Id, sessionId, _logger);
                     await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", "sessionId", sessionId);
 
                     _isAuthenticated = true;

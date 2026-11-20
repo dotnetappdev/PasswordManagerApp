@@ -5,8 +5,8 @@ using VaultGuard.Services.Interfaces;
 namespace VaultGuard.Components.Shared.Services;
 
 /// <summary>
-/// Bridges <see cref="LoginItem.Password"/> (plaintext, NOT a database column) and
-/// <see cref="LoginItem.EncryptedPassword"/> (what is actually stored) for the Blazor pages.
+/// Bridges the plaintext secret properties (NOT database columns) and their encrypted stored columns
+/// for the Blazor pages — see VaultGuard.Services.Security.VaultItemSecrets.
 /// Pages bind their password inputs/displays to <c>Password</c>, so it must be decrypted after
 /// loading an item and encrypted before saving one — otherwise a loaded item shows no password
 /// and a typed password is silently dropped on save.
@@ -25,30 +25,24 @@ public static class LoginPasswordCrypto
     }
 
     /// <summary>
-    /// Decrypts the stored password into <see cref="LoginItem.Password"/> once (no-op if it's
-    /// already populated). Returns false if there was a stored password that couldn't be decrypted.
+    /// Decrypts every stored secret on the item (login password, card number/CVV/PIN, Wi-Fi passwords,
+    /// note content, passkey…) into its in-memory plaintext property. Already-populated values are kept.
+    /// Returns false if something couldn't be decrypted (e.g. the vault session expired).
     /// </summary>
     public static async Task<bool> DecryptIntoAsync(PasswordItem? item, IPasswordRevealService reveal, IJSRuntime js)
     {
-        var login = item?.LoginItem;
-        if (login == null || !string.IsNullOrEmpty(login.Password) || string.IsNullOrEmpty(login.EncryptedPassword))
-            return true;
-
-        var pwd = await reveal.RevealPasswordAsync(login, await GetSessionIdAsync(js));
-        if (string.IsNullOrEmpty(pwd)) return false;
-        login.Password = pwd;
-        return true;
+        if (item == null) return true;
+        return reveal.OpenItem(item, await GetSessionIdAsync(js));
     }
 
     /// <summary>
-    /// Encrypts <see cref="LoginItem.Password"/> into the stored columns before a save. Returns false
-    /// when there is a password to save but the vault session can't encrypt it (locked / expired).
-    /// An empty password leaves the stored one unchanged.
+    /// Encrypts every plaintext secret on the item into its stored columns before a save. Returns false
+    /// when there is something to save but the session can't encrypt it (locked / expired) — the caller
+    /// must not save then. Empty plaintext leaves the stored value unchanged.
     /// </summary>
     public static async Task<bool> EncryptForSaveAsync(PasswordItem item, IPasswordRevealService reveal, IJSRuntime js)
     {
-        var login = item.LoginItem;
-        if (login == null || string.IsNullOrEmpty(login.Password)) return true;
-        return reveal.TryEncryptLoginPassword(login, await GetSessionIdAsync(js));
+        if (!VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(item)) return true;
+        return reveal.TrySealItem(item, await GetSessionIdAsync(js));
     }
 }

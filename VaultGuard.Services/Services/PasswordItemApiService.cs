@@ -12,20 +12,76 @@ public class PasswordItemApiService : IPasswordItemApiService
 {
     private readonly VaultGuardDbContext _context;
     private readonly ILogger<PasswordItemApiService> _logger;
+    private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
+    private readonly VaultGuard.Crypto.Interfaces.IPasswordCryptoService? _crypto;
 
     public PasswordItemApiService(
         VaultGuardDbContext context,
-        ILogger<PasswordItemApiService> logger)
+        ILogger<PasswordItemApiService> logger,
+        VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null,
+        VaultGuard.Crypto.Interfaces.IPasswordCryptoService? crypto = null)
     {
         _context = context;
         _logger = logger;
+        _currentUser = currentUser;
+        _crypto = crypto;
+    }
+
+    /// <summary>
+    /// Items the caller owns (none if unauthenticated). This used to be the whole table, so the list,
+    /// search and by-url endpoints returned every user's — and every tenant's — items.
+    /// </summary>
+    private async Task<IQueryable<PasswordItem>> OwnedAsync()
+    {
+        if (_currentUser == null) return _context.PasswordItems;
+        var userId = await _currentUser.GetUserIdAsync();
+        return userId == null ? _context.PasswordItems.Where(_ => false) : _context.PasswordItems.Where(p => p.UserId == userId);
+    }
+
+    private async Task<string?> CallerIdAsync() => _currentUser == null ? null : await _currentUser.GetUserIdAsync();
+
+    /// <summary>Tags the owner may attach: their own or shared (UserId null) — never another user's.</summary>
+    private Task<List<Tag>> OwnedTagsAsync(IEnumerable<int> ids, string? ownerId)
+        => _context.Tags.Where(t => ids.Contains(t.Id) && (t.UserId == null || t.UserId == ownerId)).ToListAsync();
+
+    /// <summary>Drops a category/collection reference that belongs to someone else.</summary>
+    private async Task StripForeignReferencesAsync(PasswordItem item, string? ownerId)
+    {
+        if (item.CategoryId is int cat && await _context.Categories.AnyAsync(c => c.Id == cat && c.UserId != null && c.UserId != ownerId))
+            item.CategoryId = null;
+        if (item.CollectionId is int col && await _context.Collections.AnyAsync(c => c.Id == col && c.UserId != null && c.UserId != ownerId))
+            item.CollectionId = null;
+    }
+
+    /// <summary>
+    /// Encrypts any secrets on the item with the owner's vault key, derived from the supplied master
+    /// password (the same key the apps use, so either side can read it). Secrets are never stored
+    /// unencrypted: no/invalid master password → <see cref="VaultGuard.Services.Security.VaultKeyRequiredException"/>.
+    /// </summary>
+    private async Task SealAsync(PasswordItem item, string ownerId, string? masterPassword)
+    {
+        if (!VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(item)) return;
+        if (string.IsNullOrEmpty(masterPassword))
+            throw new VaultGuard.Services.Security.VaultKeyRequiredException(
+                "This item contains secrets. Include \"masterPassword\" so they can be encrypted — they are never stored unencrypted.");
+        if (_crypto == null)
+            throw new VaultGuard.Services.Security.VaultKeyRequiredException("Encryption is not available on this server.");
+
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == ownerId);
+        if (user == null || string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterPasswordHash)
+            || !_crypto.VerifyMasterPassword(masterPassword, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
+            throw new VaultGuard.Services.Security.VaultKeyRequiredException("Invalid master password.");
+
+        using var cipher = VaultGuard.Services.Security.VaultCipher.ForMasterPassword(_crypto, masterPassword, Convert.FromBase64String(user.UserSalt));
+        cipher.Seal(item);
+        VaultGuard.Services.Security.VaultItemSecrets.Forget(item);
     }
 
     public async Task<IEnumerable<PasswordItemDto>> GetAllAsync()
     {
         try
         {
-            var items = await _context.PasswordItems
+            var items = await (await OwnedAsync())
                 .Include(p => p.Category)
                 .Include(p => p.Collection)
                 .Include(p => p.LoginItem)
@@ -72,7 +128,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var items = await _context.PasswordItems
+            var items = await (await OwnedAsync())
                 .Include(p => p.Category)
                 .Include(p => p.Collection)
                 .Include(p => p.LoginItem)
@@ -96,7 +152,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var items = await _context.PasswordItems
+            var items = await (await OwnedAsync())
                 .Include(p => p.Category)
                 .Include(p => p.Collection)
                 .Include(p => p.LoginItem)
@@ -120,7 +176,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var items = await _context.PasswordItems
+            var items = await (await OwnedAsync())
                 .Include(p => p.Category)
                 .Include(p => p.Collection)
                 .Include(p => p.LoginItem)
@@ -144,7 +200,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var items = await _context.PasswordItems
+            var items = await (await OwnedAsync())
                 .Include(p => p.Category)
                 .Include(p => p.Collection)
                 .Include(p => p.LoginItem)
@@ -173,13 +229,14 @@ public class PasswordItemApiService : IPasswordItemApiService
             var item = createDto.ToEntity(userId);
             
             // Handle tags
+            var callerId = await CallerIdAsync();
+            if (_currentUser != null && callerId != userId)
+                throw new UnauthorizedAccessException("Items can only be created for the signed-in user.");
             if (createDto.TagIds.Any())
             {
-                var tags = await _context.Tags
-                    .Where(t => createDto.TagIds.Contains(t.Id))
-                    .ToListAsync();
-                item.Tags = tags;
+                item.Tags = await OwnedTagsAsync(createDto.TagIds, userId);
             }
+            await StripForeignReferencesAsync(item, userId);
 
             _context.PasswordItems.Add(item);
 
@@ -188,27 +245,36 @@ public class PasswordItemApiService : IPasswordItemApiService
             {
                 var loginItem = createDto.LoginItem.ToEntity();
                 loginItem.PasswordItem = item;
+                item.LoginItem = loginItem;
+                loginItem.UserId ??= userId;
                 _context.LoginItems.Add(loginItem);
             }
             else if (createDto.CreditCardItem != null)
             {
                 var creditCardItem = createDto.CreditCardItem.ToEntity();
                 creditCardItem.PasswordItem = item;
+                item.CreditCardItem = creditCardItem;
+                creditCardItem.UserId ??= userId;
                 _context.CreditCardItems.Add(creditCardItem);
             }
             else if (createDto.SecureNoteItem != null)
             {
                 var secureNoteItem = createDto.SecureNoteItem.ToEntity();
                 secureNoteItem.PasswordItem = item;
+                item.SecureNoteItem = secureNoteItem;
+                secureNoteItem.UserId ??= userId;
                 _context.SecureNoteItems.Add(secureNoteItem);
             }
             else if (createDto.WiFiItem != null)
             {
                 var wifiItem = createDto.WiFiItem.ToEntity();
                 wifiItem.PasswordItem = item;
+                item.WiFiItem = wifiItem;
+                wifiItem.UserId ??= userId;
                 _context.WiFiItems.Add(wifiItem);
             }
 
+            await SealAsync(item, userId, createDto.MasterPassword);
             await _context.SaveChangesAsync();
 
             // Reload the item with all navigation properties
@@ -226,7 +292,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var existingItem = await _context.PasswordItems
+            var existingItem = await (await OwnedAsync())
                 .Include(p => p.Tags)
                 .Include(p => p.LoginItem)
                 .Include(p => p.CreditCardItem)
@@ -243,10 +309,7 @@ public class PasswordItemApiService : IPasswordItemApiService
             existingItem.Tags.Clear();
             if (updateDto.TagIds.Any())
             {
-                var tags = await _context.Tags
-                    .Where(t => updateDto.TagIds.Contains(t.Id))
-                    .ToListAsync();
-                existingItem.Tags = tags;
+                existingItem.Tags = await OwnedTagsAsync(updateDto.TagIds, existingItem.UserId);
             }
 
             // Handle specific item types
@@ -267,6 +330,8 @@ public class PasswordItemApiService : IPasswordItemApiService
                 existingItem.WiFiItem.UpdateFromDto(updateDto.WiFiItem);
             }
 
+            await StripForeignReferencesAsync(existingItem, existingItem.UserId);
+            await SealAsync(existingItem, existingItem.UserId!, updateDto.MasterPassword);
             await _context.SaveChangesAsync();
 
             return await GetByIdAsync(id);
@@ -282,7 +347,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var item = await _context.PasswordItems.FindAsync(id);
+            var item = await (await OwnedAsync()).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null || item.IsDeleted)
                 return false;
 
@@ -301,7 +366,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var item = await _context.PasswordItems.FindAsync(id);
+            var item = await (await OwnedAsync()).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null || item.IsDeleted)
                 return false;
 
@@ -321,7 +386,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var item = await _context.PasswordItems.FindAsync(id);
+            var item = await (await OwnedAsync()).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null || !item.IsDeleted)
                 return false;
 
@@ -341,7 +406,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var item = await _context.PasswordItems.FindAsync(id);
+            var item = await (await OwnedAsync()).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null || item.IsDeleted)
                 return false;
 
@@ -361,7 +426,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var item = await _context.PasswordItems.FindAsync(id);
+            var item = await (await OwnedAsync()).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null || item.IsDeleted)
                 return false;
 
@@ -377,11 +442,33 @@ public class PasswordItemApiService : IPasswordItemApiService
         }
     }
 
+    public async Task<IReadOnlyDictionary<string, string>?> RevealSecretsAsync(int id, string masterPassword)
+    {
+        var item = await (await OwnedAsync())
+            .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
+            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        if (item == null) return null;
+        if (_crypto == null) throw new VaultGuard.Services.Security.VaultKeyRequiredException("Encryption is not available on this server.");
+
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == item.UserId);
+        if (user == null || string.IsNullOrEmpty(masterPassword) || string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterPasswordHash)
+            || !_crypto.VerifyMasterPassword(masterPassword, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt), user.MasterPasswordIterations))
+            throw new VaultGuard.Services.Security.VaultKeyRequiredException("Invalid master password.");
+
+        using var cipher = VaultGuard.Services.Security.VaultCipher.ForMasterPassword(_crypto, masterPassword, Convert.FromBase64String(user.UserSalt));
+        var failed = cipher.Open(item);
+        if (failed.Count > 0)
+            _logger.LogWarning("Item {Id}: {Count} secret field(s) could not be decrypted", id, failed.Count); // never log values
+        return VaultGuard.Services.Security.VaultItemSecrets.Plaintexts(item);
+    }
+
     public async Task<bool> UnarchiveAsync(int id)
     {
         try
         {
-            var item = await _context.PasswordItems.FindAsync(id);
+            var item = await (await OwnedAsync()).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null || item.IsDeleted)
                 return false;
 
@@ -402,7 +489,7 @@ public class PasswordItemApiService : IPasswordItemApiService
         try
         {
             var hostname = ExtractHostname(url);
-            var items = await _context.PasswordItems
+            var items = await (await OwnedAsync())
                 .Include(p => p.LoginItem)
                 .Where(p => !p.IsDeleted && p.LoginItem != null &&
                             p.LoginItem.WebsiteUrl != null &&
@@ -421,7 +508,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         try
         {
-            var item = await _context.PasswordItems
+            var item = await (await OwnedAsync())
                 .Include(p => p.CustomFields)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
             if (item == null) return false;

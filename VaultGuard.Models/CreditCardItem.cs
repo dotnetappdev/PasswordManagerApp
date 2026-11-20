@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
 namespace VaultGuard.Models;
@@ -21,15 +22,18 @@ public class CreditCardItem
     public string? CardholderName { get; set; }
     
     [MaxLength(19)] // Maximum for credit card numbers with spaces
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? CardNumber { get; set; }
     
     [MaxLength(7)] // MM/YYYY format
     public string? ExpiryDate { get; set; }
     
     [MaxLength(4)]
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? CVV { get; set; }
     
     [MaxLength(6)]
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? PIN { get; set; }
     
     public CardType CardType { get; set; }
@@ -55,6 +59,7 @@ public class CreditCardItem
     public string? OnlineBankingUsername { get; set; }
     
     [MaxLength(500)]
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? OnlineBankingPassword { get; set; }
     
     [MaxLength(200)]
@@ -146,4 +151,20 @@ public class CreditCardItem
     public string? CvvNonce { get; set; }
     [MaxLength(200)]
     public string? CvvAuthTag { get; set; }
+
+    // AES-256-GCM encrypted PIN (ciphertext / nonce / tag, Base64)
+    [MaxLength(1000)]
+    public string? EncryptedPin { get; set; }
+    [MaxLength(200)]
+    public string? PinNonce { get; set; }
+    [MaxLength(200)]
+    public string? PinAuthTag { get; set; }
+
+    // AES-256-GCM encrypted online banking password (ciphertext / nonce / tag, Base64)
+    [MaxLength(1000)]
+    public string? EncryptedOnlineBankingPassword { get; set; }
+    [MaxLength(200)]
+    public string? OnlineBankingPasswordNonce { get; set; }
+    [MaxLength(200)]
+    public string? OnlineBankingPasswordAuthTag { get; set; }
 }

@@ -684,16 +684,6 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("CVV")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("CardNumber")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<string>("CardNumberAuthTag")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -741,6 +731,14 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("EncryptedOnlineBankingPassword")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("EncryptedPin")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("ExpirationMonth")
                         .HasColumnType("nvarchar(max)");
 
@@ -774,13 +772,39 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.Property<DateTime?>("LastUsed")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("LegacyCVV")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("CVV");
+
+                    b.Property<string>("LegacyCardNumber")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("CardNumber");
+
+                    b.Property<string>("LegacyOnlineBankingPassword")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("OnlineBankingPassword");
+
+                    b.Property<string>("LegacyPIN")
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)")
+                        .HasColumnName("PIN");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("OnlineBankingPassword")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<string>("OnlineBankingPasswordAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("OnlineBankingPasswordNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("OnlineBankingUrl")
                         .HasMaxLength(200)
@@ -790,15 +814,19 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("PIN")
-                        .HasMaxLength(6)
-                        .HasColumnType("nvarchar(6)");
-
                     b.Property<int?>("PasswordId")
                         .HasColumnType("int");
 
                     b.Property<int>("PasswordItemId")
                         .HasColumnType("int");
+
+                    b.Property<string>("PinAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PinNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("RequiresMasterPassword")
                         .HasColumnType("bit");
@@ -1604,11 +1632,6 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(5000)
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ContentAuthTag")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1648,6 +1671,12 @@ namespace VaultGuard.DAL.SqlServer.Migrations
 
                     b.Property<DateTime?>("LastUsed")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("LegacyContent")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Content");
 
                     b.Property<int?>("PasswordId")
                         .HasColumnType("int");
@@ -2206,6 +2235,18 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("EncryptedGuestNetworkPassword")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("EncryptedPassword")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("EncryptedRouterPassword")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Floor")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -2217,9 +2258,13 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("GuestNetworkPassword")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<string>("GuestNetworkPasswordAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("GuestNetworkPasswordNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("HasGuestNetwork")
                         .HasColumnType("bit");
@@ -2249,6 +2294,22 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                     b.Property<DateTime?>("LastUsed")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("LegacyGuestNetworkPassword")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("GuestNetworkPassword");
+
+                    b.Property<string>("LegacyPassword")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Password");
+
+                    b.Property<string>("LegacyRouterPassword")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("RouterPassword");
+
                     b.Property<string>("Location")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -2266,16 +2327,19 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<string>("PasswordAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int?>("PasswordId")
                         .HasColumnType("int");
 
                     b.Property<int>("PasswordItemId")
                         .HasColumnType("int");
+
+                    b.Property<string>("PasswordNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("PlanType")
                         .HasMaxLength(50)
@@ -2312,9 +2376,13 @@ namespace VaultGuard.DAL.SqlServer.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("RouterPassword")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<string>("RouterPasswordAuthTag")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("RouterPasswordNonce")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("RouterUsername")
                         .HasMaxLength(100)

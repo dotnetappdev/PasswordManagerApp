@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
 namespace VaultGuard.Models;
@@ -21,6 +22,7 @@ public class SecureNoteItem
     public string? Title { get; set; }
     
     [MaxLength(10000)]
+    [NotMapped] // plaintext, in memory only — stored encrypted (see VaultItemSecrets)
     public string? Content { get; set; }
     [MaxLength(10000)]
     public string? EncryptedContent { get; set; }

@@ -144,19 +144,40 @@ public static class MappingHelper
         {
             CardholderName = dto.CardholderName,
             CardNumber = dto.CardNumber,
+            // ExpiryDate is a required column — it was never mapped, so every API card create failed.
+            ExpiryDate = dto.ExpiryDate ?? ExpiryFrom(dto.ExpirationMonth, dto.ExpirationYear) ?? string.Empty,
             ExpirationMonth = dto.ExpirationMonth,
             ExpirationYear = dto.ExpirationYear,
+            // Secrets below are encrypted before saving (VaultItemSecrets); they were silently dropped before.
+            CVV = dto.CVV ?? dto.SecurityCode,
+            PIN = dto.PIN,
+            OnlineBankingPassword = dto.OnlineBankingPassword,
             SecurityCode = dto.SecurityCode,
             CardType = dto.CardType,
+            IssuingBank = dto.IssuingBank,
+            BankWebsite = dto.BankWebsite,
+            OnlineBankingUsername = dto.OnlineBankingUsername,
+            OnlineBankingUrl = dto.OnlineBankingUrl,
             Notes = dto.Notes,
             RequiresMasterPassword = dto.RequiresMasterPassword
         };
     }
 
+    private static string? ExpiryFrom(string? month, string? year)
+        => string.IsNullOrWhiteSpace(month) || string.IsNullOrWhiteSpace(year) ? null : $"{month.Trim().PadLeft(2, '0')}/{year.Trim()}";
+
     public static void UpdateFromDto(this CreditCardItem entity, UpdateCreditCardItemDto dto)
     {
         entity.CardholderName = dto.CardholderName ?? entity.CardholderName;
         entity.CardNumber = dto.CardNumber ?? entity.CardNumber;
+        entity.ExpiryDate = dto.ExpiryDate ?? ExpiryFrom(dto.ExpirationMonth, dto.ExpirationYear) ?? entity.ExpiryDate;
+        entity.CVV = dto.CVV ?? dto.SecurityCode ?? entity.CVV;
+        entity.PIN = dto.PIN ?? entity.PIN;
+        entity.OnlineBankingPassword = dto.OnlineBankingPassword ?? entity.OnlineBankingPassword;
+        entity.IssuingBank = dto.IssuingBank ?? entity.IssuingBank;
+        entity.BankWebsite = dto.BankWebsite ?? entity.BankWebsite;
+        entity.OnlineBankingUsername = dto.OnlineBankingUsername ?? entity.OnlineBankingUsername;
+        entity.OnlineBankingUrl = dto.OnlineBankingUrl ?? entity.OnlineBankingUrl;
         entity.ExpirationMonth = dto.ExpirationMonth ?? entity.ExpirationMonth;
         entity.ExpirationYear = dto.ExpirationYear ?? entity.ExpirationYear;
         entity.SecurityCode = dto.SecurityCode ?? entity.SecurityCode;

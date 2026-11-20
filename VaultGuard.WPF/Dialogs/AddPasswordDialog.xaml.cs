@@ -483,17 +483,32 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't read sessionId", ex); return string.Empty; }
     }
 
-    private async Task LoadDecryptedPasswordAsync(LoginItem loginItem)
+    private async Task LoadDecryptedPasswordAsync(LoginItem loginItem) => await LoadSecretsForEditAsync();
+
+    /// <summary>
+    /// Decrypts the item being edited (all secret fields) and fills any secret inputs that are still empty —
+    /// never clobbering something the user typed while decryption was running.
+    /// </summary>
+    private async Task LoadSecretsForEditAsync()
     {
-        if (_passwordRevealService == null || string.IsNullOrEmpty(loginItem.EncryptedPassword)) return;
+        if (_editingItem == null || _passwordRevealService == null) return;
         try
         {
-            var pwd = await _passwordRevealService.RevealPasswordAsync(loginItem, await GetSessionIdAsync());
-            // Don't clobber anything the user already typed while we were decrypting.
-            if (!string.IsNullOrEmpty(pwd) && string.IsNullOrEmpty(PasswordTextBox.Password))
-                PasswordTextBox.Password = pwd;
+            _passwordRevealService.OpenItem(_editingItem, await GetSessionIdAsync());
+            if (_editingItem.LoginItem?.Password is { Length: > 0 } pw && string.IsNullOrEmpty(PasswordTextBox.Password))
+                PasswordTextBox.Password = pw;
+            if (_editingItem.CreditCardItem is { } cc)
+            {
+                if (!string.IsNullOrEmpty(cc.CardNumber) && string.IsNullOrEmpty(CardNumberTextBox.Text)) CardNumberTextBox.Text = cc.CardNumber;
+                if (!string.IsNullOrEmpty(cc.CVV) && string.IsNullOrEmpty(CVVTextBox.Text)) CVVTextBox.Text = cc.CVV;
+            }
+            if (_editingItem.PasskeyItem?.Notes is { Length: > 0 } notes && string.IsNullOrEmpty(PasskeyNotesTextBox.Text))
+            {
+                PasskeyNotesTextBox.Text = notes;
+                _passkeyNotesLoaded = true;
+            }
         }
-        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to decrypt password for editing", ex); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to decrypt item for editing", ex); }
     }
 
     private async Task LoadPasskeyNotesAsync(PasskeyItem pk)
@@ -566,6 +581,8 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             CardholderNameTextBox.Text = _editingItem.CreditCardItem.CardholderName ?? string.Empty;
             CardNumberTextBox.Text = _editingItem.CreditCardItem.CardNumber ?? string.Empty;
             CVVTextBox.Text = _editingItem.CreditCardItem.CVV ?? string.Empty;
+            // Card number / CVV are stored encrypted — fill them in once decrypted.
+            if (string.IsNullOrEmpty(_editingItem.CreditCardItem.CardNumber)) _ = LoadSecretsForEditAsync();
             ExpiryDateTextBox.Text = _editingItem.CreditCardItem.ExpiryDate ?? string.Empty;
             ValidFromTextBox.Text = _editingItem.CreditCardItem.ValidFrom ?? string.Empty;
             CreditCardNotesTextBox.Text = _editingItem.CreditCardItem.Notes ?? string.Empty;
@@ -1204,6 +1221,14 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             // Update custom fields
             UpdateCustomFieldsInPasswordItem(item);
 
+            // Plaintext secret properties (password, card number, CVV, PIN, Wi-Fi passwords, note content…)
+            // are not database columns: encrypt them into the stored fields, or refuse to save.
+            if (VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(item)
+                && (_passwordRevealService == null || !_passwordRevealService.TrySealItem(item, await GetSessionIdAsync())))
+            {
+                throw new InvalidOperationException("Couldn't encrypt this item's secrets — the vault may be locked. Unlock it and try again.");
+            }
+
             // Save item with better error handling
             if (_editingItem == null)
             {
@@ -1249,17 +1274,6 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             item.LoginItem.Username = UsernameTextBox.Text?.Trim() ?? string.Empty;
             item.LoginItem.Password = PasswordTextBox.Password;
             item.LoginItem.WebsiteUrl = UrlTextBox.Text?.Trim();
-
-            // LoginItem.Password is not a database column — without this the typed password was
-            // silently dropped on save. An empty box leaves the stored password unchanged.
-            if (!string.IsNullOrEmpty(item.LoginItem.Password))
-            {
-                if (_passwordRevealService == null
-                    || !_passwordRevealService.TryEncryptLoginPassword(item.LoginItem, await GetSessionIdAsync()))
-                {
-                    throw new InvalidOperationException("Couldn't encrypt the password — the vault may be locked. Unlock it and try again.");
-                }
-            }
 
             // Set user ID for the login item
             if (_authService.CurrentUser != null)

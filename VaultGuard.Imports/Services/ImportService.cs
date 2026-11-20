@@ -207,9 +207,13 @@ public class ImportService : IImportService
                                 item.CreditCardItem.UserId = userId;
                             if (item.SecureNoteItem != null)
                                 item.SecureNoteItem.UserId = userId;
+                            if (item.WiFiItem != null)
+                                item.WiFiItem.UserId = userId;
+                            if (item.PasskeyItem != null)
+                                item.PasskeyItem.UserId = userId;
                         }
 
-                        // Encrypt plaintext credentials — always attempt, GetActiveSessionId fallback handles missing sessionId
+                        // Encrypt every plaintext secret with this user's vault key (refuses the item if that isn't possible)
                         if (_vaultSessionService != null)
                         {
                             EncryptItemCredentials(item, sessionId);
@@ -366,42 +370,28 @@ public class ImportService : IImportService
         }
     }
 
+    /// <summary>
+    /// Encrypts every imported secret (password, TOTP, notes, card number/CVV/PIN, Wi-Fi passwords, note
+    /// content…) with the importing user's vault key. Uses the import's own session, or an unlocked session
+    /// that belongs to the same user — never another user's (that would make the data unreadable to its
+    /// owner). With no usable key the item is refused rather than stored without its secrets.
+    /// </summary>
     private void EncryptItemCredentials(PasswordItem item, string? sessionId)
     {
-        if (_vaultSessionService == null) return;
+        if (_vaultSessionService == null || !VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(item)) return;
 
-        // Fall back to any active session if the provided sessionId is missing or stale
         var sid = sessionId;
         if (string.IsNullOrEmpty(sid) || !_vaultSessionService.IsVaultUnlocked(sid))
-            sid = _vaultSessionService.GetActiveSessionId();
-
-        if (string.IsNullOrEmpty(sid)) return;
-
-        if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.Password))
         {
-            try
-            {
-                item.LoginItem.EncryptedPassword = _vaultSessionService.EncryptPassword(item.LoginItem.Password, sid);
-            }
-            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Vault may be locked; skipping password encryption during import", ex); }
+            var active = _vaultSessionService.GetActiveSessionId();
+            sid = active != null && !string.IsNullOrEmpty(item.UserId) && _vaultSessionService.GetSessionUserId(active) == item.UserId
+                ? active : null;
         }
 
-        if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.Notes))
-        {
-            try
-            {
-                item.LoginItem.EncryptedNotes = _vaultSessionService.EncryptPassword(item.LoginItem.Notes, sid);
-            }
-            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to encrypt notes during import", ex); }
-        }
-
-        if (item.LoginItem != null && !string.IsNullOrEmpty(item.LoginItem.TotpSecret))
-        {
-            try
-            {
-                item.LoginItem.EncryptedTotpSecret = _vaultSessionService.EncryptPassword(item.LoginItem.TotpSecret, sid);
-            }
-            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to encrypt TOTP secret during import", ex); }
-        }
+        var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, sid);
+        if (cipher == null)
+            throw new InvalidOperationException("the vault is locked, so its secrets can't be encrypted — unlock and import again");
+        cipher.Seal(item);
+        VaultGuard.Services.Security.VaultItemSecrets.Forget(item);
     }
 }

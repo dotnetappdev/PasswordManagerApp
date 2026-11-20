@@ -72,11 +72,7 @@ public class PasswordRevealService : IPasswordRevealService
     /// carries no nonce/tag at all (legacy plaintext).
     /// </summary>
     internal static string? ToCipherPayload(string encrypted, string? nonce, string? tag)
-    {
-        if (encrypted.Split('|').Length == 3) return encrypted;
-        if (!string.IsNullOrEmpty(nonce) && !string.IsNullOrEmpty(tag)) return $"{encrypted}|{nonce}|{tag}";
-        return null;
-    }
+        => VaultGuard.Services.Security.VaultItemSecrets.ToPayload(encrypted, nonce, tag);
 
     public string? RevealField(string? encrypted, string? nonce, string? tag, string sessionId)
     {
@@ -97,31 +93,39 @@ public class PasswordRevealService : IPasswordRevealService
     }
 
     public bool TryEncryptLoginPassword(LoginItem loginItem, string sessionId)
+        => !string.IsNullOrEmpty(loginItem.Password)
+           && TrySealItem(new PasswordItem { LoginItem = loginItem }, sessionId);
+
+    public bool TrySealItem(PasswordItem item, string sessionId)
     {
-        if (string.IsNullOrEmpty(loginItem.Password)) return false;
         // Deliberately no ResolveSessionId fallback: on the multi-user web host "any active session"
-        // could be another user's, and encrypting with their key would make the password unreadable.
-        var sid = sessionId;
-        if (!CanRevealPasswords(sid))
+        // could be another user's, and encrypting with their key would make the data unreadable.
+        var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, sessionId);
+        if (cipher == null)
         {
-            _logger.LogWarning("Cannot encrypt password: vault is locked");
+            _logger.LogWarning("Cannot encrypt item secrets: vault is locked");
             return false;
         }
-
         try
         {
-            loginItem.EncryptedPassword = _vaultSessionService.EncryptPassword(loginItem.Password, sid);
-            // The pipe-joined value is self-contained; clear the split-layout columns so a stale
-            // nonce/tag from an older save can't be paired with the new ciphertext.
-            loginItem.PasswordNonce = null;
-            loginItem.PasswordAuthTag = null;
+            cipher.Seal(item);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error encrypting password for login item {Id}", loginItem.Id);
+            _logger.LogError(ex, "Error encrypting secrets for item {Id}", item.Id);
             return false;
         }
+    }
+
+    public bool OpenItem(PasswordItem item, string sessionId)
+    {
+        var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, ResolveSessionId(sessionId));
+        if (cipher == null) return false;
+        var failed = cipher.Open(item);
+        if (failed.Count > 0)
+            _logger.LogWarning("Could not decrypt {Count} field(s) of item {Id}: {Fields}", failed.Count, item.Id, string.Join(", ", failed));
+        return failed.Count == 0;
     }
 
     public async Task<string?> RevealTotpSecretAsync(LoginItem loginItem, string sessionId)

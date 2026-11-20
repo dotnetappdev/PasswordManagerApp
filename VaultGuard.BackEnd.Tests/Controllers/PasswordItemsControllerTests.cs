@@ -100,7 +100,8 @@ public class PasswordItemsControllerTests
 
         var result = await _controller.GetAll();
 
-        Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+        // A real 403 — Forbid("message") would treat the message as an auth scheme and fail with HTTP 500.
+        Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
     }
 
     [Test]
@@ -124,7 +125,8 @@ public class PasswordItemsControllerTests
 
         var result = await _controller.GetAll();
 
-        Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+        // A real 403 — Forbid("message") would treat the message as an auth scheme and fail with HTTP 500.
+        Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
         _mockItemService.Verify(x => x.GetAllAsync(), Times.Never);
     }
 
@@ -185,7 +187,8 @@ public class PasswordItemsControllerTests
 
         var result = await _controller.Create(new CreatePasswordItemDto { Title = "New login", Type = ItemType.Login });
 
-        Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+        // A real 403 — Forbid("message") would treat the message as an auth scheme and fail with HTTP 500.
+        Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
     }
 
     [Test]
@@ -196,7 +199,8 @@ public class PasswordItemsControllerTests
 
         var result = await _controller.Create(new CreatePasswordItemDto { Title = "New login", Type = ItemType.Login });
 
-        Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+        // A real 403 — Forbid("message") would treat the message as an auth scheme and fail with HTTP 500.
+        Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
         _mockItemService.Verify(x => x.CreateAsync(It.IsAny<CreatePasswordItemDto>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -264,7 +268,8 @@ public class PasswordItemsControllerTests
 
         var result = await _controller.Update(1, new UpdatePasswordItemDto { Title = "Updated" });
 
-        Assert.That(result.Result, Is.InstanceOf<ForbidResult>());
+        // A real 403 — Forbid("message") would treat the message as an auth scheme and fail with HTTP 500.
+        Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
         _mockItemService.Verify(x => x.UpdateAsync(It.IsAny<int>(), It.IsAny<UpdatePasswordItemDto>()), Times.Never);
     }
 

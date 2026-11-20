@@ -27,6 +27,15 @@ public class PasswordItemDto
 
 public class CreatePasswordItemDto
 {
+    /// <summary>
+    /// Required whenever the request carries a secret (password, card number, CVV, PIN, Wi-Fi password,
+    /// note content…). The server uses it only to derive the vault key and encrypt those values before they
+    /// are stored, then discards it; requests with secrets but no valid master password are rejected rather
+    /// than stored unencrypted. Never returned.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonPropertyName("masterPassword")]
+    public string? MasterPassword { get; set; }
+
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public ItemType Type { get; set; }
@@ -44,6 +53,15 @@ public class CreatePasswordItemDto
 
 public class UpdatePasswordItemDto
 {
+    /// <summary>
+    /// Required whenever the request carries a secret (password, card number, CVV, PIN, Wi-Fi password,
+    /// note content…). The server uses it only to derive the vault key and encrypt those values before they
+    /// are stored, then discards it; requests with secrets but no valid master password are rejected rather
+    /// than stored unencrypted. Never returned.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonPropertyName("masterPassword")]
+    public string? MasterPassword { get; set; }
+
     public string? Title { get; set; }
     public string? Description { get; set; }
     public bool? IsFavorite { get; set; }

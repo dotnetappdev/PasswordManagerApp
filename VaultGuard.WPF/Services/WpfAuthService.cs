@@ -45,6 +45,23 @@ public class WpfAuthService : IAuthService
     public ApplicationUser? CurrentUser => _currentUser;
 
     /// <summary>
+    /// The user who owns the unlocked vault session. Several profiles can share this desktop database, so
+    /// this must never fall back to "the first user in the table" — that let one profile change or delete
+    /// another profile's account.
+    /// </summary>
+    private async Task<ApplicationUser?> GetSignedInUserAsync()
+    {
+        var userId = _currentUser?.Id;
+        if (userId == null)
+        {
+            var sessionId = await _secureStorageService.GetAsync("sessionId");
+            if (!string.IsNullOrEmpty(sessionId) && _vaultSessionService.IsVaultUnlocked(sessionId))
+                userId = _vaultSessionService.GetSessionUserId(sessionId);
+        }
+        return userId == null ? null : await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+    }
+
+    /// <summary>
     /// Sets up a new master password for first-time use
     /// </summary>
     public async Task<bool> SetupMasterPasswordAsync(string masterPassword, string hint = "")
@@ -263,6 +280,8 @@ public class WpfAuthService : IAuthService
 
                         // Initialize session with master key
                         var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                        // Encrypt any secrets still stored in plaintext / old layouts for this user (no-op once done).
+                        await VaultGuard.Services.Security.VaultSecretsMigrator.RunAfterUnlockAsync(_dbContext, _vaultSessionService, user.Id, sessionId, _logger);
 
                         // Store session in secure storage
                         await _secureStorageService.SetAsync("sessionId", sessionId);
@@ -313,7 +332,7 @@ public class WpfAuthService : IAuthService
                 // Restore current user if not already set
                 if (_currentUser == null)
                 {
-                    _currentUser = await _dbContext.Users.FirstOrDefaultAsync();
+                    _currentUser = await GetSignedInUserAsync();
                 }
                 return true;
             }
@@ -401,15 +420,19 @@ public class WpfAuthService : IAuthService
     /// <summary>
     /// Changes the master password for the current user
     /// </summary>
+    /// <summary>Why the last ChangeMasterPasswordAsync call returned false, when there's a useful reason.</summary>
+    public string? LastChangePasswordError { get; private set; }
+
     public async Task<bool> ChangeMasterPasswordAsync(string currentPassword, string newPassword, string newPasswordHint = "")
     {
+        LastChangePasswordError = null;
         try
         {
-            // Get current user from database
-            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            // The signed-in profile — not simply the first user in the database.
+            var user = await GetSignedInUserAsync();
             if (user == null)
             {
-                _logger.LogError("No user found in database for password change");
+                _logger.LogError("No signed-in user for password change");
                 return false;
             }
 
@@ -449,14 +472,25 @@ public class WpfAuthService : IAuthService
             // Derive new master key
             var newMasterKey = _passwordCryptoService.DeriveMasterKey(newPassword, newUserSalt);
 
-            // LIMITATION: Re-encryption of all vault data with new master key is not implemented
-            // When master password changes, existing encrypted vault data remains encrypted with old key
-            // This would require:
-            // 1. Decrypt all password items with current master key
-            // 2. Re-encrypt them with new master key
-            // 3. Update all encrypted fields in database
-            // For now, we'll update the user record and session
-            // Users may need to re-enter vault data after master password change
+            // Re-encrypt every vault secret under the new key, staged on this context so it is saved in
+            // the same SaveChanges as the new salt/hash below. (This used to be skipped, leaving all data
+            // encrypted under a key that could no longer be derived.) The old key is the one the vault was
+            // unlocked with; fall back to deriving it from the current password.
+            var sessionForKey = await _secureStorageService.GetAsync("sessionId");
+            var unlockedKey = string.IsNullOrEmpty(sessionForKey) ? null : _vaultSessionService.GetMasterKey(sessionForKey);
+            using (var oldCipher = VaultGuard.Services.Security.VaultCipher.ForKey(_passwordCryptoService,
+                       unlockedKey != null ? (byte[])unlockedKey.Clone() : currentMasterKey, ownsKey: true))
+            using (var newCipher = VaultGuard.Services.Security.VaultCipher.ForKey(_passwordCryptoService, (byte[])newMasterKey.Clone(), ownsKey: true))
+            {
+                var rotation = await VaultGuard.Services.Security.VaultKeyRotation.StageAsync(_dbContext, user.Id, oldCipher, newCipher);
+                if (!rotation.Ok)
+                {
+                    _logger.LogWarning("Master password change refused for {UserId}: {Reason}", user.Id, rotation.Describe());
+                    LastChangePasswordError = rotation.Describe();
+                    return false;
+                }
+                _logger.LogInformation("Master password change for {UserId}: {Summary}", user.Id, rotation.Describe());
+            }
 
             // Update user record in database
             user.UserSalt = Convert.ToBase64String(newUserSalt);
@@ -605,8 +639,7 @@ public class WpfAuthService : IAuthService
             // If authenticated but no current user, try to get from database
             if (_isAuthenticated)
             {
-                var user = await _dbContext.Users.FirstOrDefaultAsync();
-                return user?.Id;
+                return (await GetSignedInUserAsync())?.Id;
             }
 
             return null;
@@ -704,6 +737,8 @@ public class WpfAuthService : IAuthService
 
                 // Initialize session with master key
                 var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
+                // Encrypt any secrets still stored in plaintext / old layouts for this user (no-op once done).
+                await VaultGuard.Services.Security.VaultSecretsMigrator.RunAfterUnlockAsync(_dbContext, _vaultSessionService, user.Id, sessionId, _logger);
 
                 // Store session in secure storage instead of browser storage
                 await _secureStorageService.SetAsync("sessionId", sessionId);
@@ -735,11 +770,11 @@ public class WpfAuthService : IAuthService
     {
         try
         {
-            // Get current user from database
-            var user = await _dbContext.Users.FirstOrDefaultAsync();
+            // The signed-in profile — not simply the first user in the database.
+            var user = await GetSignedInUserAsync();
             if (user == null)
             {
-                _logger.LogError("No user found in database for account deletion");
+                _logger.LogError("No signed-in user for account deletion");
                 return (false, "User not found");
             }
 

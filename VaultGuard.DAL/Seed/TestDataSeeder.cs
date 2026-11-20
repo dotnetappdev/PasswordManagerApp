@@ -385,6 +385,8 @@ public static class TestDataSeeder
         all.Add(GP("Home Safe Combination",   "John Doe",    "15-32-07",            "SentrySafe wall safe behind master bedroom mirror",  pwdCat, personalCol, uid, T("Important","High Security","Rarely Used")));
 
         db.PasswordItems.AddRange(all);
+        // No vault key exists yet — park card/Wi-Fi/note secrets for encryption at the owner's first unlock.
+        foreach (var item in all) VaultGuard.DAL.Security.LegacySecretColumns.StashUntilUnlock(db, item);
         db.SaveChanges();
     }
 

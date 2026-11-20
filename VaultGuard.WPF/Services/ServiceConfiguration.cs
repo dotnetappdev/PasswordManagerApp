@@ -209,6 +209,8 @@ public static class ServiceConfiguration
     private static void ConfigureBusinessServices(IServiceCollection services)
     {
         services.AddScoped<IPasswordItemService, PasswordItemService>();
+        // Scope every vault query to the owner of the unlocked session (profiles share this database).
+        services.AddScoped<VaultGuard.Services.Security.ICurrentVaultUser, VaultGuard.Services.Security.SessionVaultUser>();
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<ICategoryInterface, CategoryService>();
         services.AddScoped<ICollectionService, CollectionService>();

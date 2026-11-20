@@ -20,4 +20,11 @@ public interface IPasswordItemApiService
     Task<bool> ToggleFavoriteAsync(int id);
     Task<bool> ArchiveAsync(int id);
     Task<bool> UnarchiveAsync(int id);
+
+    /// <summary>
+    /// Decrypts the caller's own item with the vault key derived from <paramref name="masterPassword"/> and
+    /// returns its secrets by field name (e.g. "Card.CVV"). Null if the item isn't the caller's. Throws
+    /// VaultKeyRequiredException for a wrong master password.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, string>?> RevealSecretsAsync(int id, string masterPassword);
 }

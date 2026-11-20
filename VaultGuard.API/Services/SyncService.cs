@@ -494,6 +494,8 @@ public class SyncService : VaultGuard.API.Interfaces.ISyncService
             };
         }
 
+        // Secrets travel as ciphertext only (the plaintext properties are not stored).
+        VaultGuard.Services.Security.VaultItemSecrets.CopyStored(source, clone);
         return clone;
     }
 
@@ -545,6 +547,8 @@ public class SyncService : VaultGuard.API.Interfaces.ISyncService
             target.WiFiItem.RouterPassword = source.WiFiItem.RouterPassword;
             target.WiFiItem.Notes = source.WiFiItem.Notes;
         }
+
+        VaultGuard.Services.Security.VaultItemSecrets.CopyStored(source, target);
     }
 
     private static Category CloneCategory(Category source)
