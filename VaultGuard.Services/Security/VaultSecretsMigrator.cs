@@ -55,8 +55,12 @@ public static class VaultSecretsMigrator
         var items = await db.PasswordItems
             .Where(p => p.UserId == userId)
             .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
-            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem)
+            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem).Include(p => p.CustomFields)
             .Where(p =>
+                // secret custom fields still in plaintext (password / OTP / protected / TOTP secret)
+                p.CustomFields.Any(f => f.StoredValue != "" && !f.StoredValue.StartsWith(CustomField.EncryptedPrefix) &&
+                    f.Name != "VaultGuard.Protected" && f.Name != "vaultguard.password-history" && f.Name != "Brand Icon" &&
+                    (f.Type == CustomFieldType.Password || f.Type == CustomFieldType.OneTimePassword || f.IsProtected || f.Name == "TOTP Secret")) ||
                 (p.CreditCardItem != null && (
                     (EF.Property<string>(p.CreditCardItem, "LegacyCardNumber") ?? "") != "" ||
                     (EF.Property<string>(p.CreditCardItem, "LegacyCVV") ?? "") != "" ||
@@ -121,7 +125,9 @@ public static class VaultSecretsMigrator
                     v => { pk.Notes = v; pk.EncryptedNotes = pk.NotesNonce = pk.NotesAuthTag = null; });
             }
 
-            // 3. Encrypt everything now in memory (split layout), then drop the plaintext.
+            // 3. Encrypt everything now in memory (split layout) — plus plaintext secret custom fields — then
+            //    drop the plaintext.
+            changed += (item.CustomFields ?? new List<CustomField>()).Count(cf => cf.IsSecret && !cf.IsEncrypted && cf.StoredValue != "");
             cipher.Seal(item);
             VaultItemSecrets.Forget(item);
         }

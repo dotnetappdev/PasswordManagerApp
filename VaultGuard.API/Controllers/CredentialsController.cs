@@ -50,8 +50,12 @@ public class CredentialsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.OtpauthUri))
             return BadRequest("otpauthUri is required");
 
-        var ok = await _service.UpdateTotpSecretAsync(id, request.OtpauthUri);
-        return ok ? NoContent() : NotFound();
+        try
+        {
+            var ok = await _service.UpdateTotpSecretAsync(id, request.OtpauthUri, request.MasterPassword);
+            return ok ? NoContent() : NotFound();
+        }
+        catch (VaultGuard.Services.Security.VaultKeyRequiredException e) { return BadRequest(e.Message); }
     }
 
     /// <summary>
@@ -78,4 +82,6 @@ public class PatchTotpRequest
 {
     public string OtpauthUri { get; set; } = string.Empty;
     public string? Secret { get; set; }
+    /// <summary>Required: used only to derive the vault key that encrypts the secret before it is stored.</summary>
+    public string? MasterPassword { get; set; }
 }

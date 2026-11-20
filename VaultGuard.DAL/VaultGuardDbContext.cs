@@ -198,7 +198,8 @@ public class VaultGuardDbContext : IdentityDbContext<ApplicationUser, Applicatio
             entity.ToTable("CustomField");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Value).IsRequired().HasMaxLength(5000);
+            // StoredValue holds ciphertext for secret fields; Value is the in-memory plaintext (see CustomField).
+            entity.Property(e => e.StoredValue).HasColumnName("Value").IsRequired().HasMaxLength(5000);
             entity.Property(e => e.Type).IsRequired().HasConversion<int>();
             entity.Property(e => e.IsRequired).IsRequired();
             entity.Property(e => e.IsProtected).IsRequired();

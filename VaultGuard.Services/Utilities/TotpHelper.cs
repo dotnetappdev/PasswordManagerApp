@@ -33,7 +33,10 @@ public static class TotpHelper
 
         if (string.IsNullOrWhiteSpace(secret))
         {
-            if (existing != null) item.CustomFields.Remove(existing);
+            // An encrypted secret that was never decrypted into this form reads as empty — that means
+            // "unknown", not "cleared", so keep it. Only remove a secret the user could actually see.
+            if (existing != null && !(existing.IsEncrypted && string.IsNullOrEmpty(existing.Value)))
+                item.CustomFields.Remove(existing);
             return;
         }
 

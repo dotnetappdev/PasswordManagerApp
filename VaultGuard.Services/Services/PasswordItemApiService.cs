@@ -73,6 +73,8 @@ public class PasswordItemApiService : IPasswordItemApiService
             throw new VaultGuard.Services.Security.VaultKeyRequiredException("Invalid master password.");
 
         using var cipher = VaultGuard.Services.Security.VaultCipher.ForMasterPassword(_crypto, masterPassword, Convert.FromBase64String(user.UserSalt));
+        // API-only users never unlock an app, so upgrade any legacy plaintext of theirs while we hold the key.
+        await VaultGuard.Services.Security.VaultSecretsMigrator.MigrateAsync(_context, ownerId, cipher);
         cipher.Seal(item);
         VaultGuard.Services.Security.VaultItemSecrets.Forget(item);
     }
@@ -446,7 +448,7 @@ public class PasswordItemApiService : IPasswordItemApiService
     {
         var item = await (await OwnedAsync())
             .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
-            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem)
+            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem).Include(p => p.CustomFields)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         if (item == null) return null;
@@ -458,6 +460,14 @@ public class PasswordItemApiService : IPasswordItemApiService
             throw new VaultGuard.Services.Security.VaultKeyRequiredException("Invalid master password.");
 
         using var cipher = VaultGuard.Services.Security.VaultCipher.ForMasterPassword(_crypto, masterPassword, Convert.FromBase64String(user.UserSalt));
+        if (await VaultGuard.Services.Security.VaultSecretsMigrator.MigrateAsync(_context, user.Id, cipher) > 0)
+        {
+            // Legacy plaintext was just encrypted — reload so the response includes it.
+            item = await _context.PasswordItems.AsNoTracking()
+                .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
+                .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem).Include(p => p.CustomFields)
+                .FirstAsync(p => p.Id == id);
+        }
         var failed = cipher.Open(item);
         if (failed.Count > 0)
             _logger.LogWarning("Item {Id}: {Count} secret field(s) could not be decrypted", id, failed.Count); // never log values
@@ -504,7 +514,7 @@ public class PasswordItemApiService : IPasswordItemApiService
         }
     }
 
-    public async Task<bool> UpdateTotpSecretAsync(int id, string otpauthUri)
+    public async Task<bool> UpdateTotpSecretAsync(int id, string otpauthUri, string? masterPassword = null)
     {
         try
         {
@@ -524,7 +534,7 @@ public class PasswordItemApiService : IPasswordItemApiService
             }
             else
             {
-                _context.CustomFields.Add(new CustomField
+                var field = new CustomField
                 {
                     PasswordItemId = item.Id,
                     Name = totpFieldName,
@@ -533,12 +543,17 @@ public class PasswordItemApiService : IPasswordItemApiService
                     IsProtected = true,
                     CreatedAt = DateTime.UtcNow,
                     LastModified = DateTime.UtcNow,
-                });
+                };
+                item.CustomFields ??= new List<CustomField>();
+                item.CustomFields.Add(field);
             }
             item.LastModified = DateTime.UtcNow;
+            // The TOTP secret is encrypted like every other secret (needs the owner's master password).
+            await SealAsync(item, item.UserId!, masterPassword);
             await _context.SaveChangesAsync();
             return true;
         }
+        catch (VaultGuard.Services.Security.VaultKeyRequiredException) { throw; }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating TOTP for item {Id}", id);

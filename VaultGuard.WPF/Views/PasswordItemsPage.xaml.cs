@@ -521,8 +521,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     /// </summary>
     private async Task OpenSelectedItemAsync(PasswordItem item)
     {
-        if (_serviceProvider == null || item.LoginItem != null && item.CreditCardItem == null && item.WiFiItem == null && item.SecureNoteItem == null)
-            return;
+        if (_serviceProvider == null) return;
         try
         {
             var reveal = _serviceProvider.GetService<IPasswordRevealService>();

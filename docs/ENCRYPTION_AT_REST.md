@@ -11,6 +11,7 @@ Every secret in a vault item is encrypted before it reaches the database, by the
 | Wi‑Fi | network password, router admin password, guest network password |
 | Secure note | content |
 | Passkey | credential id (Windows Hello key name), notes |
+| Custom fields | the authenticator (TOTP) secret, and any field of type Password or One-time password, or marked protected |
 
 The single source of truth for this list is `VaultGuard.Services/Security/VaultItemSecrets.cs`.
 
@@ -21,9 +22,19 @@ The single source of truth for this list is `VaultGuard.Services/Security/VaultI
 - **Storage:** ciphertext, nonce and tag are stored Base64 in separate columns (`EncryptedX`, `XNonce`, `XAuthTag`). Readers also accept the older single-column `cipher|nonce|tag` layout.
 - **Plaintext never persists:** the plaintext properties (`CardNumber`, `CVV`, `Password`, `Content`, …) are `[NotMapped]`. They only exist in memory after an item is opened, so a save cannot write a secret in clear.
 
+## Custom fields
+
+A custom field keeps its value in one column. `CustomField.StoredValue` is that column. For secret fields it holds `vgenc1:` followed by `cipher|nonce|tag`; other fields are stored as-is. `CustomField.Value` is the in-memory value:
+
+- It stays empty for an encrypted field until the item is opened, and decrypting never touches the column.
+- Setting it to empty on an encrypted field changes nothing, so a form that couldn't decrypt a value can't wipe it.
+- `TotpHelper.SetSecret(item, "")` keeps an encrypted secret that was never decrypted.
+
+When copying fields, copy `StoredValue`, not `Value`.
+
 ## Rules for code
 
-- **Saving:** call `IPasswordRevealService.TrySealItem(item, sessionId)` (apps) or let `PasswordItemApiService` do it (API) before saving. If it returns false, don't save; tell the user the vault is locked.
+- **Saving:** call `IPasswordRevealService.TrySealItem(item, sessionId)` (apps) or let `PasswordItemApiService` do it (API) before saving. If it returns false, don't save; tell the user the vault is locked. As a safety net, `PasswordItemService.CreateAsync/UpdateAsync` also seals anything still in plaintext using the unlocked session, and refuses the save if there is none.
 - **Displaying:** call `OpenItem(item, sessionId)` once when an item is opened, not on every render.
 - **Copying or syncing items:** use `VaultItemSecrets.CopyStored`. Move ciphertext, never plaintext.
 - **Encrypting:** only ever use the caller's own session. Never fall back to "any active session"; on the web host that could be another user's.
@@ -45,4 +56,6 @@ The single source of truth for this list is `VaultGuard.Services/Security/VaultI
 ## API
 
 - `POST /api/passworditems` and `PUT /api/passworditems/{id}` accept `masterPassword`. It is required whenever the request contains a secret. Without it (or with a wrong one) the request is rejected with 400, never stored unencrypted.
+- `PATCH /api/credentials/{id}/totp` needs `masterPassword` too. The browser extension's direct-to-API fallback doesn't have it, so that path now fails cleanly; its normal native-host path encrypts with the session key.
+- The API also runs the plaintext migration whenever it verifies a master password (login, secret writes and reveals), so users who only use the API are upgraded too.
 - `POST /api/passworditems/{id}/secrets` with `{ "masterPassword": "…" }` returns that item's decrypted secrets, for the caller's own items only.

@@ -507,6 +507,10 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
                 PasskeyNotesTextBox.Text = notes;
                 _passkeyNotesLoaded = true;
             }
+            // Authenticator secret and password-type custom fields are encrypted too.
+            if (TotpHelper.GetSecret(_editingItem) is { Length: > 0 } totp && string.IsNullOrEmpty(TotpSecretTextBox.Text))
+                TotpSecretTextBox.Text = totp;
+            RefreshCustomFieldsUI();
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to decrypt item for editing", ex); }
     }
@@ -553,6 +557,9 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
 
         // Authenticator (TOTP) secret stored on the item
         TotpSecretTextBox.Text = TotpHelper.GetSecret(_editingItem) ?? string.Empty;
+        // Secrets (password, card, TOTP, password-type custom fields…) are stored encrypted: decrypt them and
+        // fill any of these inputs that are still empty.
+        _ = LoadSecretsForEditAsync();
 
         // Protected-note flag
         ProtectNoteCheckBox.IsChecked = ProtectedItemHelper.IsProtected(_editingItem);

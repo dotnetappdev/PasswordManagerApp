@@ -114,6 +114,16 @@ public class AuthController : ControllerBase
                 return Unauthorized("Invalid master key");
             }
 
+            // The master password is verified, so we briefly hold this user's vault key: encrypt any legacy
+            // plaintext secrets of theirs (API-only users never unlock an app, where this normally happens).
+            try
+            {
+                using var cipher = VaultGuard.Services.Security.VaultCipher.ForMasterPassword(
+                    _passwordCryptoService, loginRequest.MasterKey, Convert.FromBase64String(user.UserSalt));
+                await VaultGuard.Services.Security.VaultSecretsMigrator.MigrateAsync(_dbContext, user.Id, cipher);
+            }
+            catch (Exception migEx) { _logger.LogError(migEx, "Vault secrets migration failed for {UserId}", user.Id); }
+
             // Check if user has 2FA enabled
             if (user.TwoFactorEnabled)
             {

@@ -569,6 +569,11 @@ public class Program
         const string totpFieldName = "TOTP Secret";
         var now = DateTime.UtcNow.ToString("o");
 
+        // Authenticator secrets are encrypted at rest like every other vault secret: same AES-256-GCM vault key,
+        // stored as CustomField.EncryptedPrefix + "cipher|nonce|tag" (see VaultGuard.Models.CustomField).
+        var enc = EncryptWithKey(otpauthUri, session.Value.masterKey);
+        var sealedTotp = "vgenc1:" + enc.EncryptedPassword + "|" + enc.Nonce + "|" + enc.AuthenticationTag;
+
         // Find an existing login item by hostname
         PasswordItem? item = null;
         if (!string.IsNullOrEmpty(hostname))
@@ -590,7 +595,7 @@ public class Program
 
             if (existingField != null)
             {
-                existingField.Value = otpauthUri;
+                existingField.Value = sealedTotp;
                 existingField.LastModified = DateTime.UtcNow;
             }
             else
@@ -599,7 +604,7 @@ public class Program
                 {
                     PasswordItemId = item.Id,
                     Name = totpFieldName,
-                    Value = otpauthUri,
+                    Value = sealedTotp,
                     Type = 2, // CustomFieldType.Password
                     IsProtected = true,
                     CreatedAt = DateTime.UtcNow,
@@ -629,7 +634,7 @@ public class Program
             {
                 PasswordItemId = newItem.Id,
                 Name = totpFieldName,
-                Value = otpauthUri,
+                Value = sealedTotp,
                 Type = 2,
                 IsProtected = true,
                 CreatedAt = DateTime.UtcNow,

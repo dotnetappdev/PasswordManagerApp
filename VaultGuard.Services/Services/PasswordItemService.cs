@@ -53,6 +53,20 @@ public class PasswordItemService : IPasswordItemService
         if (item.UserId != userId) throw new UnauthorizedAccessException("That item doesn't belong to the signed-in user.");
     }
 
+    /// <summary>
+    /// Safety net for every save path (forms, reorders, favourites, imports…): any secret still in plaintext —
+    /// including password/one-time-password/protected custom fields and the TOTP secret — is encrypted with the
+    /// signed-in user's vault key before it is written. If there is a secret to protect but no unlocked vault,
+    /// the save is refused rather than storing it in clear.
+    /// </summary>
+    private async Task SealSecretsAsync(PasswordItem item)
+    {
+        if (_currentUser == null || !VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(item)) return;
+        var cipher = await _currentUser.GetSessionCipherAsync()
+                     ?? throw new VaultGuard.Services.Security.VaultKeyRequiredException("The vault is locked, so this item's secrets can't be encrypted. Unlock it and try again.");
+        cipher.Seal(item);
+    }
+
     public async Task<IEnumerable<PasswordItem>> GetAllAsync()
     {
         return await (await OwnedAsync())
@@ -101,6 +115,7 @@ public class PasswordItemService : IPasswordItemService
     public async Task<PasswordItem> CreateAsync(PasswordItem item)
     {
         await EnsureCanWriteAsync(item, isNew: true);
+        await SealSecretsAsync(item);
         item.CreatedAt = DateTime.UtcNow;
         item.LastModified = DateTime.UtcNow;
         
@@ -112,6 +127,7 @@ public class PasswordItemService : IPasswordItemService
     public async Task<PasswordItem> UpdateAsync(PasswordItem item)
     {
         await EnsureCanWriteAsync(item, isNew: false);
+        await SealSecretsAsync(item);
         item.LastModified = DateTime.UtcNow;
 
         // Snapshot the previous password into the item's rolling history (migration-free reserved custom

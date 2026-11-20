@@ -662,7 +662,11 @@
         try
         {
             await VaultGuard.Components.Shared.Services.LoginPasswordCrypto.DecryptIntoAsync(item, PasswordRevealService, JSRuntime);
-            if (ReferenceEquals(item, selectedItem)) await InvokeAsync(StateHasChanged);
+            if (ReferenceEquals(item, selectedItem))
+            {
+                StartTotpTimer(item); // the authenticator secret is encrypted until the item is opened
+                await InvokeAsync(StateHasChanged);
+            }
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't decrypt selected item's password", ex); }
     }

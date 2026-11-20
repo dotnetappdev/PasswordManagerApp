@@ -37,7 +37,7 @@ public static class VaultKeyRotation
         var items = await db.PasswordItems
             .Where(p => p.UserId == userId)
             .Include(p => p.LoginItem).Include(p => p.CreditCardItem).Include(p => p.WiFiItem)
-            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem)
+            .Include(p => p.SecureNoteItem).Include(p => p.PasskeyItem).Include(p => p.CustomFields)
             .ToListAsync(ct);
 
         var unreadable = new List<string>();
@@ -57,6 +57,10 @@ public static class VaultKeyRotation
         int count = 0;
         foreach (var item in items)
         {
+            // Encrypted custom fields keep their old ciphertext unless restaged: put the decrypted value back
+            // as the pending value so Seal re-encrypts it under the new key.
+            foreach (var cf in item.CustomFields ?? new List<CustomField>())
+                if (cf.IsEncrypted && !string.IsNullOrEmpty(cf.Value)) cf.Value = cf.Value;
             if (newKey.Seal(item) > 0) count++;
             VaultItemSecrets.Forget(item);
         }

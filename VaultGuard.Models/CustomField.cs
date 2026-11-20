@@ -11,8 +11,59 @@ public class CustomField
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
     
+    /// <summary>
+    /// What is stored in the "Value" column. For secret fields (see <see cref="IsSecret"/>) this is
+    /// <see cref="EncryptedPrefix"/> + "cipher|nonce|tag" (AES-256-GCM under the owner's vault key);
+    /// for everything else it is the value itself. Code should use <see cref="Value"/>.
+    /// </summary>
     [Required]
-    public string Value { get; set; } = string.Empty;
+    [System.Text.Json.Serialization.JsonPropertyOrder(-1)] // deserialize before Value (see Value's setter)
+    public string StoredValue { get; set; } = string.Empty;
+
+    private string? _plain;
+
+    /// <summary>
+    /// The field's value. Not a database column: for an encrypted secret field it is empty until the item is
+    /// opened (decrypted in memory only, so an unrelated save can never write it back in clear). Setting it
+    /// stages a new value; secret fields are encrypted again before they are saved. Setting an empty value on
+    /// an encrypted field leaves it unchanged (a form that couldn't decrypt it can never wipe it).
+    /// </summary>
+    [NotMapped]
+    public string Value
+    {
+        get => _plain ?? (IsEncrypted ? string.Empty : StoredValue);
+        set
+        {
+            if (string.IsNullOrEmpty(value) && IsEncrypted) { _plain = null; return; }
+            _plain = value ?? string.Empty;
+            StoredValue = _plain;
+        }
+    }
+
+    /// <summary>Marks an encrypted <see cref="StoredValue"/>.</summary>
+    public const string EncryptedPrefix = "vgenc1:";
+
+    [NotMapped, System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEncrypted => StoredValue.StartsWith(EncryptedPrefix, StringComparison.Ordinal);
+
+    /// <summary>Password and one-time-password fields, anything marked protected, and the TOTP secret.</summary>
+    [NotMapped, System.Text.Json.Serialization.JsonIgnore]
+    public bool IsSecret => !ReservedNames.Contains(Name) &&
+        (Type is CustomFieldType.Password or CustomFieldType.OneTimePassword || IsProtected ||
+         string.Equals(Name, "TOTP Secret", StringComparison.OrdinalIgnoreCase));
+
+    // App-internal fields that hold flags or already-encrypted data, never user secrets.
+    private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
+        { "VaultGuard.Protected", "vaultguard.password-history", "Brand Icon" };
+
+    /// <summary>Sets the decrypted value in memory without touching the stored column.</summary>
+    public void SetDecrypted(string plain) => _plain = plain;
+
+    /// <summary>Replaces the stored column with ciphertext, keeping the in-memory value for display.</summary>
+    public void SetSealed(string encryptedStoredValue) { _plain ??= StoredValue; StoredValue = encryptedStoredValue; }
+
+    /// <summary>Drops the in-memory plaintext of an encrypted field.</summary>
+    public void ForgetPlaintext() { if (IsEncrypted) _plain = null; }
     
     [Required]
     public CustomFieldType Type { get; set; } = CustomFieldType.Text;

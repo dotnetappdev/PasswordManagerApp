@@ -11,7 +11,9 @@ public interface IPasswordItemApiService
     Task<IEnumerable<PasswordItemDto>> GetByTagIdAsync(int tagId);
     Task<IEnumerable<PasswordItemDto>> SearchAsync(string searchTerm);
     Task<IEnumerable<PasswordItemDto>> SearchByUrlAsync(string url);
-    Task<bool> UpdateTotpSecretAsync(int id, string otpauthUri);
+    /// <summary>Stores the authenticator secret, encrypted with the vault key from <paramref name="masterPassword"/>.
+    /// Throws VaultKeyRequiredException if it is missing or wrong — the secret is never stored in clear.</summary>
+    Task<bool> UpdateTotpSecretAsync(int id, string otpauthUri, string? masterPassword = null);
     Task<PasswordItemDto> CreateAsync(CreatePasswordItemDto createDto, string userId);
     Task<PasswordItemDto?> UpdateAsync(int id, UpdatePasswordItemDto updateDto);
     Task<bool> DeleteAsync(int id);

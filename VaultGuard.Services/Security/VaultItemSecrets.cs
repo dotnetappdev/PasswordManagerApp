@@ -141,6 +141,17 @@ public static class VaultItemSecrets
             f.SetStored(owner, parts[0], parts[1], parts[2]);
             sealedCount++;
         }
+
+        // Secret custom fields (password / one-time-password / protected / TOTP secret): the ciphertext lives in
+        // the field's single "Value" column, marked with CustomField.EncryptedPrefix.
+        foreach (var cf in item.CustomFields ?? Enumerable.Empty<CustomField>())
+        {
+            if (!cf.IsSecret || cf.IsEncrypted || string.IsNullOrEmpty(cf.StoredValue)) continue;
+            var payload = encrypt(cf.StoredValue);
+            if (payload.Split('|').Length != 3) throw new InvalidOperationException($"Encryption of custom field {cf.Name} returned an invalid value.");
+            cf.SetSealed(CustomField.EncryptedPrefix + payload);
+            sealedCount++;
+        }
         return sealedCount;
     }
 
@@ -170,6 +181,13 @@ public static class VaultItemSecrets
             try { f.SetPlain(owner, decrypt(payload)); }
             catch (Exception) { failed.Add(f.Name); } // never log the value or the exception detail here
         }
+
+        foreach (var cf in item.CustomFields ?? Enumerable.Empty<CustomField>())
+        {
+            if (!cf.IsEncrypted) continue;
+            try { cf.SetDecrypted(decrypt(cf.StoredValue.Substring(CustomField.EncryptedPrefix.Length))); }
+            catch (Exception) { failed.Add("Custom." + cf.Name); }
+        }
         return failed;
     }
 
@@ -191,7 +209,8 @@ public static class VaultItemSecrets
 
     /// <summary>True if any plaintext secret property on the item is populated (i.e. something to seal).</summary>
     public static bool HasPlaintext(PasswordItem item)
-        => Fields.Any(f => f.Owner(item) is { } o && !string.IsNullOrEmpty(f.GetPlain(o)));
+        => Fields.Any(f => f.Owner(item) is { } o && !string.IsNullOrEmpty(f.GetPlain(o)))
+           || (item.CustomFields ?? Enumerable.Empty<CustomField>()).Any(cf => cf.IsSecret && !cf.IsEncrypted && !string.IsNullOrEmpty(cf.StoredValue));
 
     /// <summary>Populated plaintext secrets by field name, e.g. "Card.CVV" → "123" (for an explicit reveal).</summary>
     public static IReadOnlyDictionary<string, string> Plaintexts(PasswordItem item)
@@ -199,6 +218,10 @@ public static class VaultItemSecrets
                  .Where(x => x.Owner != null)
                  .Select(x => (x.Name, Value: Fields.First(f => f.Name == x.Name).GetPlain(x.Owner!)))
                  .Where(x => !string.IsNullOrEmpty(x.Value))
+                 .Concat((item.CustomFields ?? Enumerable.Empty<CustomField>())
+                     .Where(cf => cf.IsSecret && !string.IsNullOrEmpty(cf.Value))
+                     .Select(cf => (Name: "Custom." + cf.Name, Value: (string?)cf.Value)))
+                 .GroupBy(x => x.Name).Select(g => g.First())
                  .ToDictionary(x => x.Name, x => x.Value!);
 
     /// <summary>Clears all in-memory plaintext secrets (e.g. when a view closes or the vault locks).</summary>
@@ -209,6 +232,7 @@ public static class VaultItemSecrets
             var owner = f.Owner(item);
             if (owner != null) f.SetPlain(owner, null);
         }
+        foreach (var cf in item.CustomFields ?? Enumerable.Empty<CustomField>()) cf.ForgetPlaintext();
     }
 
     /// <summary>True when the stored value for the login password is still legacy plaintext.</summary>

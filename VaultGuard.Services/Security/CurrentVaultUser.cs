@@ -9,6 +9,12 @@ public interface ICurrentVaultUser
 {
     /// <summary>The signed-in user's id, or null when nobody is signed in (callers then see no data).</summary>
     Task<string?> GetUserIdAsync();
+
+    /// <summary>
+    /// The signed-in user's vault cipher when one is held locally (an unlocked app session), else null.
+    /// The API returns null — it derives the key per request from a supplied master password instead.
+    /// </summary>
+    Task<VaultCipher?> GetSessionCipherAsync() => Task.FromResult<VaultCipher?>(null);
 }
 
 /// <summary>
@@ -33,6 +39,12 @@ public sealed class SessionVaultUser : ICurrentVaultUser
             if (!string.IsNullOrEmpty(owner)) return owner;
         }
         return _sp.GetService<IAuthService>()?.CurrentUser?.Id;
+    }
+
+    public async Task<VaultCipher?> GetSessionCipherAsync()
+    {
+        var sessions = _sp.GetService<IVaultSessionService>();
+        return sessions == null ? null : VaultCipher.ForSession(sessions, await GetSessionIdAsync());
     }
 
     private async Task<string?> GetSessionIdAsync()
