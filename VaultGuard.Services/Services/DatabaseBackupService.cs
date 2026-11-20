@@ -35,8 +35,10 @@ public class DatabaseBackupService : IDatabaseBackupService
         IPasswordEncryptionService encryptionService,
         IBackupEncryptionService backupEncryption,
         IAuthService? authService = null,
-        VaultGuard.ExceptionReporting.IExceptionReporter? exceptionReporter = null)
+        VaultGuard.ExceptionReporting.IExceptionReporter? exceptionReporter = null,
+        VaultGuard.Services.Security.ICurrentVaultUser? currentUser = null)
     {
+        _currentUser = currentUser;
         _logger = logger;
         _contextFactory = contextFactory;
         _encryptionService = encryptionService;
@@ -319,12 +321,27 @@ public class DatabaseBackupService : IDatabaseBackupService
         }
     }
 
+    private readonly VaultGuard.Services.Security.ICurrentVaultUser? _currentUser;
+
     public async Task<BrowserExportResult> ExportToBrowserAsync(BrowserExportFormat format)
     {
         try
         {
+            // Export only the signed-in user's own logins, with their passwords decrypted by their unlocked vault
+            // key. Previously this exported every user's items in the database, with blank passwords (the
+            // plaintext property isn't stored).
+            var userId = _currentUser == null ? null : await _currentUser.GetUserIdAsync();
+            using var cipher = _currentUser == null ? null : await _currentUser.GetSessionCipherAsync();
+            if (userId == null || cipher == null)
+                return new BrowserExportResult { Success = false, ErrorMessage = "Unlock your vault to export your passwords." };
+
             using var context = _contextFactory.CreateDbContext();
-            var passwordItems = await context.PasswordItems.Include(p => p.LoginItem).ToListAsync();
+            var passwordItems = await context.PasswordItems
+                .Where(p => p.UserId == userId && !p.IsDeleted && p.LoginItem != null)
+                .Include(p => p.LoginItem)
+                .AsNoTracking()
+                .ToListAsync();
+            foreach (var item in passwordItems) cipher.Open(item);
 
             var exportData = format switch
             {
@@ -338,7 +355,7 @@ public class DatabaseBackupService : IDatabaseBackupService
             {
                 Success = true,
                 ExportData = exportData,
-                ExportedCount = passwordItems.Count
+                ExportedCount = passwordItems.Count(p => !string.IsNullOrEmpty(p.LoginItem?.Password))
             };
         }
         catch (Exception ex)

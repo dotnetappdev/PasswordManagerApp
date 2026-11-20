@@ -1070,10 +1070,34 @@ public class SettingsViewModel : BaseViewModel
             new Dictionary<string, string> { ["operation"] = operation });
     }
 
+    /// <summary>
+    /// Exports the signed-in user's logins to a browser-importable CSV and asks where to save it. (This was a
+    /// stub that reported success without exporting anything.) The CSV is plaintext by nature — the caller
+    /// warns the user first.
+    /// </summary>
     public async Task<ExportResult> ExportToBrowserAsync(string format)
     {
-        await Task.Delay(100);
-        return new ExportResult { Success = true, ExportedCount = 0 };
+        if (!Enum.TryParse<BrowserExportFormat>(format, ignoreCase: true, out var fmt))
+            return new ExportResult { Success = false, ErrorMessage = $"Unsupported browser: {format}" };
+        var svc = _serviceProvider.GetService<IDatabaseBackupService>();
+        if (svc == null) return new ExportResult { Success = false, ErrorMessage = "Export is unavailable." };
+
+        var result = await svc.ExportToBrowserAsync(fmt);
+        if (!result.Success || result.ExportData == null)
+            return new ExportResult { Success = false, ErrorMessage = result.ErrorMessage ?? "Export failed." };
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = $"Save passwords for {format}",
+            FileName = $"VaultGuard-{format}-passwords-{DateTime.Now:yyyyMMdd}.csv",
+            Filter = "CSV file (*.csv)|*.csv",
+            DefaultExt = ".csv"
+        };
+        if (dialog.ShowDialog() != true)
+            return new ExportResult { Success = false, ErrorMessage = "Export cancelled." };
+
+        await System.IO.File.WriteAllTextAsync(dialog.FileName, result.ExportData, new System.Text.UTF8Encoding(false));
+        return new ExportResult { Success = true, ExportedCount = result.ExportedCount };
     }
 
     private void SaveCloudSettings()

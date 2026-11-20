@@ -2410,7 +2410,23 @@ public sealed partial class SettingsPage : Page
             var browserName = button.Tag?.ToString();
             if (!string.IsNullOrEmpty(browserName))
             {
+                var confirm = new ModernWpf.Controls.ContentDialog
+                {
+                    Title = $"Export passwords for {browserName}?",
+                    Content = new TextBlock
+                    {
+                        Text = "The exported CSV file contains your passwords UNENCRYPTED — anyone who can open the file can read them. " +
+                               "Import it into the browser straight away, then delete it (and empty the Recycle Bin).",
+                        TextWrapping = TextWrapping.Wrap, MaxWidth = 460
+                    },
+                    PrimaryButtonText = "Export",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ModernWpf.Controls.ContentDialogButton.Close
+                };
+                if (await Helpers.DialogManager.ShowAsync(confirm) != ModernWpf.Controls.ContentDialogResult.Primary) return;
+
                 var result = await _viewModel.ExportToBrowserAsync(browserName);
+                if (result?.ErrorMessage == "Export cancelled.") return;
 
                 var message = result?.Success == true
                     ? $"Successfully exported {result.ExportedCount} passwords to {browserName} format."
