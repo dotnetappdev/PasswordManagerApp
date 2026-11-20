@@ -56,14 +56,22 @@ public class PermissionService : IPermissionService
     {
         try
         {
-            // Admin can access everything
-            if (await IsInRoleAsync(userId, ApplicationRoles.Admin))
+            // User can access their own resources
+            if (userId == resourceOwnerId)
             {
                 return await HasPermissionAsync(userId, permission);
             }
 
-            // User can access their own resources
-            if (userId == resourceOwnerId)
+            // Every cross-user rule below applies only inside one tenant. "Admin" is the in-app family/vault
+            // administrator (SuperAdmin is the platform operator), so it previously reached across tenants —
+            // an admin of one customer could read another customer's users' items.
+            if (!await SameTenantAsync(userId, resourceOwnerId))
+            {
+                return false;
+            }
+
+            // Admin can access everything in their own tenant
+            if (await IsInRoleAsync(userId, ApplicationRoles.Admin))
             {
                 return await HasPermissionAsync(userId, permission);
             }
@@ -89,6 +97,15 @@ public class PermissionService : IPermissionService
                 userId, resourceOwnerId, permission);
             return false;
         }
+    }
+
+    /// <summary>True when both users belong to the same tenant (both unassigned = single-tenant install).</summary>
+    private async Task<bool> SameTenantAsync(string userId, string otherUserId)
+    {
+        if (string.IsNullOrEmpty(otherUserId)) return false;
+        var a = await _userManager.FindByIdAsync(userId);
+        var b = await _userManager.FindByIdAsync(otherUserId);
+        return a != null && b != null && a.TenantId == b.TenantId;
     }
 
     public async Task<IList<string>> GetUserRolesAsync(string userId)

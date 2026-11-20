@@ -11,6 +11,9 @@ public static class MappingHelper
         return new PasswordItemDto
         {
             Id = entity.Id,
+            // Ownership is what the API's permission checks compare against; it was never mapped, so owners got
+            // 404 on their own items and the by-collection/category/tag filters always returned nothing.
+            UserId = entity.UserId,
             Title = entity.Title,
             Description = entity.Description,
             Type = entity.Type,
