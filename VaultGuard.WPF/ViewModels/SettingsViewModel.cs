@@ -111,7 +111,11 @@ public class SettingsViewModel : BaseViewModel
         try
         {
             if (File.Exists(SettingsFilePath))
-                return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsFilePath)) ?? new();
+            {
+                var stored = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsFilePath)) ?? new();
+                // Secrets (NAS/FTP passwords, API secret, tokens…) are DPAPI-encrypted on disk; hand back plaintext.
+                return stored.ToDictionary(kv => kv.Key, kv => VaultGuard.Services.Security.LocalSettingsProtector.Unprotect(kv.Key, kv.Value));
+            }
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to load local settings", ex); }
         return new();
@@ -122,7 +126,9 @@ public class SettingsViewModel : BaseViewModel
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(SettingsFilePath)!);
-            File.WriteAllText(SettingsFilePath, JsonSerializer.Serialize(values));
+            // Never write secrets in plain text (they used to be): encrypt them for this Windows user.
+            var stored = values.ToDictionary(kv => kv.Key, kv => VaultGuard.Services.Security.LocalSettingsProtector.Protect(kv.Key, kv.Value));
+            File.WriteAllText(SettingsFilePath, JsonSerializer.Serialize(stored));
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to save local settings", ex); }
     }

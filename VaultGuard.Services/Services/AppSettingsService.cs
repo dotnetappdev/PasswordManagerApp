@@ -19,6 +19,8 @@ public sealed class AppSettingsService : IAppSettingsService
     public AppSettingsService()
     {
         _values = LoadFromDisk(SettingsFilePath);
+        // Secrets written in plain text by older versions are encrypted (DPAPI, Windows) on first load.
+        if (VaultGuard.Services.Security.LocalSettingsProtector.ProtectAll(_values)) Save();
     }
 
     public string SettingsFilePath { get; } = Path.Combine(
@@ -28,7 +30,9 @@ public sealed class AppSettingsService : IAppSettingsService
     public string Get(string key, string fallback = "")
     {
         lock (_sync)
-            return _values.TryGetValue(key, out var v) && v is not null ? v : fallback;
+            return _values.TryGetValue(key, out var v) && v is not null
+                ? VaultGuard.Services.Security.LocalSettingsProtector.Unprotect(key, v)
+                : fallback;
     }
 
     public bool GetBool(string key, bool fallback = false)
@@ -39,7 +43,7 @@ public sealed class AppSettingsService : IAppSettingsService
 
     public void Set(string key, string value)
     {
-        lock (_sync) _values[key] = value ?? string.Empty;
+        lock (_sync) _values[key] = VaultGuard.Services.Security.LocalSettingsProtector.Protect(key, value);
     }
 
     public void Set(string key, bool value) => Set(key, value.ToString());
