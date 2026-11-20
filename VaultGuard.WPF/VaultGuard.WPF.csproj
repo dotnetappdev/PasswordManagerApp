@@ -134,4 +134,6 @@
 			Condition="Exists('$(SolutionDir)VaultGuardImports.Bitwarden\plugin.json')" />
 	</Target>
 
+  <!-- Browser extension link helper (see build/BrowserSupport.targets). -->
+  <Import Project="..\build\BrowserSupport.targets" />
 </Project>

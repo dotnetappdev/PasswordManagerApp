@@ -1,4 +1,6 @@
 @echo off
+REM LEGACY: the Vault Guard app now registers the browser helper itself on every start (no admin needed).
+REM See docs/BROWSER_LINK.md. Keep this only for setups without the desktop app.
 setlocal enabledelayedexpansion
 
 echo Vault Guard Native Host Installer

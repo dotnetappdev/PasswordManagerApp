@@ -129,7 +129,9 @@ public static class MauiProgram
 		builder.Services.AddScoped<IAppStartupService, AppStartupService>();
 		builder.Services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
 		builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-		builder.Services.AddScoped<IVaultSessionService, VaultSessionService>();
+		// Singleton: one person's device, and the browser link (MauiBrowserLink) must see the vault the user
+		// unlocked in the UI — a scoped store would be a different, empty instance outside the BlazorWebView.
+		builder.Services.AddSingleton<IVaultSessionService, VaultSessionService>();
 		builder.Services.AddScoped<IPasscodeService, PasscodeService>();
 		builder.Services.AddScoped<IVaultService, VaultService>();
 		builder.Services.AddScoped<IAuditLogService, AuditLogService>();
@@ -197,6 +199,9 @@ public static class MauiProgram
 		// the user click "Create default accounts"), mobile seeds the default accounts immediately since
 		// there's no shared desktop database to fall back to.
 		SeedDatabaseAsync(app.Services).GetAwaiter().GetResult();
+
+		// Browser extension link (Windows): registered with the browsers on every start, so updates keep it current.
+		VaultGuard.App.Services.MauiBrowserLink.Start(app.Services);
 
 		return app;
 	}

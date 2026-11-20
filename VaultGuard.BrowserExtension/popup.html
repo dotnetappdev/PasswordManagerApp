@@ -25,6 +25,14 @@
         <h1>Vault Guard</h1>
       </div>
       
+      <!-- Browser link: use the unlocked Vault Guard desktop app (recommended) -->
+      <div id="appLink" class="app-link">
+        <div id="appLinkStatus" class="app-link-status">Checking for the Vault Guard app…</div>
+        <button type="button" id="connectAppBtn" class="btn btn-primary" style="display: none;">Connect to Vault Guard app</button>
+        <button type="button" id="recheckAppBtn" class="btn btn-secondary" style="display: none;">I've unlocked it — check again</button>
+      </div>
+      <div class="app-link-divider"><span>or sign in here</span></div>
+
       <form id="loginForm" class="form">
         <div class="form-group">
           <label for="username">Username/Email:</label>

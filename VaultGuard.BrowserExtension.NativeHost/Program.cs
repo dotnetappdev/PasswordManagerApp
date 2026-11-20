@@ -14,8 +14,16 @@ public class Program
     private static string _currentDbPath = "";
     private static readonly Dictionary<string, (string userId, byte[] masterKey)> _sessions = new();
 
+    // The browser passes the calling extension's origin (Chrome: "chrome-extension://<id>/"; Firefox: the
+    // add-on id as the second argument). Forwarded to the app so its approval prompt can say who is asking.
+    private static string? _callerOrigin;
+
+    // Requests answered by the running desktop app when it's open (see AppLinkClient).
+    private static readonly HashSet<string> AppLinkActions = new() { "hello", "pair", "getCredentials", "getCreditCards", "saveTotpSecret" };
+
     public static async Task Main(string[] args)
     {
+        _callerOrigin = args.FirstOrDefault(a => a.Contains("-extension://")) ?? (args.Length > 1 ? args[1] : null);
         try
         {
             // Initialize services
@@ -160,6 +168,19 @@ public class Program
                     _customFieldSchemaEnsured = false; // re-check the schema on the new DB
                 }
             }
+        }
+
+        // Browser link: when the Vault Guard app is running, it answers from its unlocked vault (pairing and
+        // lock state are enforced there). Only when it isn't running do we fall back to the local handlers below.
+        if (action != null && AppLinkActions.Contains(action))
+        {
+            var timeout = action == "pair" ? TimeSpan.FromMinutes(3) : TimeSpan.FromSeconds(20);
+            var fromApp = await AppLinkClient.TryForwardAsync(message, _callerOrigin, timeout);
+            if (fromApp is { } reply) return reply;
+            if (action == "hello")
+                return new { success = true, linked = false, protocol = AppLinkClient.ProtocolVersion, error = "Vault Guard isn't running. Open it to use the extension." };
+            if (action == "pair")
+                return new { success = false, code = "APP_NOT_RUNNING", error = "Open Vault Guard to connect this browser." };
         }
 
         try

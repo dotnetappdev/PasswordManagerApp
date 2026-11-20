@@ -3,6 +3,11 @@ class VaultGuardBackground {
   constructor() {
     this.nativeHostName = 'com.passwordmanager.native_host';
     this.authToken = null;
+    // Browser link (like 1Password's app integration): when the Vault Guard desktop app is running and this
+    // browser has been approved in it, the app answers from its unlocked vault — no sign-in in the extension.
+    this.linkSecret = null;   // issued by the app when the user approves this browser
+    this.link = null;         // last { linked, paired, unlocked, app, appVersion, protocol }
+    this.linkCheckedAt = 0;
     this.init();
   }
 
@@ -23,6 +28,9 @@ class VaultGuardBackground {
       if (result.authToken) {
         this.authToken = result.authToken;
       }
+      // The pairing secret stays on this device (storage.local, never synced to other browsers).
+      const local = await chrome.storage.local.get(['linkSecret']);
+      this.linkSecret = local.linkSecret || null;
     } catch (error) {
       console.error('Vault Guard: Error loading settings:', error);
     }
@@ -48,6 +56,17 @@ class VaultGuardBackground {
           break;
         case 'getSettings':
           await this.getSettings(sendResponse);
+          break;
+        case 'getLinkStatus':
+          sendResponse({ success: true, link: await this.refreshLink(true) });
+          break;
+        case 'connectApp':
+          await this.connectApp(sendResponse);
+          break;
+        case 'disconnectApp':
+          this.linkSecret = null;
+          await chrome.storage.local.remove('linkSecret');
+          sendResponse({ success: true, link: await this.refreshLink(true) });
           break;
         case 'testConnection':
           await this.testConnection(sendResponse);
@@ -77,6 +96,11 @@ class VaultGuardBackground {
           message.databasePath = settings.databasePath;
         }
         
+        if (this.linkSecret) {
+          message.linkSecret = this.linkSecret;
+        }
+        message.browser = this.browserName();
+
         chrome.runtime.sendNativeMessage(this.nativeHostName, message, (response) => {
           if (chrome.runtime.lastError) {
             reject(new Error(chrome.runtime.lastError.message));
@@ -276,8 +300,59 @@ class VaultGuardBackground {
     };
   }
 
+  browserName() {
+    const brands = (navigator.userAgentData && navigator.userAgentData.brands) || [];
+    const brand = brands.map(b => b.brand).find(b => !/Not.?A.?Brand|Chromium/i.test(b));
+    if (brand) return brand;
+    return /Firefox/i.test(navigator.userAgent) ? 'Firefox' : 'Chromium-based browser';
+  }
+
+  /** Asks the desktop app (through the native host) whether it's running, unlocked and has approved us. */
+  async refreshLink(force = false) {
+    if (!force && this.link && Date.now() - this.linkCheckedAt < 5000) return this.link;
+    try {
+      const response = await this.sendNativeMessage({ action: 'hello', extensionVersion: chrome.runtime.getManifest().version, protocol: 2 });
+      this.link = {
+        linked: !!response?.linked,
+        paired: !!response?.paired,
+        unlocked: !!response?.unlocked,
+        app: response?.app || null,
+        appVersion: response?.appVersion || null,
+        protocol: response?.protocol || null,
+        needsUpdate: !!response?.protocol && response.protocol < 2,
+        error: response?.error || null
+      };
+    } catch (error) {
+      this.link = { linked: false, paired: false, unlocked: false, error: 'Browser link helper not installed. Open Vault Guard once to set it up.' };
+    }
+    this.linkCheckedAt = Date.now();
+    return this.link;
+  }
+
+  /** Pair with the running app: the user approves this browser in Vault Guard, which returns a secret. */
+  async connectApp(sendResponse) {
+    try {
+      const response = await this.sendNativeMessage({ action: 'pair' });
+      if (response?.success && response.secret) {
+        this.linkSecret = response.secret;
+        await chrome.storage.local.set({ linkSecret: response.secret });
+      }
+      const link = await this.refreshLink(true);
+      sendResponse({ success: !!response?.success, error: response?.error, link });
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
+  }
+
+  /** Signed in (legacy) or linked to an unlocked, approving desktop app. */
+  async hasAccess() {
+    if (this.authToken) return true;
+    const link = await this.refreshLink();
+    return !!(link && link.linked && link.paired && link.unlocked);
+  }
+
   async getCredentials(request, sendResponse) {
-    if (!this.authToken) {
+    if (!(await this.hasAccess())) {
       sendResponse({ success: false, error: 'Not authenticated' });
       return;
     }
@@ -309,7 +384,7 @@ class VaultGuardBackground {
   }
 
   async getCreditCards(request, sendResponse) {
-    if (!this.authToken) {
+    if (!(await this.hasAccess())) {
       sendResponse({ success: false, error: 'Not authenticated' });
       return;
     }
@@ -454,11 +529,13 @@ class VaultGuardBackground {
   async getSettings(sendResponse) {
     try {
       const result = await chrome.storage.sync.get(['authToken']);
-      
+      const link = await this.refreshLink();
+
       sendResponse({ 
         success: true, 
         settings: {
-          isLoggedIn: !!result.authToken,
+          isLoggedIn: !!result.authToken || !!(link.linked && link.paired && link.unlocked),
+          link,
           supportInfo: 'This extension uses native messaging to connect directly to your local SQLite database.'
         }
       });

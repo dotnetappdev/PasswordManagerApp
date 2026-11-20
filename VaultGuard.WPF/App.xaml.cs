@@ -228,6 +228,9 @@ public partial class App : Application
             {
                 await _host.StartAsync();
 
+                // Browser link (extension ↔ this app), registered with the browsers on every start.
+                VaultGuard.WPF.Services.WpfBrowserLink.Start(_host.Services, () => m_window);
+
                 // Check if this is first run and show database configuration dialog
                 await ShowDatabaseConfigurationIfNeededAsync();
 
@@ -440,6 +443,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        try { VaultGuard.WPF.Services.WpfBrowserLink.StopAsync().GetAwaiter().GetResult(); } catch { /* exiting */ }
         _trayIcon?.Dispose();
         base.OnExit(e);
     }

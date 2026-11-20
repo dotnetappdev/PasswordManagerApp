@@ -6,7 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishSingleFile>true</PublishSingleFile>
-    <PublishTrimmed>true</PublishTrimmed>
+    <!-- Not trimmed: trimming switches off reflection-based System.Text.Json (every reply here is an anonymous
+         object, so the host crashed on every message) and breaks EF Core. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <SelfContained>true</SelfContained>
   </PropertyGroup>
 

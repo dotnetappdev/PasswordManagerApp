@@ -1,0 +1,29 @@
+<Project>
+  <!--
+    Ships the browser extension's native-messaging host ("browser link" helper) next to the desktop app, in a
+    BrowserSupport\ folder, the way 1Password ships its browser-support helper. On start the app registers it
+    with the installed browsers (VaultGuard.Services/BrowserLink/BrowserLinkRegistrar), so every update keeps
+    the browser link current.
+    - Build:   framework-dependent copy (fast; developer machines have .NET).
+    - Publish: self-contained single file, so it runs on machines without a .NET runtime (the apps ship
+               self-contained). It lives in its own folder because it has its own dependency versions.
+  -->
+  <PropertyGroup>
+    <BrowserSupportProject>$(MSBuildThisFileDirectory)..\VaultGuard.BrowserExtension.NativeHost\VaultGuard.BrowserExtension.NativeHost.csproj</BrowserSupportProject>
+    <BrowserSupportRid Condition="'$(BrowserSupportRid)' == ''">win-x64</BrowserSupportRid>
+  </PropertyGroup>
+
+  <Target Name="VgBuildBrowserSupport" AfterTargets="Build" Condition="'$(VgSkipBrowserSupport)' != 'true'">
+    <MSBuild Projects="$(BrowserSupportProject)" Targets="Restore"
+             Properties="RuntimeIdentifier=$(BrowserSupportRid);SelfContained=false;VgBrowserSupportRestore=build" />
+    <MSBuild Projects="$(BrowserSupportProject)" Targets="Publish"
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=$(BrowserSupportRid);SelfContained=false;PublishSingleFile=false;PublishTrimmed=false;PublishDir=$(TargetDir)BrowserSupport\" />
+  </Target>
+
+  <Target Name="VgPublishBrowserSupport" AfterTargets="Publish" Condition="'$(VgSkipBrowserSupport)' != 'true'">
+    <MSBuild Projects="$(BrowserSupportProject)" Targets="Restore"
+             Properties="RuntimeIdentifier=$(BrowserSupportRid);SelfContained=true;VgBrowserSupportRestore=publish" />
+    <MSBuild Projects="$(BrowserSupportProject)" Targets="Publish"
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=$(BrowserSupportRid);SelfContained=true;PublishSingleFile=true;EnableCompressionInSingleFile=true;PublishTrimmed=false;PublishDir=$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine($(MSBuildProjectDirectory), $(PublishDir)))))BrowserSupport\" />
+  </Target>
+</Project>

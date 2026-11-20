@@ -28,6 +28,8 @@ class VaultGuardPopup {
   }
 
   setupEventListeners() {
+    document.getElementById('connectAppBtn').addEventListener('click', () => this.connectApp());
+    document.getElementById('recheckAppBtn').addEventListener('click', () => this.checkAuthStatus());
     // Navigation
     document.getElementById('settingsLink').addEventListener('click', () => this.showSettings());
     document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
@@ -116,6 +118,7 @@ class VaultGuardPopup {
           await this.loadCredentials();
         } else {
           this.showScreen('login');
+          this.renderAppLink(response.settings.link);
         }
       } else {
         this.showScreen('login');
@@ -123,6 +126,40 @@ class VaultGuardPopup {
     } catch (error) {
       console.error('Error checking auth status:', error);
       this.showScreen('login');
+    }
+  }
+
+  /** Shows how this browser is linked to the Vault Guard desktop app and what to do next. */
+  renderAppLink(link) {
+    const status = document.getElementById('appLinkStatus');
+    const connect = document.getElementById('connectAppBtn');
+    const recheck = document.getElementById('recheckAppBtn');
+    connect.style.display = 'none';
+    recheck.style.display = 'none';
+    if (!link || !link.linked) {
+      status.textContent = (link && link.error) || 'Open the Vault Guard app on this computer to use it here.';
+      recheck.style.display = 'block';
+    } else if (link.needsUpdate) {
+      status.textContent = `Vault Guard ${link.appVersion || ''} is too old for this extension — update the app.`;
+    } else if (!link.paired) {
+      status.textContent = `Found ${link.app || 'Vault Guard'} ${link.appVersion || ''}. Connect this browser, then approve it in the app.`;
+      connect.style.display = 'block';
+    } else if (!link.unlocked) {
+      status.textContent = `Connected to ${link.app || 'Vault Guard'}. Unlock the app to fill passwords.`;
+      recheck.style.display = 'block';
+    }
+  }
+
+  async connectApp() {
+    const status = document.getElementById('appLinkStatus');
+    status.textContent = 'Approve this browser in the Vault Guard app…';
+    document.getElementById('connectAppBtn').disabled = true;
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'connectApp' });
+      if (!response.success) status.textContent = response.error || 'The connection wasn\'t approved.';
+      await this.checkAuthStatus();
+    } finally {
+      document.getElementById('connectAppBtn').disabled = false;
     }
   }
 

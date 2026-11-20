@@ -133,4 +133,6 @@
       <Folder Include="Components\Pages\" />
     </ItemGroup>
 
+  <!-- Browser extension link helper, Windows build only (see build/BrowserSupport.targets). -->
+  <Import Project="..\build\BrowserSupport.targets" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
 </Project>
