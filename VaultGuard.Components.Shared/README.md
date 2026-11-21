@@ -22,12 +22,20 @@ A shared Blazor component library that provides reusable UI components for both 
 - Biometric authentication support (mobile only)
 
 #### Vault.razor
-- Main password vault interface
+- Main password vault interface (used by the MAUI app)
+- Secrets are masked with a show/hide toggle and decrypted only when an item is opened — including card PINs,
+  router passwords and secret custom fields
 - Card-based password item display
 - Real-time search and filtering
 - Category and collection navigation
 - One-click password copying
 - CRUD operations for all item types
+
+#### Import.razor
+- Import from 1Password (CSV and 1PUX) and other managers, using the **local** `IImportService` (the
+  standalone MAUI app has no API server). The file is read as soon as it's chosen.
+- Hosts must register their importers in DI, e.g.
+  `services.AddSingleton<IPasswordImportProvider, OnePasswordImportProvider>()` (MAUI does).
 
 #### Settings.razor
 - Application settings management
@@ -137,6 +145,14 @@ dotnet test VaultGuard.Components.Shared.Tests
 - **Memory Safety**: Sensitive data cleared from memory after use
 - **CSRF Protection**: Built-in cross-site request forgery protection
 - **Input Validation**: Comprehensive input validation and sanitization
+- **Per-user scoping**: pages read the vault through services scoped to the owner of the unlocked session
+
+### Note for component authors
+
+When building render fragments in code, give Mud buttons a typed callback —
+`EventCallback.Factory.Create<MouseEventArgs>(this, …)`. An untyped `EventCallback` passed to
+`MudIconButton.OnClick` throws at render time and takes down the whole page (this crashed the MAUI vault
+page whenever an item was opened).
 
 ## Responsive Design
 

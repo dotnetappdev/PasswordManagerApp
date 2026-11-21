@@ -98,19 +98,35 @@ Each database provider has its own project:
 
 1. Create a new class library project
 2. Reference `VaultGuard.Imports`
-3. Implement `IPasswordImportProvider`
-4. Register the plugin in your application
+3. Implement `IPasswordImportProvider` (`ProviderName`, `DisplayName`, `Version`, `SupportedFileExtensions`,
+   `ImportFromFileAsync`)
+4. Register it in each host's DI container so the import pages always list it:
+   `services.AddSingleton<IPasswordImportProvider, MyImportProvider>();` — `ImportService` picks up every
+   registered provider. (Scanning loaded assemblies alone is unreliable: an assembly nothing has touched yet
+   isn't loaded, which left the MAUI import list empty.)
+
+Provider rules, learned the hard way with 1Password:
+- Store secrets **exactly** as exported — never `Trim()` a password.
+- Read CSV columns **by header name**, not position, and handle quoted commas/newlines.
+- Give each item the body its type needs (`LoginItem`, `CreditCardItem`, `WiFiItem`, `SecureNoteItem`).
+- Collection/category ids you return are temporary link keys; `ImportService` replaces them with real ones.
+- Put plaintext in the normal properties: `ImportService` encrypts every secret with the user's vault key
+  (and refuses items with secrets while the vault is locked).
 
 Example:
 ```csharp
 public class CustomImportProvider : IPasswordImportProvider
 {
-    public string Name => "Custom Provider";
-    public string Description => "Import from custom format";
-    
-    public async Task<List<PasswordItem>> ImportAsync(Stream data, IProgress<int> progress)
+    public string ProviderName => "Custom";
+    public string DisplayName => "Custom format";
+    public string Version => "1.0.0";
+    public string[] SupportedFileExtensions => new[] { ".csv" };
+
+    public async Task<ImportResult> ImportFromFileAsync(Stream fileStream, string fileName)
     {
-        // Implementation
+        var result = new ImportResult();
+        // parse fileStream, add PasswordItems to result.ImportedItems, set result.Success = true
+        return result;
     }
 }
 ```
@@ -203,7 +219,7 @@ The `VaultGuard.Components.Shared` project contains:
 - AES-256-GCM authenticated encryption
 - Session-based vault management
 
-For detailed security information, see [docs/SECURITY.md](docs/SECURITY.md).
+For detailed security information, see [docs/SECURITY.md](SECURITY.md).
 
 ## Performance
 

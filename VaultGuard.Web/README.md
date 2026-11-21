@@ -1,6 +1,6 @@
 # VaultGuard.Web
 
-A modern Blazor Server web application for password management with full theme support (Light, Dark, System), built using .NET 9 and MudBlazor components.
+A modern Blazor Server web application for password management with full theme support (Light, Dark, System), built using .NET 10 and MudBlazor components.
 
 ## Features
 
@@ -18,7 +18,9 @@ A modern Blazor Server web application for password management with full theme s
 - **📋 One-Click Copy**: Copy passwords to clipboard with visual feedback
 - **✏️ Full CRUD Operations**: Create, edit, delete passwords and other items
 - **🔄 Real-time Sync**: Changes sync automatically with mobile apps via API
-- **🌱 Seeded Demo Data**: Fresh local databases are automatically populated with sample collections, categories, tags, and password items
+- **🌱 Seeded Demo Data**: Fresh local databases are automatically populated with sample collections, categories, tags, and password items (Development only)
+- **📥 Import**: 1Password (CSV and the extended 1PUX export), Bitwarden, LastPass, KeePass, browsers and more, from the **Import** page. You can import several files in one session, and every imported secret is encrypted with your vault key as it's saved
+- **👁️ Reveal on demand**: passwords, card numbers, CVVs, PINs, Wi-Fi and router passwords and secret custom fields are masked with a **Show** button and copy action; they're decrypted only for the item you open
 
 ## Blazor UI Screenshots
 
@@ -109,12 +111,14 @@ Supports multiple database providers through Entity Framework Core:
    - Click "Test Connection" to verify settings
    - Click "Save & Continue" to save configuration
    - The app will restart and create the database schema
+   - Once the app is configured, `/setup` is only available to an **Admin**
 
 4. **Access the web app**
    - After setup, you'll be redirected to the home page
    - Register a new account or login with existing credentials
    - Enter your master password to unlock the vault
-   - On a fresh local database, sample data such as **Chase Bank**, **Personal Gmail**, and **Netflix** is added automatically for demos and screenshots
+   - On a fresh local database in **Development**, sample data such as **Chase Bank**, **Personal Gmail**, and **Netflix** is added automatically for demos and screenshots
+   - Outside Development the sign-in page asks for your email instead of listing accounts, and the "Create default accounts" button is turned off
 
 ### Setup Wizard
 
@@ -279,12 +283,13 @@ the standalone WPF desktop app, the API and MAUI enforce **identical** protocols
 
 ### Encryption
 
-- **AES-256-GCM**: authenticated encryption for all sensitive data (random 96-bit nonce + 128-bit tag)
+- **AES-256-GCM**: authenticated encryption for every secret field — passwords, notes, authenticator secrets, card numbers/CVVs/PINs, Wi-Fi passwords, note content and secret custom fields (random 96-bit nonce + 128-bit tag); see [`docs/ENCRYPTION_AT_REST.md`](../docs/ENCRYPTION_AT_REST.md)
 - **PBKDF2-HMAC-SHA256**: 600,000 iterations for key derivation (OWASP 2024), with **Argon2id** supported via
   a self-describing hash format (existing PBKDF2 vaults keep working)
 - **HKDF-SHA256 key separation**: independent encryption / authentication / backup sub-keys
 - **Zero-Knowledge Architecture**: server cannot decrypt data without the master password
 - **Session-Based Keys**: encryption keys cached in memory and wiped after use
+- **Per-user scoping**: every vault query is limited to the signed-in user, so users can't read each other's items, tags, collections or categories
 
 ### Authentication
 

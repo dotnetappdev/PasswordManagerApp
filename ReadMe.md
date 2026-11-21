@@ -46,7 +46,7 @@ built in.
 | 🌐 **Web** | `VaultGuard.Web` | Blazor Server | [![Build Web (Blazor)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml) |
 | 🔌 **API** | `VaultGuard.API` | ASP.NET Core | [![Build API](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml) |
 | 📱 **Mobile** | `VaultGuard.App` | MAUI (Android/iOS/Windows) | [![Build MAUI](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-maui.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-maui.yml) |
-| 🧩 **Extension** | `VaultGuard.BrowserExtension` | Chrome/Edge/Firefox | - |
+| 🧩 **Extension** | `VaultGuard.BrowserExtension` | Chrome/Edge/Brave/Firefox, paired with the WPF or MAUI app | [Test it locally](VaultGuard.BrowserExtension/TESTING_LOCALLY.md) |
 
 ---
 
@@ -59,10 +59,22 @@ built in.
 - **Two-factor authentication.** TOTP authenticator support with hashed, single-use recovery codes. On a trusted device a 2FA account signs in with just the authenticator code.
 - **Step-up verification.** 2FA-style number-matching approval on important actions (editing, deleting or saving items and categories, and changing your master password).
 - **Passkeys.** WebAuthn/FIDO2 sign-in, including a software authenticator for the browser extension.
+- **Browser link and in-page autofill.** The extension pairs once with the running WPF or MAUI app (approve
+  it in the app) and fills from your unlocked vault. A Vault Guard icon sits in sign-in, sign-up, one-time-code
+  and card fields; its menu offers your logins for the site, a strong password on sign-up forms, the current
+  one-time code and saved cards. Nothing fills until you choose, hidden fields are never filled, and passwords
+  are only decrypted for the site they belong to. No store or certificate is needed to try it: see
+  [`TESTING_LOCALLY.md`](VaultGuard.BrowserExtension/TESTING_LOCALLY.md).
+- **Desktop updates with a safety net.** WPF's *Help → Check for Updates…* offers to back up your vault
+  before installing, and *Help → Back Up Vault Now* takes a backup at any time.
 - **Personalisation & accessibility.** Light / dark / system and a Windows-style **yellow-on-black high-contrast** theme; a custom **accent-colour** picker (palette swatches + specific colours) and selectable **fonts**; UI zoom and per-section text scaling; screen-reader labels.
 - **Bring your own database.** SQLite out of the box; switch to SQL Server, MySQL or PostgreSQL from Settings.
 - **Encrypted backups.** Local, NAS/SMB, FTP/FTPS, OneDrive and Google Drive - always encrypted before they leave the device.
 - **Import from anywhere.** 1Password, Bitwarden, LastPass, KeePass, Chrome, Edge, Firefox, Safari, Dashlane, NordPass, Keeper, Enpass, RoboForm and Apple Passwords.
+  1Password imports accept both the **CSV** export (columns matched by header name, in any order) and the
+  extended **1PUX** export (logins with authenticators, cards, secure notes, passwords, Wi-Fi routers,
+  identities, tags, favourites and archived items). Every imported secret is encrypted with your vault key as
+  it's saved; with the vault locked, items with secrets are refused rather than stored in plaintext.
 
 ---
 
@@ -419,7 +431,9 @@ VaultGuard.WPF/                Windows desktop app
 VaultGuard.WinUi/              WinUI 3 desktop app
 VaultGuard.App/                MAUI mobile app (Blazor Hybrid)
 VaultGuard.Uno/                Uno Platform mobile/WASM app
-VaultGuard.BrowserExtension/   Cross-browser extension + native messaging host
+VaultGuard.BrowserExtension/   Cross-browser extension (popup, in-page autofill)
+VaultGuard.BrowserExtension.NativeHost/   Browser helper: links the extension to the running app
+build/BrowserSupport.targets   Ships the browser helper in the WPF/MAUI app's BrowserSupport\ folder
 ```
 
 ---
@@ -458,6 +472,14 @@ Because the auth hash is a one-way derivative, the server/database can verify yo
 that can decrypt your vault. The expensive 600,000-iteration work backs the master key; the final auth hash
 step is a single PBKDF2 pass over that already-hardened key.
 
+**Encryption at rest, field by field.** Each secret is its own AES-256-GCM value (ciphertext, nonce and tag
+in separate columns): login passwords, notes, authenticator (TOTP) secrets and security answers; card
+numbers, CVVs, PINs and online-banking passwords; Wi-Fi, router and guest-network passwords; secure-note
+content; passkey credential IDs; and custom fields of type *Password*, *One-Time Password* or marked
+concealed. The plaintext properties are never mapped to the database. Older databases are migrated on first
+unlock (and the freed pages wiped), and changing the master password re-encrypts everything, refusing to
+proceed if anything can't be read. Details: [`docs/ENCRYPTION_AT_REST.md`](docs/ENCRYPTION_AT_REST.md).
+
 **In-memory hygiene.** The derived master key is cached for the session (so the app doesn't re-derive it on
 every operation) and is explicitly zeroed with `Array.Clear` as soon as it is no longer needed. Intermediate
 buffers holding key material are wiped the same way.
@@ -493,9 +515,20 @@ verification and re-encryption-on-password-change as the server-backed builds.
   with the server's data-protection keys (Blazor web).
 - **Encrypted backups.** Local, NAS/SMB, FTP/FTPS, OneDrive and Google Drive backups are encrypted on the
   device *before* upload, so those targets only ever see ciphertext.
+- **Per-user isolation.** Every vault query is scoped to the signed-in user (the API to the token's user, the
+  apps to the owner of the unlocked session), so one profile can't read another's items, tags, collections or
+  categories. Family admins and parents only reach other members' items inside their own tenant, never across
+  customers, and even then can't decrypt them: secrets need the owner's own vault key.
+- **Browser link.** The extension's helper talks to the app over a named pipe limited to your Windows user.
+  A browser must be approved in the app once; it then holds a random 256-bit pairing secret, of which the app
+  keeps only a hash. See [`docs/BROWSER_LINK.md`](docs/BROWSER_LINK.md).
 - **Brute-force protection.** The API rate-limits requests (a global per-IP limit plus a stricter limit on
   authentication endpoints) and enforces Identity account lockout after repeated failed sign-ins. The desktop
   and mobile apps additionally throttle local passcode attempts.
+- **Local settings.** Secrets kept in the desktop apps' settings file (API keys, connection passwords) are
+  protected with Windows DPAPI.
+- **No open setup or account lists in production.** The web setup page requires an admin once configured;
+  outside Development the sign-in page doesn't list accounts and demo accounts can't be created.
 - **Transport.** The API and web app run over HTTPS with an explicit CORS allow-list; the API additionally
   gates requests with bearer-token authentication and an API-key middleware.
 - **Secrets management.** The API can source its secrets - database credentials, JWT signing key, Sentry DSN,
@@ -525,6 +558,8 @@ Start here, then dive into a topic:
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Cutting releases: automated SmarterASP.NET deploys and the manual tag-based release |
 | [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](docs/SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
 | [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) | Master-key login, 2FA, passkeys, OTP, biometrics, passcode, QR sign-in, device management, profiles |
+| [`docs/ENCRYPTION_AT_REST.md`](docs/ENCRYPTION_AT_REST.md) | Which fields are encrypted, how, migration of older vaults, key rotation |
+| [`docs/BROWSER_LINK.md`](docs/BROWSER_LINK.md) · [`TESTING_LOCALLY.md`](VaultGuard.BrowserExtension/TESTING_LOCALLY.md) | How the extension pairs with the WPF/MAUI app; loading it unpacked to test |
 | [`docs/PASSKEYS.md`](docs/PASSKEYS.md) | Website passkeys (extension) and device passkeys (sign-in), RP setup, mobile association files |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Providers, EF Identity setup, MySQL, migrations |
 | [`docs/UI_AND_UX.md`](docs/UI_AND_UX.md) | Design system, theming, validation UX, accessibility, navigation |

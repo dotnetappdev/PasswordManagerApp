@@ -6,7 +6,7 @@ VaultGuard has unit/integration tests and browser-driven UI tests, with an Allur
 
 | Project | Framework | What it covers |
 | --- | --- | --- |
-| `VaultGuard.BackEnd.Tests` | NUnit | Services, controllers, crypto, seeding, validation - the bulk of the unit/integration suite (~194 tests). **Allure-instrumented.** |
+| `VaultGuard.BackEnd.Tests` | NUnit | Services, controllers, crypto, seeding, validation - the bulk of the unit/integration suite (~305 tests). Includes `OnePasswordImportEndToEndTests`: 1Password CSV and 1PUX files imported through the real `ImportService` into a real SQLite vault, every value decrypted back, the database file scanned for leaked plaintext, and the reveal calls the apps make checked. **Allure-instrumented.** |
 | `VaultGuard.Tests.QrLogin` | xUnit | Passkey engine (`PasskeyServiceTests`), 2FA/passkey DTOs, QR login |
 | `VaultGuard.Tests.OTP` | xUnit | OTP / TOTP |
 | `VaultGuard.Tests.Playwright` | MSTest + Playwright | **UI automation** against the Blazor web app (its own library) - ~56 assertion-based tests run in CI via `run-tests.yml`'s `blazor-ui-tests` job |

@@ -31,6 +31,17 @@ and theme files are in place and working.
   registers a key in the **Windows Hello** credential store (prompts Hello); *account-level* biometric
   unlock of VaultGuard uses the same Windows Hello system. Same model as the web, Android and iOS apps.
 - Cloud backup (Google Drive + OneDrive), import/export.
+- **Browser link.** On every start the app registers its browser helper (shipped in `BrowserSupport\`) with
+  Chrome, Edge, Brave, Chromium, Vivaldi and Firefox, for your Windows user only, and answers the Vault Guard
+  extension from the unlocked vault. The first time a browser connects, the app asks
+  **"Allow this browser to use Vault Guard?"**. See
+  [`../VaultGuard.BrowserExtension/TESTING_LOCALLY.md`](../VaultGuard.BrowserExtension/TESTING_LOCALLY.md).
+- **Updates with a backup first.** *Help → Check for Updates…* offers **Back up & continue** before installing
+  a new version; *Help → Back Up Vault Now…* takes a snapshot at any time.
+- **Reveal on demand.** Passwords, card numbers, CVVs, Wi-Fi passwords, protected notes and secret custom
+  fields (*Password* type, or concealed fields imported from 1Password) are masked until you click the eye
+  button; they're decrypted only when the item is opened.
+- **1Password import** of both the CSV and the extended **1PUX** export, through the shared import service.
 - **Maintenance → Delete Seed Data** removes the built-in demo data and never touches your user accounts.
   A **"Keep my categories, collections & tags"** option deletes only the sample *items* while preserving
   your vault's organisation (backed by `TestDataSeeder.ClearSeedData(db, userId, keepCategories)`).
@@ -47,10 +58,16 @@ vault** follows exactly the same protocols documented in the [root README](../Re
 - **Zero-knowledge** master password (never stored; derives keys in memory, wiped after use).
 - **PBKDF2-HMAC-SHA256 @ 600,000 iterations**, with **Argon2id** supported via the self-describing hash
   format (existing PBKDF2 vaults keep working unchanged).
-- **AES-256-GCM** authenticated encryption of every item (random nonce + 128-bit tag).
+- **AES-256-GCM** authenticated encryption of every secret field (random nonce + 128-bit tag), including
+  authenticator secrets, card PINs, Wi-Fi passwords and secret custom fields — see
+  [`docs/ENCRYPTION_AT_REST.md`](../docs/ENCRYPTION_AT_REST.md). Changing the master password re-encrypts
+  everything.
+- **Per-profile isolation**: every query is scoped to the owner of the unlocked session, so profiles sharing
+  one database can't see each other's items.
 - **Constant-time** verification of auth hashes, passcodes and 2FA/recovery codes.
 - **HKDF-SHA256** key separation for independent purpose keys.
-- Local passcode attempts are throttled; "remember this device" is protected by **Windows DPAPI**.
+- Local passcode attempts are throttled; "remember this device" and secrets in the settings file are
+  protected by **Windows DPAPI**.
 
 There is nothing WPF-specific to keep in sync: security improvements made in the shared core apply to the
 desktop app automatically.
@@ -76,6 +93,9 @@ Key conventions:
 ```bash
 dotnet build VaultGuard.WPF/VaultGuard.WPF.csproj
 ```
+
+The build also produces the browser helper in `bin\…\BrowserSupport\`. On Linux/macOS you can compile-check the
+project (it won't run) with `-p:EnableWindowsTargeting=true -p:VgSkipBrowserSupport=true`.
 
 ## Run
 

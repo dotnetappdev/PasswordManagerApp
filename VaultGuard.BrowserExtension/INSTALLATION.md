@@ -1,5 +1,12 @@
 # Vault Guard Browser Extension Installation Guide
 
+> **Current method (recommended):** you no longer install the native host or edit manifests by hand. Run the
+> Vault Guard desktop app (WPF, or MAUI on Windows) once — it registers its browser helper for every browser —
+> then load the extension and click **Connect**. Step-by-step guide:
+> [`VaultGuard.BrowserExtension/TESTING_LOCALLY.md`](TESTING_LOCALLY.md). The steps below describe the older manual setup
+> (direct SQLite access without the app) and are kept for reference only.
+
+
 This guide will help you install and set up the Vault Guard browser extension to work with your Vault Guard App, including configuration for both API mode and local SQLite database mode.
 
 > **Note:** For information about packaging the extension for distribution, see [PACKAGING.md](PACKAGING.md).

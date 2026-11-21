@@ -1,119 +1,69 @@
-# Vault Guard Browser Extension Native Host
+# Vault Guard browser helper (native messaging host)
 
-This native messaging host enables the Vault Guard browser extension to communicate directly with your local SQLite database, eliminating the need for a running API server.
+The small program the browser starts when the Vault Guard extension needs your vault. It doesn't read the
+database itself: it passes each request on to the **running Vault Guard app** (WPF, or MAUI on Windows), which
+answers from your unlocked vault. You never install or register it by hand.
 
-## Features
-
-- Direct SQLite database access from browser extension
-- Secure encryption/decryption using your master password
-- No network dependencies - works completely offline
-- Support for Chrome, Firefox, and Edge browsers
-
-## Installation
-
-### 1. Build the Native Host
-
-First, build the native messaging host executable:
-
-```bash
-cd VaultGuard.BrowserExtension.NativeHost
-dotnet publish -c Release -r win-x64 --self-contained true --single-file
+```
+extension ──stdio (native messaging)──► VaultGuard.BrowserExtension.NativeHost.exe
+                                                │ named pipe, current Windows user only
+                                                ▼
+                                  Vault Guard app (WPF / MAUI) — pairing check, unlocked vault
 ```
 
-For other platforms:
-- Linux: `-r linux-x64`
-- macOS: `-r osx-x64`
+- **Shipped with the app.** `build/BrowserSupport.targets` builds the helper into the app's `BrowserSupport\`
+  folder on every build, and as a self-contained copy on publish.
+- **Registered by the app on every start.** `BrowserLinkRegistrar` writes the native-messaging manifests and
+  `HKCU` registry keys for Chrome, Edge, Brave, Chromium, Vivaldi and Firefox, for the current user only (no
+  admin rights). After an update or a move the registration follows the app automatically.
+- **Only our extension may start it.** The manifest allows only `chrome-extension://niapolneagndnohemlljncmndahkoncp/`
+  (fixed by the `key` in the extension's `manifest.json`) and, for Firefox, `vaultguard@dotnetappdevni.com`.
 
-### 2. Install the Native Host
+## What it forwards
 
-#### Windows (Chrome/Edge)
+`hello`, `pair`, `getCredentials`, `getCreditCards`, `getTotpCode` and `saveTotpSecret` go to the app.
 
-1. Copy the built executable to a permanent location (e.g., `C:\Program Files\VaultGuard\VaultGuardNativeHost.exe`)
+| Request | What the app does |
+|---|---|
+| `hello` | Reports whether the app is running, the browser is paired and the vault is unlocked |
+| `pair` | Shows **"Allow this browser to use Vault Guard?"**; on **Allow** returns a random 256-bit secret (the app stores only its hash) |
+| `getCredentials` | Logins whose saved website matches the page's site. Passwords are decrypted only for a matching site; with no site, titles and usernames only |
+| `getCreditCards` | Saved cards for checkout forms |
+| `getTotpCode` | The current one-time code for one login, after checking it matches the site |
+| `saveTotpSecret` | Saves an authenticator QR code found on a site to the matching login (encrypted) |
 
-2. Update the manifest file `com.passwordmanager.native_host.json`:
-   - Replace `PASSWORD_MANAGER_NATIVE_HOST_PATH` with the full path to the executable
-   - Replace `PASSWORD_MANAGER_EXTENSION_ID` with your extension's ID
+Every request carries the pairing secret and the extension's origin. The app refuses anything from an
+unpaired browser, or while the vault is locked. Protocol: 4-byte little-endian length plus UTF-8 JSON, in both
+directions.
 
-3. Register the native messaging host:
-   ```cmd
-   reg add "HKEY_CURRENT_USER\Software\Google\Chrome\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\path\to\com.passwordmanager.native_host.json" /f
-   ```
+When the app isn't running, `hello` says so and the extension shows "Open Vault Guard". The older
+stand-alone handlers in `Program.cs` (direct SQLite access with the master password) are kept only as a
+fallback for setups without the app.
 
-   For Edge, use:
-   ```cmd
-   reg add "HKEY_CURRENT_USER\Software\Microsoft\Edge\NativeMessagingHosts\com.passwordmanager.native_host" /ve /t REG_SZ /d "C:\path\to\com.passwordmanager.native_host.json" /f
-   ```
+## Build
 
-#### Linux (Chrome/Chromium)
+You don't normally build it yourself: building `VaultGuard.WPF` or `VaultGuard.App` (Windows) builds it into
+`BrowserSupport\`. To build it on its own:
 
-1. Copy the built executable to a permanent location (e.g., `/usr/local/bin/passwordmanager-native-host`)
+```bash
+dotnet build VaultGuard.BrowserExtension.NativeHost -r win-x64
+```
 
-2. Update the manifest file and copy it to:
-   ```bash
-   mkdir -p ~/.config/google-chrome/NativeMessagingHosts
-   cp com.passwordmanager.native_host.json ~/.config/google-chrome/NativeMessagingHosts/
-   ```
+Trimming is off on purpose (`PublishTrimmed=false`): the JSON protocol uses reflection-based serialization,
+and a trimmed build failed on its first message.
 
-#### macOS (Chrome)
+## Testing
 
-1. Copy the built executable to a permanent location
-
-2. Update the manifest file and copy it to:
-   ```bash
-   mkdir -p ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts
-   cp com.passwordmanager.native_host.json ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/
-   ```
-
-### 3. Configure Database Path
-
-The native host will automatically look for your password database in these locations:
-
-1. `passwordmanager_dev.db` in the current directory
-2. `%APPDATA%\VaultGuard\passwordmanager.db` (Windows)
-3. `~/.local/share/VaultGuard/passwordmanager.db` (Linux)
-4. `~/Library/Application Support/VaultGuard/passwordmanager.db` (macOS)
-
-If your database is in a different location, you may need to modify the `GetDatabasePath()` method in `Program.cs`.
-
-## Usage
-
-1. Install the browser extension as usual
-2. The extension will automatically use the native messaging host instead of making API calls
-3. Login with your email and master password
-4. The extension will decrypt passwords locally and provide autofill functionality
-
-## Security
-
-- Your master password is never stored - only used to derive encryption keys
-- All decryption happens locally in the native host process
-- No network communication is required after login
-- Session keys are stored in memory only and cleared on logout
+See [`../VaultGuard.BrowserExtension/TESTING_LOCALLY.md`](../VaultGuard.BrowserExtension/TESTING_LOCALLY.md)
+for loading the extension unpacked and connecting it to the app, and [`../docs/BROWSER_LINK.md`](../docs/BROWSER_LINK.md)
+for the design and security model.
 
 ## Troubleshooting
 
-### Extension shows "Failed to communicate with native host"
-
-1. Verify the native host executable is in the correct location
-2. Check that the manifest file paths are correct
-3. Ensure the extension ID in the manifest matches your installed extension
-4. Try restarting the browser after installation
-
-### "Database connection failed"
-
-1. Verify the database file exists and is accessible
-2. Check that the database file isn't locked by another process
-3. Ensure the native host has read permissions for the database file
-
-### Native messaging host logs
-
-Check the browser's extension console for error messages. The native host logs errors to stderr which may be visible in the browser's extension debugging tools.
-
-## Development
-
-To debug the native messaging host:
-
-1. Build in Debug configuration
-2. Add console output or file logging to `Program.cs`
-3. Test communication manually using the browser's extension debugging tools
-
-For testing message format, you can send messages directly to the native host via stdin/stdout following the Chrome native messaging protocol.
+| Symptom | Fix |
+|---|---|
+| "Browser link helper not installed" | Start the app once (it registers the helper), check `BrowserSupport\VaultGuard.BrowserExtension.NativeHost.exe` exists next to the app, then restart the browser |
+| "Vault Guard isn't running" | Start the app as yourself (not "Run as administrator"); the pipe only accepts the same Windows user |
+| Connect doesn't finish | Look for the **Allow** dialog in the app; it times out after two minutes |
+| Check the registration | `%LOCALAPPDATA%\VaultGuard\BrowserLink\com.passwordmanager.native_host.json` and `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.passwordmanager.native_host` |
+| Logs | `%LOCALAPPDATA%\VaultGuard\logs\<year>\<month>\<day>.txt` (app and helper) |
