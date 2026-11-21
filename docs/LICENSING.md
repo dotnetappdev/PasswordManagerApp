@@ -1,5 +1,11 @@
 # Licensing (CD Keys / Pro Feature Unlock)
 
+> **Not in use: Vault Guard is free.** There is no subscription, no payment and no paid tier, and every feature
+> is available to everyone. The apps no longer check licences: API key management is open to all users, and the
+> License tab is hidden in the web and desktop settings. The licensing code described below (and the Admin app's
+> License Keys / Subscriptions pages) is kept in the codebase only for reference and isn't needed to run Vault Guard.
+
+
 VaultGuard ships a CD-key licensing system so a super admin can sell/issue "Pro" licenses that unlock
 paid features (API access, cloud backup, unlimited devices, advanced sharing, priority support, SSO,
 multi-tenancy) in the WPF and Blazor (Web/MAUI) clients, without those clients ever talking directly to

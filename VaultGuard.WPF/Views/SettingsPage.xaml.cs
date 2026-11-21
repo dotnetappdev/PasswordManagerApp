@@ -281,7 +281,7 @@ public sealed partial class SettingsPage : Page
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
             StartOneDriveStatusTimer();
-            RefreshLicenseStatus();
+            // No licence check: Vault Guard is free and every feature is included.
 
             // Theme loads asynchronously in the view model's constructor, so reflect the tile
             // selection both now (in case it's already loaded) and whenever it changes.
