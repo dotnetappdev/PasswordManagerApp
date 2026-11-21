@@ -21,6 +21,8 @@ A modern Blazor Server web application for password management with full theme s
 - **🌱 Seeded Demo Data**: Fresh local databases are automatically populated with sample collections, categories, tags, and password items (Development only)
 - **📥 Import**: 1Password (CSV and the extended 1PUX export), Bitwarden, LastPass, KeePass, browsers and more, from the **Import** page. You can import several files in one session, and every imported secret is encrypted with your vault key as it's saved
 - **🔒 Auto-lock and clipboard clearing** (Settings → Security → Session & Lock): the vault locks after the chosen idle time and the sign-in page says why; copied values are wiped from the clipboard after the chosen time, and when the vault locks
+- **📶 Share Wi-Fi as a QR code** from a Wi-Fi item (main or guest network)
+- **📅 Coming up**: the dashboard lists cards, passports and memberships that have expired or expire within 90 days; click one to open it
 - **👁️ Reveal on demand**: passwords, card numbers, CVVs, PINs, Wi-Fi and router passwords and secret custom fields are masked with a **Show** button and copy action; they're decrypted only for the item you open
 
 ## Blazor UI Screenshots

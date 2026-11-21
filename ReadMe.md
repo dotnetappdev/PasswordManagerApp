@@ -76,6 +76,11 @@ built in.
 - **Quick Access (Windows desktop).** Press **Ctrl+Shift+Space** in any app, type a few letters, and press Enter to
   copy the password (Shift+Enter: username, Ctrl+Enter: one-time code, Alt+Enter: open in Vault Guard). Works
   from the tray; the shortcut can be changed or turned off in Settings → Security.
+- **Phishing guard.** Type a saved password on a site it doesn't belong to (your bank password on
+  `bank-secure-login.xyz`) and the extension warns you before you sign in, naming the login it belongs to.
+- **Share Wi-Fi as a QR code.** Guests point a phone camera at it to join (main or guest network).
+- **"Coming up" reminders.** Cards, passports, licences and memberships that have expired or expire within 90 days,
+  on the dashboard / Security Center, with a reminder after unlocking when something is due within 30 days.
 - **"Save this login?"** The extension offers to save logins you sign in or sign up with, or to update a
   password you've changed, straight into the WPF or MAUI app. After filling a login that has an authenticator,
   its current one-time code is copied, ready to paste on the 2-step page.

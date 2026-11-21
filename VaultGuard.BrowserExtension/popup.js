@@ -258,7 +258,12 @@ class VaultGuardPopup {
 
   /** "Offer to save logins" switch + the sites the user chose "Never for this site" on. */
   async renderSaveLoginSettings() {
-    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill']);
+    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill', 'phishingGuard', 'reuseTrustedSites']);
+    const guardEl = document.getElementById('phishingGuard');
+    if (guardEl) guardEl.checked = local.phishingGuard !== false;
+    const trusted = local.reuseTrustedSites || [];
+    const trustedSummary = document.getElementById('reuseTrustedSummary');
+    if (trustedSummary) trustedSummary.textContent = trusted.length ? `Sites you trusted: ${trusted.join(', ')}.` : '';
     const offerEl = document.getElementById('offerToSaveLogins');
     if (offerEl) offerEl.checked = local.offerToSaveLogins !== false;
     const totpEl = document.getElementById('copyTotpAfterFill');
@@ -331,6 +336,8 @@ class VaultGuardPopup {
       if (offerEl) await chrome.storage.local.set({ offerToSaveLogins: offerEl.checked });
       const totpEl = document.getElementById('copyTotpAfterFill');
       if (totpEl) await chrome.storage.local.set({ copyTotpAfterFill: totpEl.checked });
+      const guardEl = document.getElementById('phishingGuard');
+      if (guardEl) await chrome.storage.local.set({ phishingGuard: guardEl.checked });
       await chrome.storage.sync.set({
         connectionMode: connectionMode,
         apiUrl: apiUrl,

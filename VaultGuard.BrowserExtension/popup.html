@@ -202,6 +202,17 @@
         <h3 style="margin-top: 20px;">Filling &amp; saving</h3>
         <div class="form-group">
           <label class="checkbox-label">
+            <input type="checkbox" id="phishingGuard" checked>
+            <span class="checkmark"></span>
+            Warn me if I type a saved password on the wrong site
+          </label>
+          <small>
+            If the password you're typing is the one saved for another site (say, your bank), Vault Guard warns you
+            before you sign in — a common sign of a fake site. <span id="reuseTrustedSummary"></span>
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
             <input type="checkbox" id="copyTotpAfterFill" checked>
             <span class="checkmark"></span>
             Copy one-time code after filling

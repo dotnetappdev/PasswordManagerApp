@@ -61,6 +61,19 @@ class VaultGuardBackground {
           if (!(await this.hasAccess())) { sendResponse({ success: false, error: 'Not connected' }); break; }
           sendResponse(await this.sendNativeMessage({ action: 'getTotpCode', itemId: request.itemId, domain: request.domain || '' }));
           break;
+        case 'checkPasswordReuse':
+          sendResponse(await this.checkPasswordReuse(request, sender));
+          break;
+        case 'trustSiteForReuse': {
+          const site = this.senderSite(sender);
+          if (site) {
+            const r = await chrome.storage.local.get('reuseTrustedSites');
+            const list = r.reuseTrustedSites || [];
+            if (!list.includes(site.host)) await chrome.storage.local.set({ reuseTrustedSites: [...list, site.host] });
+          }
+          sendResponse({ success: true });
+          break;
+        }
         case 'captureLogin':
           sendResponse(await this.captureLogin(request, sender));
           break;
@@ -319,6 +332,23 @@ class VaultGuardBackground {
       success: true,
       password: password
     };
+  }
+
+  // ---------- Phishing guard ----------
+  /** Asks the app whether the password typed on this tab's site is saved for a different site. */
+  async checkPasswordReuse(request, sender) {
+    const site = this.senderSite(sender);
+    const password = typeof request.password === 'string' ? request.password : '';
+    if (!site || password.length < 6 || password.length > 4096) return { matches: [] };
+    const prefs = await chrome.storage.local.get(['phishingGuard', 'reuseTrustedSites']);
+    if (prefs.phishingGuard === false || (prefs.reuseTrustedSites || []).includes(site.host)) return { matches: [] };
+    // At most one check every 1.5 s per tab, so typing can't flood the app.
+    const now = Date.now(), last = (this._reuseChecked ??= {})[sender.tab?.id] || 0;
+    if (now - last < 1500) return { matches: [], throttled: true };
+    this._reuseChecked[sender.tab?.id] = now;
+    if (!(await this.hasAccess())) return { matches: [] };
+    const r = await this.sendNativeMessage({ action: 'checkPasswordReuse', domain: site.host, loginPassword: password });
+    return { matches: Array.isArray(r?.matches) ? r.matches.slice(0, 3) : [], site: site.host };
   }
 
   // ---------- "Save this login?" ----------

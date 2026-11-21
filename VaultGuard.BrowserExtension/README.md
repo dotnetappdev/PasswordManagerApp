@@ -31,6 +31,11 @@ you're on.
   to Vault Guard (with a name you can edit), to **update** the saved password if it changed, or to never ask
   on that site again. It also works on single-page apps that don't navigate after signing in. Turn it off,
   or reset the "never" list, in the popup's Settings.
+- **Phishing guard.** When you pause typing in a sign-in password field, the extension asks the app whether that
+  password is saved for a *different* site. If so (your bank password on a look-alike site) it warns you before you
+  sign in, with **Leave this site**, **Clear password** or **I trust this site**. The app answers with login titles
+  and sites only, never passwords; values Vault Guard filled itself and sign-up fields aren't checked. Turn it off
+  in the popup's Settings → Filling & saving.
 - **One-time code copied after filling.** Filling a login that has an authenticator (from the in-page menu or
   the popup) copies its current 6-digit code, ready to paste on the 2-step page. Turn it off in the popup's
   Settings → Filling & saving.

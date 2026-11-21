@@ -42,6 +42,8 @@ A shared Blazor component library that provides reusable UI components for both 
   idle time it signs out of the vault (`IAuthService.LogoutAsync` wipes the key), wipes the clipboard and goes to
   the sign-in page, where `LockedNotice` explains what happened. It also checks immediately when the app or tab
   becomes visible again, so a device that slept locks straight away.
+- **`ExpiryRemindersCard`**: "Coming up" — pass the page's items; lists card expiries and expiry/renewal date fields
+  (via `ExpiryReminders`), expired / within 30 / within 90 days. Used on the web and MAUI dashboards.
 - **`SecureClipboard`** (service, register as scoped): use `CopyAsync` for every vault value instead of calling
   `navigator.clipboard.writeText`. It wipes the clipboard after the user's setting, waiting for the page to
   regain focus if needed.

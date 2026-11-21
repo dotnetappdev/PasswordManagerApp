@@ -31,6 +31,9 @@ extension (background.js) ──native messaging──▶ BrowserSupport\VaultGu
   - `getCreditCards`.
   - `saveTotpSecret`: the secret is stored encrypted.
   - `getTotpCode`: the current one-time code for one login, only if it's saved for the page's site.
+  - `checkPasswordReuse`: the phishing guard. Is the password being typed (sent as `loginPassword`) saved for a
+    different site? Returns the titles and sites of those logins, never passwords, and nothing when the same
+    password is also saved for the current site. Compared in constant time; rate-limited by the extension.
   - `saveLogin`: "Save this login?" from the extension. It creates a login for the site, or (with `itemId`)
     updates the password of an existing login saved for the same site, keeping the old one in password history.
     The site comes from the browser tab, not the page, and the password travels as `loginPassword` (the helper

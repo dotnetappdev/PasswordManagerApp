@@ -93,6 +93,7 @@
     icon.addEventListener('click', (e) => { e.stopPropagation(); dismissed.delete(f); openMenu(f, true); });
     layer.appendChild(icon);
     fields.set(f, { kind, icon });
+    watchForReuse(f);
     f.addEventListener('focus', () => { if (!dismissed.has(f)) openMenu(f, false); });
     f.addEventListener('keydown', (e) => onFieldKey(e, f));
     // Typing your own value means you don't want a suggestion: get out of the way (the menu sits over the
@@ -258,6 +259,7 @@
     f.focus();
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
     setter.call(f, value); // works with React/Vue-controlled inputs
+    filledByUs.set(f, value);
     f.dispatchEvent(new Event('input', { bubbles: true }));
     f.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
@@ -374,6 +376,9 @@
     .toast { position: fixed; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 9px 12px;
       color: #fff; background: #172033; border-radius: 10px; box-shadow: 0 10px 30px rgb(0 0 0 / .25); transition: opacity .35s, transform .35s; }
     .toast.out { opacity: 0; transform: translateY(6px); }
+    .warn-card { border-top: 4px solid #DC2626; }
+    .warn-icon { width: 20px; height: 20px; border-radius: 50%; background: #DC2626; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+    .warn-card .btn.primary { background: linear-gradient(180deg, #EF4444, #DC2626); }
     .save-card { position: fixed; top: 16px; right: 16px; width: 340px; max-width: calc(100vw - 32px); box-sizing: border-box;
       color: #172033; background: #fff; border: 1px solid rgb(16 24 40 / .10); border-radius: 14px;
       box-shadow: 0 18px 50px -12px rgb(16 24 40 / .35), 0 4px 12px rgb(16 24 40 / .08); animation: pop .16s ease-out; }
@@ -440,6 +445,10 @@
     const isNew = fresh.length > 0 || pws.length >= 2;
     const pw = fresh[0] || (pws.length >= 3 ? pws[1] : pws.length === 2 ? pws[0] : pws[0]);
     send({ action: 'captureLogin', username: usernameIn(scope, pw), password: pw.value, isNew });
+    if (!isNew && filledByUs.get(pw) !== pw.value && checked.get(pw) !== pw.value && pw.value.length >= 6) {
+      checked.set(pw, pw.value);
+      send({ action: 'checkPasswordReuse', password: pw.value }).then(r => { if (r?.matches?.length) showReuseWarning(pw, r.matches, r.site || HOST); });
+    }
     // Single-page apps often don't navigate after signing in: look for the offer here too.
     setTimeout(checkPendingSave, 2500);
   }
@@ -505,6 +514,63 @@
     });
     layer.appendChild(el);
     saveCard = el;
+  }
+
+  // ---------- Phishing guard ----------
+  // Typing a saved password on a site it doesn't belong to (e.g. your bank password on bank-secure-login.xyz) is
+  // the classic phishing trap. When you pause typing in a sign-in password field, the extension asks the Vault
+  // Guard app privately whether that password is saved for another site; the app answers with titles/sites only.
+  const filledByUs = new WeakMap();   // field -> value we filled (no need to check our own fills)
+  const checked = new WeakMap();      // field -> last value checked
+  let warnCard = null;
+
+  function watchForReuse(f) {
+    if (fields.get(f)?.kind !== 'password') return; // sign-up / new-password fields are new passwords
+    let timer = 0;
+    const check = () => {
+      clearTimeout(timer);
+      const v = f.value;
+      if (v.length < 6 || checked.get(f) === v || filledByUs.get(f) === v || warnCard) return;
+      checked.set(f, v);
+      send({ action: 'checkPasswordReuse', password: v }).then(r => {
+        if (r?.matches?.length && f.value === v) showReuseWarning(f, r.matches, r.site || HOST);
+      });
+    };
+    f.addEventListener('input', (e) => { if (e.isTrusted) { clearTimeout(timer); timer = setTimeout(check, 800); } });
+    f.addEventListener('blur', check);
+  }
+
+  function closeWarnCard() { if (warnCard) { warnCard.remove(); warnCard = null; } }
+
+  function showReuseWarning(field, matches, site) {
+    closeWarnCard();
+    const first = matches[0];
+    const others = matches.length > 1 ? ` and ${matches.length - 1} other login${matches.length > 2 ? 's' : ''}` : '';
+    const el = document.createElement('div');
+    el.className = 'save-card warn-card';
+    el.setAttribute('role', 'alertdialog');
+    el.setAttribute('aria-label', 'Vault Guard warning');
+    el.innerHTML = `<div class="head"><span class="warn-icon">!</span><span class="brand">Is this the right site?</span><button class="close" type="button" aria-label="Close">✕</button></div>
+      <div class="save-body">
+        <div class="save-text">That's your password for <strong>${esc(first.title)}</strong> (${esc(first.site)})${esc(others)}.</div>
+        <div class="save-text">You're on <strong>${esc(site)}</strong>. If you weren't expecting to sign in to ${esc(first.title)} here, this could be a fake site trying to steal it.</div>
+        <div class="save-actions">
+          <button class="btn primary" data-act="leave" type="button">Leave this site</button>
+          <button class="btn ghost" data-act="clear" type="button">Clear password</button>
+          <button class="btn ghost" data-act="trust" type="button">I trust this site</button>
+        </div>
+      </div>`;
+    el.addEventListener('click', async (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      const act = b.classList.contains('close') ? 'close' : b.dataset.act;
+      if (act === 'leave') { closeWarnCard(); if (history.length > 1) history.back(); else location.replace('about:blank'); return; }
+      if (act === 'clear') { setValue(field, ''); checked.delete(field); closeWarnCard(); toast('Password cleared'); return; }
+      if (act === 'trust') { await send({ action: 'trustSiteForReuse' }); }
+      closeWarnCard();
+    });
+    el.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') closeWarnCard(); });
+    layer.appendChild(el);
+    warnCard = el;
   }
 
   // ---------- lifecycle ----------

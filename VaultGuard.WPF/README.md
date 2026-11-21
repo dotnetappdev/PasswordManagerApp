@@ -51,6 +51,9 @@ and theme files are in place and working.
   entry you act on and go through the secure clipboard. When the vault is locked it offers to unlock; it closes
   when it loses focus or the vault locks. Change or turn off the shortcut in Settings → Security (if another app
   already owns it, Vault Guard says so).
+- **Share Wi-Fi.** Wi-Fi items have a QR button: guests scan it with a phone camera to join (main or guest network).
+- **Coming up.** Security Center lists cards, passports and anything with an expiry/renewal date that has expired or
+  expires within 90 days; after unlocking, a toast mentions anything due within 30 days.
 - **Updates with a backup first.** *Help → Check for Updates…* offers **Back up & continue** before installing
   a new version; *Help → Back Up Vault Now…* takes a snapshot at any time.
 - **Reveal on demand.** Passwords, card numbers, CVVs, Wi-Fi passwords, protected notes and secret custom

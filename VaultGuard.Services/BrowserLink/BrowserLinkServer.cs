@@ -135,6 +135,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
             "saveTotpSecret" => await SaveTotpAsync(db, userId, cipher, req, ct),
             "getTotpCode" => await GetTotpCodeAsync(db, userId, cipher, req, ct),
             "saveLogin" => await SaveLoginAsync(db, userId, cipher, req, ct),
+            "checkPasswordReuse" => await CheckPasswordReuseAsync(db, userId, cipher, req, ct),
             _ => new { success = false, code = "UNSUPPORTED", error = $"Unknown action '{action}'." }
         };
     }
@@ -254,6 +255,43 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         item.LastModified = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return new { success = true, created, updated = !created, itemId = item.Id, title = item.Title };
+    }
+
+    /// <summary>
+    /// Phishing guard: is the password being typed on this page the saved password of a login for a *different*
+    /// site? Returns only the titles and sites of those logins — never a password. If the same password is also
+    /// saved for this site, it's the user's own reuse (Security Center flags that), not a warning here.
+    /// </summary>
+    private static async Task<object> CheckPasswordReuseAsync(VaultGuardDbContext db, string userId, VaultCipher cipher, JsonElement req, CancellationToken ct)
+    {
+        var domain = req.Utf8("domain");
+        var typed = req.Utf8("loginPassword"); // not "password": the helper strips that name
+        if (string.IsNullOrWhiteSpace(domain) || typed.Length < 6 || typed.Length > 4096)
+            return new { success = true, matches = Array.Empty<object>() };
+
+        var logins = await db.PasswordItems.AsNoTracking()
+            .Where(p => p.UserId == userId && !p.IsDeleted && p.LoginItem != null && p.LoginItem.EncryptedPassword != null)
+            .Include(p => p.LoginItem)
+            .ToListAsync(ct);
+
+        var typedBytes = System.Text.Encoding.UTF8.GetBytes(typed);
+        var elsewhere = new List<(string Title, string Site)>();
+        var savedHere = false;
+        foreach (var item in logins)
+        {
+            var url = item.LoginItem!.WebsiteUrl ?? item.LoginItem.Website ?? item.Website ?? "";
+            cipher.Open(item);
+            var pw = item.LoginItem.Password ?? "";
+            var same = pw.Length == typed.Length &&
+                       System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(System.Text.Encoding.UTF8.GetBytes(pw), typedBytes);
+            VaultItemSecrets.Forget(item);
+            if (!same) continue;
+            if (SiteMatcher.Matches(url, domain)) { savedHere = true; break; }
+            elsewhere.Add((item.Title ?? "a login", SiteMatcher.Host(url) ?? url));
+        }
+        System.Security.Cryptography.CryptographicOperations.ZeroMemory(typedBytes);
+        if (savedHere || elsewhere.Count == 0) return new { success = true, matches = Array.Empty<object>() };
+        return new { success = true, matches = elsewhere.Take(3).Select(m => new { title = m.Title, site = m.Site }).ToArray() };
     }
 
     /// <summary>
