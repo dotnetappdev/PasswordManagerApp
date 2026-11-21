@@ -147,6 +147,7 @@ You need at least one **Login** item saved in the app with a website URL.
 | Open a sign-up or change-password form | The first suggestion is **Use a strong password**. Pick it to fill both password boxes; it's also copied to the clipboard |
 | Open a 2-step verification page whose login has an authenticator | The one-time code for that login is offered and filled |
 | Open a checkout form | Your saved cards are offered, and number, name, expiry and CVC are filled |
+| Fill a login that has an authenticator | Besides filling, "One-time code copied" appears: paste it on the 2-step page |
 | Sign in on a site you haven't saved | **"Save login to Vault Guard?"** in the top-right corner: edit the name and click **Save**. It appears in the app's vault |
 | Sign in again with a different password | **"Update password?"**: **Update** changes the saved password (the old one goes into password history) |
 | Choose **Never for this site** | That site isn't asked again (reset it in the popup's Settings → Saving logins) |

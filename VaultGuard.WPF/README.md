@@ -44,6 +44,13 @@ and theme files are in place and working.
   and wiped after the chosen time if they're still on the clipboard. **Same as Windows** follows the lock timeout
   Windows enforces (machine inactivity limit policy, or a password-protected screen saver), and organizations can
   cap the times or force lock-with-Windows through Group Policy — see [`docs/POLICIES.md`](../docs/POLICIES.md).
+- **Quick Access.** A system-wide shortcut (Ctrl+Shift+Space by default; also in the tray menu) opens a search box
+  over whatever app you're in. Type to search titles, usernames, sites and tags; **Enter** copies the password
+  (card number for cards, Wi-Fi password for networks), **Shift+Enter** the username, **Ctrl+Enter** the current
+  one-time code, **Alt+Enter** opens the item in Vault Guard, **Esc** closes. Secrets are decrypted only for the
+  entry you act on and go through the secure clipboard. When the vault is locked it offers to unlock; it closes
+  when it loses focus or the vault locks. Change or turn off the shortcut in Settings → Security (if another app
+  already owns it, Vault Guard says so).
 - **Updates with a backup first.** *Help → Check for Updates…* offers **Back up & continue** before installing
   a new version; *Help → Back Up Vault Now…* takes a snapshot at any time.
 - **Reveal on demand.** Passwords, card numbers, CVVs, Wi-Fi passwords, protected notes and secret custom

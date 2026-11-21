@@ -232,6 +232,18 @@ public class SettingsViewModel : BaseViewModel
         }
     }
 
+    private string _quickAccessHotkey = VaultGuard.WPF.Services.QuickAccess.Default;
+
+    /// <summary>System-wide shortcut that opens Quick Access ("Off" to disable).</summary>
+    public string QuickAccessHotkey
+    {
+        get => _quickAccessHotkey;
+        set => SetProperty(ref _quickAccessHotkey, value);
+    }
+
+    public List<string> QuickAccessHotkeyOptions { get; } =
+        VaultGuard.WPF.Services.GlobalHotkey.Choices.Select(c => c.Name).Append(VaultGuard.WPF.Services.QuickAccess.Off).ToList();
+
     /// <summary>Also lock when Windows locks, sleeps or switches user.</summary>
     public bool LockOnSystemLock
     {
@@ -581,6 +593,7 @@ public class SettingsViewModel : BaseViewModel
             LockOnSystemLock = VaultGuard.Services.Security.VaultSecuritySettings.ResolveLockOnSystemLock(
                 localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey, out var lsl) && bool.TryParse(lsl, out var lb)
                     ? lb : VaultGuard.Services.Security.VaultSecuritySettings.DefaultLockOnSystemLock, Policy);
+            QuickAccessHotkey = VaultGuard.WPF.Services.QuickAccess.Current;
             // A choice the policy no longer allows (e.g. "Never") shows as the policy's maximum.
             if (!TimeoutOptions.Any(o => o.Value == SessionTimeoutMinutes) && Policy.AutoLockMaxMinutes is { } maxLock) SessionTimeoutMinutes = maxLock;
             if (!ClipboardOptions.Any(o => o.Value == ClipboardClearSeconds) && Policy.ClipboardClearMaxSeconds is { } maxClip) ClipboardClearSeconds = maxClip;
@@ -734,6 +747,7 @@ public class SettingsViewModel : BaseViewModel
             localSettings[VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutesKey] = SessionTimeoutMinutes.ToString();
             localSettings[VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSecondsKey] = ClipboardClearSeconds.ToString();
             localSettings[VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey] = LockOnSystemLock.ToString();
+            localSettings[VaultGuard.WPF.Services.QuickAccess.SettingKey] = QuickAccessHotkey;
             localSettings["AuthMode"] = AuthenticationMode;
             localSettings["ApiBaseUrl"] = ApiBaseUrl;
             localSettings["ApiKey"] = ApiKey;

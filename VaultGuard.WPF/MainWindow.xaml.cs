@@ -452,6 +452,18 @@ public sealed partial class MainWindow : Window
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
     }
 
+    /// <summary>Shows one item (Quick Access "Open"): All Items, with that item selected once the list loads.</summary>
+    public void OpenItem(int itemId)
+    {
+        if (!_isAuthenticated) return;
+        MainNavigationView.SelectedItem = AllItemsNavItem;
+        NavigateToPage("AllItems");
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            if (ContentFrame.Content is Views.PasswordItemsPage page) page.SelectItemWhenLoaded(itemId);
+        });
+    }
+
     public void NavigateToPage(string pageTag)
     {
         if (!_isAuthenticated && pageTag != "Login") return;

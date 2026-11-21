@@ -242,11 +242,27 @@ class VaultGuardPopup {
     }
   }
 
+  async copyTotpAfterFill(credential, tabId) {
+    try {
+      if (!credential?.hasTotp) return;
+      const pref = await chrome.storage.local.get('copyTotpAfterFill');
+      if (pref.copyTotpAfterFill === false) return;
+      const t = await chrome.runtime.sendMessage({ action: 'getTotpCode', itemId: credential.id, domain: this.currentDomain });
+      if (!t?.success || !t.code) return;
+      await navigator.clipboard.writeText(t.code);
+      await chrome.tabs.sendMessage(tabId, { action: 'vaultGuardToast', text: `One-time code copied (valid ${t.secondsRemaining ?? 30} s)` }).catch(() => {});
+    } catch (e) {
+      console.warn('Vault Guard: could not copy the one-time code', e);
+    }
+  }
+
   /** "Offer to save logins" switch + the sites the user chose "Never for this site" on. */
   async renderSaveLoginSettings() {
-    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites']);
+    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill']);
     const offerEl = document.getElementById('offerToSaveLogins');
     if (offerEl) offerEl.checked = local.offerToSaveLogins !== false;
+    const totpEl = document.getElementById('copyTotpAfterFill');
+    if (totpEl) totpEl.checked = local.copyTotpAfterFill !== false;
     const never = local.neverSaveSites || [];
     const summary = document.getElementById('neverSaveSummary');
     const clearBtn = document.getElementById('clearNeverSaveBtn');
@@ -313,6 +329,8 @@ class VaultGuardPopup {
     try {
       const offerEl = document.getElementById('offerToSaveLogins');
       if (offerEl) await chrome.storage.local.set({ offerToSaveLogins: offerEl.checked });
+      const totpEl = document.getElementById('copyTotpAfterFill');
+      if (totpEl) await chrome.storage.local.set({ copyTotpAfterFill: totpEl.checked });
       await chrome.storage.sync.set({
         connectionMode: connectionMode,
         apiUrl: apiUrl,
@@ -510,7 +528,11 @@ class VaultGuardPopup {
         action: 'fillCredentials',
         credential: credential
       });
-      
+
+      // A login with an authenticator: copy its current one-time code now, while the popup still has focus,
+      // so it's ready to paste on the 2-step page.
+      await this.copyTotpAfterFill(credential, tab.id);
+
       // Close popup after filling
       window.close();
     } catch (error) {

@@ -73,8 +73,12 @@ built in.
   **Same as Windows** to follow the lock timeout Windows enforces (its inactivity policy or a password-protected
   screen saver), and IT can cap both times through Group Policy or Intune with the included ADMX template — see
   [`docs/POLICIES.md`](docs/POLICIES.md).
+- **Quick Access (Windows desktop).** Press **Ctrl+Shift+Space** in any app, type a few letters, and press Enter to
+  copy the password (Shift+Enter: username, Ctrl+Enter: one-time code, Alt+Enter: open in Vault Guard). Works
+  from the tray; the shortcut can be changed or turned off in Settings → Security.
 - **"Save this login?"** The extension offers to save logins you sign in or sign up with, or to update a
-  password you've changed, straight into the WPF or MAUI app.
+  password you've changed, straight into the WPF or MAUI app. After filling a login that has an authenticator,
+  its current one-time code is copied, ready to paste on the 2-step page.
 - **Desktop updates with a safety net.** WPF's *Help → Check for Updates…* offers to back up your vault
   before installing, and *Help → Back Up Vault Now* takes a backup at any time.
 - **Personalisation & accessibility.** Light / dark / system and a Windows-style **yellow-on-black high-contrast** theme; a custom **accent-colour** picker (palette swatches + specific colours) and selectable **fonts**; UI zoom and per-section text scaling; screen-reader labels.

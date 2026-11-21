@@ -31,6 +31,9 @@ you're on.
   to Vault Guard (with a name you can edit), to **update** the saved password if it changed, or to never ask
   on that site again. It also works on single-page apps that don't navigate after signing in. Turn it off,
   or reset the "never" list, in the popup's Settings.
+- **One-time code copied after filling.** Filling a login that has an authenticator (from the in-page menu or
+  the popup) copies its current 6-digit code, ready to paste on the 2-step page. Turn it off in the popup's
+  Settings → Filling & saving.
 - **Strong password suggestion** on sign-up and change-password forms. It fills both the
   "new" and "confirm" boxes.
 - **One-time codes** from logins that have an authenticator set up.

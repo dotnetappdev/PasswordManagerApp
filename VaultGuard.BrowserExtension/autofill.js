@@ -267,6 +267,24 @@
     return [...fields.entries()].filter(([g, st]) => kinds.includes(st.kind) && scopeOf(g) === scopeOf(f) && isVisible(g)).map(([g]) => g);
   }
 
+  /**
+   * After filling a login that has an authenticator, put its current one-time code on the clipboard, ready to
+   * paste on the 2-step page (on by default; popup Settings → "Copy one-time code after filling").
+   */
+  async function copyTotpAfterFill(c) {
+    if (!c?.hasTotp) return;
+    const pref = await chrome.storage.local.get('copyTotpAfterFill').catch(() => ({}));
+    if (pref.copyTotpAfterFill === false) return;
+    const t = await send({ action: 'getTotpCode', itemId: c.id, domain: HOST });
+    if (!t?.success || !t.code) return;
+    try {
+      await navigator.clipboard.writeText(t.code); // allowed: this follows the user's click / Enter
+      toast(`One-time code copied (valid ${t.secondsRemaining ?? 30} s)`);
+    } catch {
+      toast('Filled. Use the Vault Guard icon on the code field for the one-time code');
+    }
+  }
+
   function fillLogin(field, c) {
     const users = sameScope(field, ['username']);
     const pws = sameScope(field, ['password', 'new-password']);
@@ -277,6 +295,7 @@
       // username-first sign-in (password step comes next): remember nothing, the user picks again on the next step
     }
     toast(`Filled ${c.title || 'login'}`);
+    copyTotpAfterFill(c);
   }
 
   function fillNewPassword(field, pw) {
@@ -497,4 +516,6 @@
   document.addEventListener('mousedown', (e) => { if (menu && e.target !== menu.field && !e.composedPath().includes(host)) closeMenu(); }, true);
   document.addEventListener('focusin', (e) => { if (menu && e.target !== menu.field) closeMenu(); });
   setTimeout(checkPendingSave, 700); // a sign-in on the previous page may be waiting to be saved
+  // The popup fills through content.js and copies the one-time code itself; it asks us to say so.
+  chrome.runtime.onMessage.addListener((msg) => { if (msg?.action === 'vaultGuardToast' && typeof msg.text === 'string') toast(msg.text.slice(0, 120)); });
 })();

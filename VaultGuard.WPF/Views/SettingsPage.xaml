@@ -665,6 +665,22 @@
                                        Style="{StaticResource ModernCaptionStyle}" Opacity="0.8"/>
                         </StackPanel>
 
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Quick Access shortcut"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox x:Name="QuickAccessHotkeyComboBox"
+                                     ItemsSource="{Binding QuickAccessHotkeyOptions}"
+                                     SelectedItem="{Binding QuickAccessHotkey, Mode=TwoWay}"
+                                     SelectionChanged="QuickAccessHotkeyComboBox_SelectionChanged"
+                                     ToolTip="Press this in any app to search your vault and copy a password, username or one-time code"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     MinWidth="200"/>
+                            <TextBlock Text="Search your vault from any app: Enter copies the password, Shift+Enter the username, Ctrl+Enter the one-time code."
+                                       TextWrapping="Wrap" MaxWidth="320" Margin="0,4,0,0"
+                                       Style="{StaticResource ModernCaptionStyle}" Opacity="0.8"/>
+                        </StackPanel>
+
                         <CheckBox x:Name="LockOnSystemLockCheckBox" Margin="8"
                                   Content="Lock when Windows locks or the PC sleeps"
                                   IsChecked="{Binding LockOnSystemLock, Mode=TwoWay}"

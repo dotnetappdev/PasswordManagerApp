@@ -504,6 +504,26 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         _ => type.ToString(),
     };
 
+    /// <summary>Selects (and scrolls to) an item as soon as the list has loaded it — used by Quick Access "Open".</summary>
+    public void SelectItemWhenLoaded(int itemId)
+    {
+        var tries = 0;
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+        timer.Tick += (_, _) =>
+        {
+            var list = GetElement<ListView>("ItemsList");
+            var match = list?.Items.OfType<PasswordItem>().FirstOrDefault(i => i.Id == itemId);
+            if (match != null)
+            {
+                list!.SelectedItem = match;
+                list.ScrollIntoView(match);
+                timer.Stop();
+            }
+            else if (++tries > 40) timer.Stop(); // ~6 s: the list never showed it (e.g. filtered out)
+        };
+        timer.Start();
+    }
+
     private void ItemsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var listView = sender as ListView ?? GetElement<ListView>("ItemsList");

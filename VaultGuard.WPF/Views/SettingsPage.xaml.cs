@@ -695,6 +695,16 @@ public sealed partial class SettingsPage : Page
         }
     }
 
+    private async void QuickAccessHotkeyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel == null || !IsLoaded || QuickAccessHotkeyComboBox.SelectedItem == null) return;
+        await _viewModel.SaveSettingsAsync();
+        var error = VaultGuard.WPF.Services.QuickAccess.Apply();
+        if (error != null) VaultGuard.WPF.Services.ToastService.Instance.Show(error, VaultGuard.WPF.Services.ToastType.Warning);
+        else if (_viewModel.QuickAccessHotkey != VaultGuard.WPF.Services.QuickAccess.Off)
+            VaultGuard.WPF.Services.ToastService.Instance.Success($"Quick Access: press {_viewModel.QuickAccessHotkey} in any app.");
+    }
+
     private async void LockOnSystemLockCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         if (_viewModel != null && IsLoaded) await _viewModel.SaveSettingsAsync();

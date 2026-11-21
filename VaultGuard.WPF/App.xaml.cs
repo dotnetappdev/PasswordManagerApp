@@ -221,6 +221,10 @@ public partial class App : Application
 
         InitTrayIcon();
         VaultGuard.WPF.Helpers.DialogManager.Initialize(); // lets a lock close every open dialog
+        // Quick Access: search and copy from any app with a system-wide shortcut (Ctrl+Shift+Space by default).
+        var quickAccessError = VaultGuard.WPF.Services.QuickAccess.Start(_host.Services, () => m_window as MainWindow, ShowMainWindow);
+        if (quickAccessError != null)
+            _trayIcon?.ShowBalloonTip(4000, "Vault Guard Quick Access", quickAccessError, System.Windows.Forms.ToolTipIcon.Warning);
         // Auto-lock after the configured idle time, and when Windows locks or sleeps (Settings → Security).
         VaultGuard.WPF.Services.WpfAutoLock.Start(Dispatcher,
             isUnlocked: () => (m_window as MainWindow)?.IsVaultUnlocked == true,
@@ -400,6 +404,7 @@ public partial class App : Application
 
         var menu = new System.Windows.Forms.ContextMenuStrip();
         menu.Items.Add("Open VaultGuard", null, (_, _) => ShowMainWindow());
+        menu.Items.Add("Quick Access",     null, (_, _) => m_window?.Dispatcher.BeginInvoke(VaultGuard.WPF.Services.QuickAccess.Show));
         menu.Items.Add("Lock Vault",       null, (_, _) => LockVault());
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add("Settings",         null, (_, _) => OpenSettings());
@@ -455,6 +460,7 @@ public partial class App : Application
     {
         try { VaultGuard.WPF.Services.WpfBrowserLink.StopAsync().GetAwaiter().GetResult(); } catch { /* exiting */ }
         try { VaultGuard.WPF.Services.WpfAutoLock.Stop(); VaultGuard.WPF.Helpers.SecureClipboard.ClearIfStillOurs(); } catch { /* exiting */ }
+        try { VaultGuard.WPF.Services.QuickAccess.Stop(); } catch { /* exiting */ }
         _trayIcon?.Dispose();
         base.OnExit(e);
     }
