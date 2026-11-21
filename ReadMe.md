@@ -4,7 +4,9 @@
 
 # Vault Guard
 
-**A self-hosted password manager for Windows, web and mobile - one encrypted vault, the same app everywhere.**
+**A free, self-hosted password manager for Windows, web and mobile - one encrypted vault, the same app everywhere.**
+
+**Free. No subscription, no payments, no paid tier: every feature is included.**
 
 [![Build WPF](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml)
 [![Build Web (Blazor)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml)
@@ -46,7 +48,7 @@ built in.
 | 🌐 **Web** | `VaultGuard.Web` | Blazor Server | [![Build Web (Blazor)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml) |
 | 🔌 **API** | `VaultGuard.API` | ASP.NET Core | [![Build API](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-api.yml) |
 | 📱 **Mobile** | `VaultGuard.App` | MAUI (Android/iOS/Windows) | [![Build MAUI](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-maui.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-maui.yml) |
-| 🧩 **Extension** | `VaultGuard.BrowserExtension` | Chrome/Edge/Brave/Firefox, paired with the WPF or MAUI app | [Test it locally](VaultGuard.BrowserExtension/TESTING_LOCALLY.md) |
+| 🧩 **Extension** | `VaultGuard.BrowserExtension` | Chrome/Edge/Brave/Vivaldi/Firefox, paired with the WPF or MAUI app | [Install it](VaultGuard.BrowserExtension/INSTALLATION.md) |
 
 ---
 
@@ -579,7 +581,7 @@ Start here, then dive into a topic:
 | [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) | Master-key login, 2FA, passkeys, OTP, biometrics, passcode, QR sign-in, device management, profiles |
 | [`docs/POLICIES.md`](docs/POLICIES.md) | Auto-lock and clipboard settings, "Same as Windows", Group Policy / Intune (ADMX) for organizations |
 | [`docs/ENCRYPTION_AT_REST.md`](docs/ENCRYPTION_AT_REST.md) | Which fields are encrypted, how, migration of older vaults, key rotation |
-| [`docs/BROWSER_LINK.md`](docs/BROWSER_LINK.md) · [`TESTING_LOCALLY.md`](VaultGuard.BrowserExtension/TESTING_LOCALLY.md) | How the extension pairs with the WPF/MAUI app; loading it unpacked to test |
+| [`INSTALLATION.md`](VaultGuard.BrowserExtension/INSTALLATION.md) · [`docs/BROWSER_LINK.md`](docs/BROWSER_LINK.md) · [`TESTING_LOCALLY.md`](VaultGuard.BrowserExtension/TESTING_LOCALLY.md) | Installing the browser extension; how it pairs with the WPF/MAUI app; developing it |
 | [`docs/PASSKEYS.md`](docs/PASSKEYS.md) | Website passkeys (extension) and device passkeys (sign-in), RP setup, mobile association files |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Providers, EF Identity setup, MySQL, migrations |
 | [`docs/UI_AND_UX.md`](docs/UI_AND_UX.md) | Design system, theming, validation UX, accessibility, navigation |

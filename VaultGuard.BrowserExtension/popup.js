@@ -256,6 +256,25 @@ class VaultGuardPopup {
     }
   }
 
+  /** Settings → Vault Guard app: connection status and "Disconnect this browser". */
+  async renderLinkSettings() {
+    const status = document.getElementById('linkSettingsStatus');
+    const btn = document.getElementById('disconnectAppBtn');
+    if (!status || !btn) return;
+    const r = await chrome.runtime.sendMessage({ action: 'getLinkStatus' }).catch(() => null);
+    const link = r?.link;
+    status.textContent = !link?.linked ? 'The Vault Guard app isn\'t running.'
+      : !link.paired ? 'This browser isn\'t connected to Vault Guard.'
+      : `Connected to ${link.app || 'Vault Guard'}${link.unlocked ? '' : ' (locked)'}.`;
+    btn.style.display = link?.paired ? '' : 'none';
+    btn.onclick = async () => {
+      btn.disabled = true;
+      await chrome.runtime.sendMessage({ action: 'disconnectApp' }).catch(() => {});
+      btn.disabled = false;
+      await this.renderLinkSettings();
+    };
+  }
+
   /** "Offer to save logins" switch + the sites the user chose "Never for this site" on. */
   async renderSaveLoginSettings() {
     const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill', 'phishingGuard', 'reuseTrustedSites']);
@@ -293,6 +312,7 @@ class VaultGuardPopup {
     // Default ON (preserves the original always-intercept behaviour) unless explicitly disabled.
     if (interceptPasskeysInput) interceptPasskeysInput.checked = settings.interceptPasskeys !== false;
     await this.renderSaveLoginSettings();
+    await this.renderLinkSettings();
     
     // Show/hide fields based on connection mode
     this.handleConnectionModeChange({ target: connectionModeSelect });

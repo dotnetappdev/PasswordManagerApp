@@ -5,18 +5,23 @@ passwords on sign-up forms. It talks to the **Vault Guard desktop app** (WPF or 
 over a local, paired link. Your vault stays in the app and is decrypted there, only for the site
 you're on.
 
+> **Installing it?** Follow **[INSTALLATION.md](INSTALLATION.md)**. Vault Guard is free: no subscription or
+> payments, every feature included.
+>
 > **Want to try it right now?** Follow **[TESTING_LOCALLY.md](TESTING_LOCALLY.md)**. You load the
 > extension unpacked: no store, no certificate, about five minutes.
 
 ## Documentation
 
+- **[INSTALLATION.md](INSTALLATION.md)**: installing it for everyday use (release zip, each browser,
+  connecting, updating, troubleshooting).
 - **[TESTING_LOCALLY.md](TESTING_LOCALLY.md)**: run and test the extension on your own machine,
   step by step, with troubleshooting.
 - **[../docs/BROWSER_LINK.md](../docs/BROWSER_LINK.md)**: how the app ↔ browser link works
   (pairing, the helper, registration, security).
 - **[PACKAGING.md](PACKAGING.md)**: packaging for the Chrome Web Store, Edge Add-ons and
   Firefox AMO.
-- **[INSTALLATION.md](INSTALLATION.md)**, **[HELP.md](HELP.md)**,
+- **[HELP.md](HELP.md)**,
   **[CONTEXT_DETECTION.md](CONTEXT_DETECTION.md)**, **[PASSKEYS_SETUP.md](PASSKEYS_SETUP.md)**:
   older, more detailed notes.
 

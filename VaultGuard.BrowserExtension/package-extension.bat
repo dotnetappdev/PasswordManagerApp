@@ -57,6 +57,12 @@ echo   * Copied: background.js
 copy "%SCRIPT_DIR%content.js" "%TEMP_DIR%\" >nul
 echo   * Copied: content.js
 
+copy "%SCRIPT_DIR%autofill.js" "%TEMP_DIR%\" >nul
+echo   * Copied: autofill.js
+copy "%SCRIPT_DIR%jsQR.js" "%TEMP_DIR%\" >nul
+echo   * Copied: jsQR.js
+copy "%SCRIPT_DIR%inpage.js" "%TEMP_DIR%\" >nul
+echo   * Copied: inpage.js
 copy "%SCRIPT_DIR%content.css" "%TEMP_DIR%\" >nul
 echo   * Copied: content.css
 

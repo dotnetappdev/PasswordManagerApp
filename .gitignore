@@ -433,3 +433,6 @@ allure-report/
 /winui_build_output.txt
 *.sln.backup
 /logs/
+
+# Browser extension packages built by package-extension.sh/.bat
+VaultGuard.BrowserExtension/dist/

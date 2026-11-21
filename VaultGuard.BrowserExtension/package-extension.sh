@@ -34,10 +34,15 @@ rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
 # Files to include in the package
+# Everything manifest.json loads (content scripts, the passkey page hook, the QR decoder, popup, icons).
+# Keep in step with manifest.json — a missing file breaks the extension only after it's installed.
 FILES=(
     "manifest.json"
     "background.js"
     "content.js"
+    "autofill.js"
+    "jsQR.js"
+    "inpage.js"
     "content.css"
     "popup.html"
     "popup.js"

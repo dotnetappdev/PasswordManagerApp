@@ -72,6 +72,9 @@ jobs:
         run: |
           (cd publish/api && zip -r "$OLDPWD/VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip" .)
           (cd publish/web && zip -r "$OLDPWD/VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip" .)
+          # The browser extension, ready to "Load unpacked" (unzip first) — see VaultGuard.BrowserExtension/INSTALLATION.md.
+          (cd VaultGuard.BrowserExtension && zip -r "$OLDPWD/VaultGuardBrowserExtension-${{ steps.ver.outputs.VERSION }}.zip" \
+            manifest.json background.js content.js autofill.js jsQR.js inpage.js content.css popup.html popup.js popup.css icons)
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
@@ -82,10 +85,12 @@ jobs:
           prerelease: false
           body: |
             - **VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip** is the self-hosted Blazor web site (`VaultGuard.Web`) - unzip and run/deploy it to use VaultGuard in a browser. It is not the browser extension.
+            - **VaultGuardBrowserExtension-${{ steps.ver.outputs.VERSION }}.zip** is the browser extension for Chrome, Edge, Brave, Vivaldi and Firefox. Unzip it, then follow VaultGuard.BrowserExtension/INSTALLATION.md (it works with the Vault Guard desktop app).
             - **VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip** is the REST API backend (`VaultGuard.API`) that the Web site, desktop, and mobile apps talk to.
           generate_release_notes: true
           files: |
             VaultGuardAPI-${{ steps.ver.outputs.VERSION }}.zip
             VaultGuardWeb-${{ steps.ver.outputs.VERSION }}.zip
+            VaultGuardBrowserExtension-${{ steps.ver.outputs.VERSION }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
