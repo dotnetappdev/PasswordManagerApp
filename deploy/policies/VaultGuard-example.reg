@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+; Example Vault Guard policy for one PC (machine-wide). Import with:  reg import VaultGuard-example.reg
+; Remove with:  reg delete "HKLM\SOFTWARE\Policies\VaultGuard" /f
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\VaultGuard]
+; lock after at most 10 minutes idle (0x0a)
+"AutoLockMaxMinutes"=dword:0000000a
+; clear copied values within 30 seconds (0x1e)
+"ClipboardClearMaxSeconds"=dword:0000001e
+; always lock when Windows locks or sleeps
+"LockOnWindowsLock"=dword:00000001

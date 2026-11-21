@@ -37,7 +37,8 @@ internal static class WpfAutoLock
     {
         _isUnlocked = isUnlocked;
         _lock = lockVault;
-        _timer = new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, (_, _) => Check(), dispatcher);
+        // Every 10 s (a Windows policy can be as short as a few minutes; locking up to 10 s late is fine).
+        _timer = new DispatcherTimer(TimeSpan.FromSeconds(10), DispatcherPriority.Background, (_, _) => Check(), dispatcher);
         _timer.Start();
         SystemEvents.SessionSwitch += OnSessionSwitch;
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
@@ -53,10 +54,11 @@ internal static class WpfAutoLock
     private static void Check()
     {
         if (_isUnlocked?.Invoke() != true) return;
-        var minutes = WpfSecuritySettings.AutoLockMinutes;
-        if (minutes <= 0) return;
-        if (SystemIdleTime() >= TimeSpan.FromMinutes(minutes))
-            _lock?.Invoke($"Locked after {VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(minutes)} of inactivity.");
+        if (WpfSecuritySettings.AutoLock.Timeout is not { } timeout) return;
+        if (SystemIdleTime() >= timeout)
+            _lock?.Invoke(timeout.TotalSeconds < 60
+                ? $"Locked after {(int)timeout.TotalSeconds} seconds of inactivity."
+                : $"Locked after {VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock((int)Math.Ceiling(timeout.TotalMinutes))} of inactivity.");
     }
 
     private static void OnSessionSwitch(object? sender, SessionSwitchEventArgs e)

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitionResources xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <displayName>Vault Guard</displayName>
+  <description>Policies for the Vault Guard password manager.</description>
+  <resources>
+    <stringTable>
+      <string id="SUPPORTED_VaultGuard">Vault Guard desktop (WPF) and Windows app (MAUI)</string>
+      <string id="Cat_VaultGuard">Vault Guard</string>
+      <string id="AutoLockMaxMinutes">Maximum time before Vault Guard locks when idle</string>
+      <string id="AutoLockMaxMinutes_Help">Sets the longest time, in minutes, that Vault Guard may stay unlocked without keyboard or mouse activity.
+
+If you enable this policy, users can still choose a shorter time (or "Same as Windows" if Windows locks sooner), but they can't choose a longer time or "Never". Settings shows that the limit comes from the organization.
+
+If you disable or don't configure this policy, users choose any auto-lock time.
+
+Tip: to make Vault Guard follow the Windows lock, also configure "Interactive logon: Machine inactivity limit" (Computer Configuration > Windows Settings > Security Settings > Local Policies > Security Options); Vault Guard's "Same as Windows" uses it.</string>
+      <string id="ClipboardClearMaxSeconds">Maximum time a copied value stays on the clipboard</string>
+      <string id="ClipboardClearMaxSeconds_Help">Sets the longest time, in seconds, before Vault Guard wipes a copied password or other value from the clipboard.
+
+If you enable this policy, users can choose a shorter time but not a longer one or "Never".
+
+If you disable or don't configure this policy, users choose any time.</string>
+      <string id="LockOnWindowsLock">Always lock Vault Guard when Windows locks</string>
+      <string id="LockOnWindowsLock_Help">If you enable this policy, Vault Guard always locks when Windows is locked, the PC sleeps or the user switches account, and users can't turn this off.
+
+If you disable or don't configure this policy, users decide (it's on by default).</string>
+    </stringTable>
+    <presentationTable>
+      <presentation id="AutoLockMaxMinutes">
+        <decimalTextBox refId="AutoLockMaxMinutesValue" defaultValue="15" spinStep="5">Minutes:</decimalTextBox>
+      </presentation>
+      <presentation id="ClipboardClearMaxSeconds">
+        <decimalTextBox refId="ClipboardClearMaxSecondsValue" defaultValue="60" spinStep="10">Seconds:</decimalTextBox>
+      </presentation>
+    </presentationTable>
+  </resources>
+</policyDefinitionResources>

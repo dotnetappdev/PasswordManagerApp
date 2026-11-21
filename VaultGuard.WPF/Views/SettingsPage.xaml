@@ -641,9 +641,11 @@
                                      SelectedValuePath="Value"
                                      SelectedValue="{Binding SessionTimeoutMinutes, Mode=TwoWay}"
                                      SelectionChanged="SessionTimeoutComboBox_SelectionChanged"
-                                     ToolTip="Locks the vault when there's been no keyboard or mouse activity on this PC for this long"
+                                     ToolTip="Locks the vault when there's been no keyboard or mouse activity on this PC for this long. &quot;Same as Windows&quot; follows the lock timeout Windows enforces (Group Policy inactivity limit or a password-protected screen saver)."
                                      Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="200"/>
+                            <TextBlock Text="{Binding AutoLockExplanation}" TextWrapping="Wrap" MaxWidth="320" Margin="0,4,0,0"
+                                       Style="{StaticResource ModernCaptionStyle}" Opacity="0.8"/>
                         </StackPanel>
 
                         <StackPanel Margin="8">
@@ -659,11 +661,15 @@
                                      ToolTip="Copied passwords and other values are wiped from the clipboard after this long (and never kept in Windows clipboard history)"
                                      Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="200"/>
+                            <TextBlock Text="{Binding ClipboardExplanation}" TextWrapping="Wrap" MaxWidth="320" Margin="0,4,0,0"
+                                       Style="{StaticResource ModernCaptionStyle}" Opacity="0.8"/>
                         </StackPanel>
 
                         <CheckBox x:Name="LockOnSystemLockCheckBox" Margin="8"
                                   Content="Lock when Windows locks or the PC sleeps"
                                   IsChecked="{Binding LockOnSystemLock, Mode=TwoWay}"
+                                  IsEnabled="{Binding LockOnSystemLockEditable}"
+                                  ToolTip="Required by your organization when greyed out"
                                   Checked="LockOnSystemLockCheckBox_Changed" Unchecked="LockOnSystemLockCheckBox_Changed"/>
                     </StackPanel>
                 </StackPanel>

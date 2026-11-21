@@ -68,7 +68,10 @@ built in.
 - **Auto-lock and clipboard clearing.** Every app locks the vault after the idle time you choose (1 minute to
   4 hours, or never) and wipes copied passwords from the clipboard after the time you choose (10 seconds to
   5 minutes). Locking removes the vault key from memory. On Windows the desktop app also locks when Windows locks
-  or sleeps, and copied secrets are kept out of clipboard history (Win+V) and cloud clipboard sync.
+  or sleeps, and copied secrets are kept out of clipboard history (Win+V) and cloud clipboard sync. Choose
+  **Same as Windows** to follow the lock timeout Windows enforces (its inactivity policy or a password-protected
+  screen saver), and IT can cap both times through Group Policy or Intune with the included ADMX template — see
+  [`docs/POLICIES.md`](docs/POLICIES.md).
 - **"Save this login?"** The extension offers to save logins you sign in or sign up with, or to update a
   password you've changed, straight into the WPF or MAUI app.
 - **Desktop updates with a safety net.** WPF's *Help → Check for Updates…* offers to back up your vault
@@ -564,6 +567,7 @@ Start here, then dive into a topic:
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Cutting releases: automated SmarterASP.NET deploys and the manual tag-based release |
 | [`docs/SECURITY.md`](docs/SECURITY.md) · [`SECURITY_REMEDIATION_PRD.md`](docs/SECURITY_REMEDIATION_PRD.md) | Encryption, master-password security, remediation |
 | [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) | Master-key login, 2FA, passkeys, OTP, biometrics, passcode, QR sign-in, device management, profiles |
+| [`docs/POLICIES.md`](docs/POLICIES.md) | Auto-lock and clipboard settings, "Same as Windows", Group Policy / Intune (ADMX) for organizations |
 | [`docs/ENCRYPTION_AT_REST.md`](docs/ENCRYPTION_AT_REST.md) | Which fields are encrypted, how, migration of older vaults, key rotation |
 | [`docs/BROWSER_LINK.md`](docs/BROWSER_LINK.md) · [`TESTING_LOCALLY.md`](VaultGuard.BrowserExtension/TESTING_LOCALLY.md) | How the extension pairs with the WPF/MAUI app; loading it unpacked to test |
 | [`docs/PASSKEYS.md`](docs/PASSKEYS.md) | Website passkeys (extension) and device passkeys (sign-in), RP setup, mobile association files |

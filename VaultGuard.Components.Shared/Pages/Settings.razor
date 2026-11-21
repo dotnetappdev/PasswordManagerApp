@@ -111,21 +111,23 @@
                     <MudSelect T="int" Value="autoLockMinutes" ValueChanged="SetAutoLock" Label="Auto-lock after"
                                HelperText="Locks the vault when the app hasn't been used for this long"
                                Variant="Variant.Outlined">
-                        @foreach (var m in VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoices)
+                        @foreach (var m in VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoicesFor(OperatingSystem.IsWindows(), lockPolicy))
                         {
                             <MudSelectItem T="int" Value="@m">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(m)</MudSelectItem>
                         }
                     </MudSelect>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1" data-testid="autolock-explanation">@autoLockExplanation</MudText>
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudSelect T="int" Value="clipboardClearSeconds" ValueChanged="SetClipboardClear" Label="Clear clipboard after"
                                HelperText="Copied passwords and other values are wiped from the clipboard after this long"
                                Variant="Variant.Outlined">
-                        @foreach (var sec in VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoices)
+                        @foreach (var sec in VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoicesFor(lockPolicy))
                         {
                             <MudSelectItem T="int" Value="@sec">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeClipboard(sec)</MudSelectItem>
                         }
                     </MudSelect>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">@VaultGuard.Services.Security.VaultSecuritySettings.ResolveClipboard(clipboardClearSeconds, lockPolicy).Explanation</MudText>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -944,6 +946,12 @@
 
     private int autoLockMinutes = VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
     private int clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds;
+
+    // Organization policy (Windows Group Policy) and what the chosen auto-lock really does on this device.
+    private readonly VaultGuard.Services.Security.VaultGuardPolicy lockPolicy = VaultGuard.Services.Security.VaultGuardPolicy.Read();
+    private string autoLockExplanation => VaultGuard.Services.Security.VaultSecuritySettings.ResolveAutoLock(autoLockMinutes,
+        autoLockMinutes == VaultGuard.Services.Security.VaultSecuritySettings.SameAsWindows ? VaultGuard.Services.Security.WindowsLockPolicy.Read() : VaultGuard.Services.Security.WindowsLockInfo.None,
+        lockPolicy).Explanation;
 
     private void SetAutoLock(int minutes)
     {

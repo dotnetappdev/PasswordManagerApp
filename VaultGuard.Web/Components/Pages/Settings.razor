@@ -162,7 +162,7 @@
                     <MudSelect T="int" @bind-Value="_autoLockMinutes" Label="Auto-lock after"
                                HelperText="Locks the vault when there's been no mouse or keyboard activity for this long"
                                Variant="Variant.Outlined" Class="mb-3">
-                        @foreach (var m in VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoices)
+                        @foreach (var m in VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoicesFor(windows: false, _lockPolicy))
                         {
                             <MudSelectItem T="int" Value="@m">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(m)</MudSelectItem>
                         }
@@ -170,7 +170,7 @@
                     <MudSelect T="int" @bind-Value="_clipboardClearSeconds" Label="Clear clipboard after"
                                HelperText="Copied passwords and other values are wiped from the clipboard after this long"
                                Variant="Variant.Outlined" Class="mb-3">
-                        @foreach (var sec in VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoices)
+                        @foreach (var sec in VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoicesFor(_lockPolicy))
                         {
                             <MudSelectItem T="int" Value="@sec">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeClipboard(sec)</MudSelectItem>
                         }
@@ -1229,6 +1229,8 @@
     string _passwordHint = string.Empty;
     int _autoLockMinutes = VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
     int _clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds;
+    // Limits an administrator set on this server through Group Policy (SOFTWARE\Policies\VaultGuard).
+    readonly VaultGuard.Services.Security.VaultGuardPolicy _lockPolicy = VaultGuard.Services.Security.VaultGuardPolicy.Read();
     bool _lockOnBrowserClose = true;
     bool isSavingPassword = false;
 

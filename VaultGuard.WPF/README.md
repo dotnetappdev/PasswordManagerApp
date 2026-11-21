@@ -40,7 +40,9 @@ and theme files are in place and working.
   measured system-wide so using the browser extension counts as activity, and, by default, when Windows locks or
   the PC sleeps. Locking (auto-lock, Ctrl+L, the tray's *Lock Vault*, sign-out) removes the vault key from
   memory; it used to only switch screens. Copied values are kept out of Windows clipboard history and cloud sync,
-  and wiped after the chosen time if they're still on the clipboard.
+  and wiped after the chosen time if they're still on the clipboard. **Same as Windows** follows the lock timeout
+  Windows enforces (machine inactivity limit policy, or a password-protected screen saver), and organizations can
+  cap the times or force lock-with-Windows through Group Policy — see [`docs/POLICIES.md`](../docs/POLICIES.md).
 - **Updates with a backup first.** *Help → Check for Updates…* offers **Back up & continue** before installing
   a new version; *Help → Back Up Vault Now…* takes a snapshot at any time.
 - **Reveal on demand.** Passwords, card numbers, CVVs, Wi-Fi passwords, protected notes and secret custom

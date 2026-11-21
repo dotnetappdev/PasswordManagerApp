@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vault Guard administrative template. Copy this file to %SystemRoot%\PolicyDefinitions (or the domain's
+     Central Store) and en-US\VaultGuard.adml to the matching language folder. Settings are written to
+     SOFTWARE\Policies\VaultGuard; machine policy takes precedence over user policy. See docs/POLICIES.md. -->
+<policyDefinitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="vaultguard" namespace="VaultGuard.Policies" />
+    <using prefix="windows" namespace="Microsoft.Policies.Windows" />
+  </policyNamespaces>
+  <resources minRequiredRevision="1.0" />
+  <supportedOn>
+    <definitions>
+      <definition name="SUPPORTED_VaultGuard" displayName="$(string.SUPPORTED_VaultGuard)" />
+    </definitions>
+  </supportedOn>
+  <categories>
+    <category name="VaultGuard" displayName="$(string.Cat_VaultGuard)" />
+  </categories>
+  <policies>
+    <policy name="AutoLockMaxMinutes" class="Both" displayName="$(string.AutoLockMaxMinutes)"
+            explainText="$(string.AutoLockMaxMinutes_Help)" presentation="$(presentation.AutoLockMaxMinutes)"
+            key="SOFTWARE\Policies\VaultGuard">
+      <parentCategory ref="VaultGuard" />
+      <supportedOn ref="SUPPORTED_VaultGuard" />
+      <elements>
+        <decimal id="AutoLockMaxMinutesValue" valueName="AutoLockMaxMinutes" minValue="1" maxValue="1440" required="true" />
+      </elements>
+    </policy>
+    <policy name="ClipboardClearMaxSeconds" class="Both" displayName="$(string.ClipboardClearMaxSeconds)"
+            explainText="$(string.ClipboardClearMaxSeconds_Help)" presentation="$(presentation.ClipboardClearMaxSeconds)"
+            key="SOFTWARE\Policies\VaultGuard">
+      <parentCategory ref="VaultGuard" />
+      <supportedOn ref="SUPPORTED_VaultGuard" />
+      <elements>
+        <decimal id="ClipboardClearMaxSecondsValue" valueName="ClipboardClearMaxSeconds" minValue="5" maxValue="3600" required="true" />
+      </elements>
+    </policy>
+    <policy name="LockOnWindowsLock" class="Both" displayName="$(string.LockOnWindowsLock)"
+            explainText="$(string.LockOnWindowsLock_Help)" key="SOFTWARE\Policies\VaultGuard" valueName="LockOnWindowsLock">
+      <parentCategory ref="VaultGuard" />
+      <supportedOn ref="SUPPORTED_VaultGuard" />
+      <enabledValue><decimal value="1" /></enabledValue>
+      <disabledValue><decimal value="0" /></disabledValue>
+    </policy>
+  </policies>
+</policyDefinitions>

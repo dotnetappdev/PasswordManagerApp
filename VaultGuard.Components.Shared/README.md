@@ -32,8 +32,9 @@ A shared Blazor component library that provides reusable UI components for both 
 - CRUD operations for all item types
 
 #### Settings.razor — Lock & Clipboard
-- "Auto-lock after" and "Clear clipboard after", saved as soon as they change (shared keys in
-  `VaultSecuritySettings`).
+- "Auto-lock after" (with **Same as Windows** when running on Windows) and "Clear clipboard after", saved as
+  soon as they change (shared keys in `VaultSecuritySettings`), with a line explaining what applies. Choices
+  respect any organization policy (`VaultGuardPolicy`, see `docs/POLICIES.md`).
 
 ### Security components (Components/)
 - **`VaultAutoLock`**: place once in the main layout with the host's sign-in route

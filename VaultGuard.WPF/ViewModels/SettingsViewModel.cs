@@ -204,14 +204,32 @@ public class SettingsViewModel : BaseViewModel
     public int SessionTimeoutMinutes
     {
         get => _sessionTimeoutMinutes;
-        set => SetProperty(ref _sessionTimeoutMinutes, value);
+        set
+        {
+            if (SetProperty(ref _sessionTimeoutMinutes, value)) OnPropertyChanged(nameof(AutoLockExplanation));
+        }
     }
+
+    /// <summary>The organization policy in force (Group Policy: HKLM/HKCU\SOFTWARE\Policies\VaultGuard).</summary>
+    public VaultGuard.Services.Security.VaultGuardPolicy Policy { get; } = VaultGuard.Services.Security.VaultGuardPolicy.Read();
+
+    /// <summary>One line under the auto-lock choice saying what will actually happen on this PC.</summary>
+    public string AutoLockExplanation => VaultGuard.WPF.Services.WpfSecuritySettings.Resolve(SessionTimeoutMinutes).Explanation;
+
+    public string ClipboardExplanation => VaultGuard.Services.Security.VaultSecuritySettings.ResolveClipboard(ClipboardClearSeconds, Policy).Explanation;
+
+    /// <summary>True when policy requires locking whenever Windows locks (the box is then ticked and disabled).</summary>
+    public bool LockOnSystemLockForced => Policy.ForceLockOnWindowsLock;
+    public bool LockOnSystemLockEditable => !Policy.ForceLockOnWindowsLock;
 
     /// <summary>Wipe copied values from the clipboard after this many seconds (0 = never).</summary>
     public int ClipboardClearSeconds
     {
         get => _clipboardClearSeconds;
-        set => SetProperty(ref _clipboardClearSeconds, value);
+        set
+        {
+            if (SetProperty(ref _clipboardClearSeconds, value)) OnPropertyChanged(nameof(ClipboardExplanation));
+        }
     }
 
     /// <summary>Also lock when Windows locks, sleeps or switches user.</summary>
@@ -540,11 +558,12 @@ public class SettingsViewModel : BaseViewModel
 
     public sealed record Choice(int Value, string Label);
 
-    public List<Choice> TimeoutOptions { get; } =
-        VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoices.Select(m => new Choice(m, VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(m))).ToList();
+    // "Same as Windows" first; nothing longer than an organization's maximum (which also removes "Never").
+    public List<Choice> TimeoutOptions => VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoicesFor(windows: true, Policy)
+        .Select(m => new Choice(m, VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(m))).ToList();
 
-    public List<Choice> ClipboardOptions { get; } =
-        VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoices.Select(s => new Choice(s, VaultGuard.Services.Security.VaultSecuritySettings.DescribeClipboard(s))).ToList();
+    public List<Choice> ClipboardOptions => VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoicesFor(Policy)
+        .Select(s => new Choice(s, VaultGuard.Services.Security.VaultSecuritySettings.DescribeClipboard(s))).ToList();
 
     private async Task LoadSettingsAsync()
     {
@@ -556,11 +575,15 @@ public class SettingsViewModel : BaseViewModel
             var localSettings = LoadLocalSettings();
             SelectedTheme = localSettings.TryGetValue("SelectedTheme", out var theme) ? theme : "System";
             SessionTimeoutMinutes = localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutesKey, out var timeout) && int.TryParse(timeout, out var tm)
-                ? VaultGuard.Services.Security.VaultSecuritySettings.Sanitize(tm, 0, 24 * 60, VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes) : VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
+                ? VaultGuard.Services.Security.VaultSecuritySettings.Sanitize(tm, VaultGuard.Services.Security.VaultSecuritySettings.SameAsWindows, 24 * 60, VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes) : VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
             ClipboardClearSeconds = localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSecondsKey, out var clip) && int.TryParse(clip, out var cs)
                 ? VaultGuard.Services.Security.VaultSecuritySettings.Sanitize(cs, 0, 3600, VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds) : VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds;
-            LockOnSystemLock = localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey, out var lsl) && bool.TryParse(lsl, out var lb)
-                ? lb : VaultGuard.Services.Security.VaultSecuritySettings.DefaultLockOnSystemLock;
+            LockOnSystemLock = VaultGuard.Services.Security.VaultSecuritySettings.ResolveLockOnSystemLock(
+                localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey, out var lsl) && bool.TryParse(lsl, out var lb)
+                    ? lb : VaultGuard.Services.Security.VaultSecuritySettings.DefaultLockOnSystemLock, Policy);
+            // A choice the policy no longer allows (e.g. "Never") shows as the policy's maximum.
+            if (!TimeoutOptions.Any(o => o.Value == SessionTimeoutMinutes) && Policy.AutoLockMaxMinutes is { } maxLock) SessionTimeoutMinutes = maxLock;
+            if (!ClipboardOptions.Any(o => o.Value == ClipboardClearSeconds) && Policy.ClipboardClearMaxSeconds is { } maxClip) ClipboardClearSeconds = maxClip;
             AuthenticationMode = localSettings.TryGetValue("AuthMode", out var authMode) ? authMode : "Local Database";
             ApiBaseUrl = localSettings.TryGetValue("ApiBaseUrl", out var apiUrl) ? apiUrl : "https://localhost:7001/api";
             ApiKey = localSettings.TryGetValue("ApiKey", out var apiKey) ? apiKey : string.Empty;

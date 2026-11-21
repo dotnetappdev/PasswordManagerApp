@@ -20,9 +20,10 @@ public sealed class SecureClipboard : IAsyncDisposable
         _settings = settings;
     }
 
+    /// <summary>The user's "Clear clipboard after" choice, capped by any organization policy.</summary>
     public int ClearAfterSeconds => _settings != null
-        ? VaultSecuritySettings.ClipboardClearSeconds(_settings)
-        : VaultSecuritySettings.DefaultClipboardClearSeconds;
+        ? VaultSecuritySettings.EffectiveClipboard(_settings).Seconds
+        : VaultSecuritySettings.ResolveClipboard(VaultSecuritySettings.DefaultClipboardClearSeconds, VaultGuardPolicy.Read()).Seconds;
 
     internal async ValueTask<IJSObjectReference> ModuleAsync() =>
         _module ??= await _js.InvokeAsync<IJSObjectReference>("import", "./_content/VaultGuard.Components.Shared/js/vault-security.js");

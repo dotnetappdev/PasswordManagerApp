@@ -25,14 +25,16 @@
     private long _lastActivityTicks = DateTime.UtcNow.Ticks;
     private int _locking;
 
-    /// <summary>For tests and diagnostics: the timeout currently in force.</summary>
+    /// <summary>The timeout in force: the user's choice ("Same as Windows" follows Windows' own lock timeout),
+    /// capped by any organization policy. Re-read on every check so changes apply immediately.</summary>
     public TimeSpan? Timeout
     {
         get
         {
             var settings = Services.GetService(typeof(IAppSettingsService)) as IAppSettingsService;
-            var minutes = settings != null ? VaultSecuritySettings.AutoLockMinutes(settings) : VaultSecuritySettings.DefaultAutoLockMinutes;
-            return minutes <= 0 ? null : TimeSpan.FromMinutes(minutes);
+            return settings != null
+                ? VaultSecuritySettings.EffectiveAutoLock(settings).Timeout
+                : VaultSecuritySettings.ResolveAutoLock(VaultSecuritySettings.DefaultAutoLockMinutes, WindowsLockInfo.None, VaultGuardPolicy.Read()).Timeout;
         }
     }
 
@@ -63,7 +65,7 @@
         if (Timeout is not { } timeout || !AuthService.IsAuthenticated) return;
         var idle = DateTime.UtcNow - new DateTime(Interlocked.Read(ref _lastActivityTicks), DateTimeKind.Utc);
         if (idle < timeout) return;
-        await LockAsync((int)timeout.TotalMinutes);
+        await LockAsync((int)Math.Ceiling(timeout.TotalMinutes));
     }
 
     private async Task LockAsync(int minutes)
