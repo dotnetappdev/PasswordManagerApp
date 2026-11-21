@@ -159,156 +159,30 @@ public class PasswordRevealService : IPasswordRevealService
         }
     }
 
-    public async Task<string?> RevealPasswordAsync(WiFiItem wifiItem, string sessionId)
+    // Field reveals for the other item types. Each returns the value if the item is already open, otherwise
+    // decrypts the stored ciphertext (split columns, or the legacy "cipher|nonce|tag" form) — never ciphertext,
+    // and null when the vault is locked.
+    public Task<string?> RevealPasswordAsync(WiFiItem wifiItem, string sessionId) =>
+        Task.FromResult(Reveal(wifiItem.Password, wifiItem.EncryptedPassword, wifiItem.PasswordNonce, wifiItem.PasswordAuthTag, sessionId));
+
+    public Task<string?> RevealCardNumberAsync(CreditCardItem creditCardItem, string sessionId) =>
+        Task.FromResult(Reveal(creditCardItem.CardNumber, creditCardItem.EncryptedCardNumber, creditCardItem.CardNumberNonce, creditCardItem.CardNumberAuthTag, sessionId));
+
+    public Task<string?> RevealCvvAsync(CreditCardItem creditCardItem, string sessionId) =>
+        Task.FromResult(Reveal(creditCardItem.CVV, creditCardItem.EncryptedCvv, creditCardItem.CvvNonce, creditCardItem.CvvAuthTag, sessionId));
+
+    public Task<string?> RevealContentAsync(SecureNoteItem secureNoteItem, string sessionId) =>
+        Task.FromResult(Reveal(secureNoteItem.Content, secureNoteItem.EncryptedContent, secureNoteItem.ContentNonce, secureNoteItem.ContentAuthTag, sessionId));
+
+    private string? Reveal(string? opened, string? encrypted, string? nonce, string? tag, string sessionId)
     {
-        var sid = ResolveSessionId(sessionId);
-        try
+        if (string.IsNullOrEmpty(encrypted)) return opened ?? string.Empty;
+        if (!CanRevealPasswords(ResolveSessionId(sessionId)))
         {
-            if (!CanRevealPasswords(sid))
-            {
-                _logger.LogWarning("Attempted to reveal WiFi password when vault is locked");
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(wifiItem.Password))
-            {
-                return string.Empty;
-            }
-
-            var parts = wifiItem.Password.Split('|');
-            if (parts.Length != 3)
-            {
-                _logger.LogError("Invalid encrypted WiFi password format for item {Id}", wifiItem.Id);
-                return null;
-            }
-            var encryptedData = new EncryptedPasswordData
-            {
-                EncryptedPassword = parts[0],
-                Nonce = parts[1],
-                AuthenticationTag = parts[2]
-            };
-
-            var decryptedPassword = _vaultSessionService.DecryptPassword(
-                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sid);
-            return decryptedPassword;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error revealing WiFi password for item {Id}", wifiItem.Id);
+            _logger.LogWarning("Attempted to reveal a field while the vault is locked");
             return null;
         }
-    }
-
-    public async Task<string?> RevealCardNumberAsync(CreditCardItem creditCardItem, string sessionId)
-    {
-        var sid = ResolveSessionId(sessionId);
-        try
-        {
-            if (!CanRevealPasswords(sid))
-            {
-                _logger.LogWarning("Attempted to reveal card number when vault is locked");
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(creditCardItem.EncryptedCardNumber) ||
-                string.IsNullOrEmpty(creditCardItem.CardNumberNonce) ||
-                string.IsNullOrEmpty(creditCardItem.CardNumberAuthTag))
-            {
-                return string.Empty;
-            }
-
-            var encryptedData = new EncryptedPasswordData
-            {
-                EncryptedPassword = creditCardItem.EncryptedCardNumber,
-                Nonce = creditCardItem.CardNumberNonce,
-                AuthenticationTag = creditCardItem.CardNumberAuthTag
-            };
-
-            var decryptedCardNumber = _vaultSessionService.DecryptPassword(
-                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sid);
-            return decryptedCardNumber;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error revealing card number for item {Id}", creditCardItem.Id);
-            return null;
-        }
-    }
-
-    public async Task<string?> RevealCvvAsync(CreditCardItem creditCardItem, string sessionId)
-    {
-        var sid = ResolveSessionId(sessionId);
-        try
-        {
-            if (!CanRevealPasswords(sid))
-            {
-                _logger.LogWarning("Attempted to reveal CVV when vault is locked");
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(creditCardItem.EncryptedCvv) ||
-                string.IsNullOrEmpty(creditCardItem.CvvNonce) ||
-                string.IsNullOrEmpty(creditCardItem.CvvAuthTag))
-            {
-                return string.Empty;
-            }
-
-            var encryptedData = new EncryptedPasswordData
-            {
-                EncryptedPassword = creditCardItem.EncryptedCvv,
-                Nonce = creditCardItem.CvvNonce,
-                AuthenticationTag = creditCardItem.CvvAuthTag
-            };
-
-            var decryptedCvv = _vaultSessionService.DecryptPassword(
-                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sid);
-            return decryptedCvv;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error revealing CVV for item {Id}", creditCardItem.Id);
-            return null;
-        }
-    }
-
-    public async Task<string?> RevealContentAsync(SecureNoteItem secureNoteItem, string sessionId)
-    {
-        var sid = ResolveSessionId(sessionId);
-        try
-        {
-            if (!CanRevealPasswords(sid))
-            {
-                _logger.LogWarning("Attempted to reveal secure note content when vault is locked");
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(secureNoteItem.EncryptedContent) ||
-                string.IsNullOrEmpty(secureNoteItem.ContentNonce) ||
-                string.IsNullOrEmpty(secureNoteItem.ContentAuthTag))
-            {
-                return string.Empty;
-            }
-
-            var encryptedData = new EncryptedPasswordData
-            {
-                EncryptedPassword = secureNoteItem.EncryptedContent,
-                Nonce = secureNoteItem.ContentNonce,
-                AuthenticationTag = secureNoteItem.ContentAuthTag
-            };
-
-            var decryptedContent = _vaultSessionService.DecryptPassword(
-                string.Join("|", encryptedData.EncryptedPassword, encryptedData.Nonce, encryptedData.AuthenticationTag),
-                sid);
-            return decryptedContent;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error revealing content for secure note {Id}", secureNoteItem.Id);
-            return null;
-        }
+        return !string.IsNullOrEmpty(opened) ? opened : RevealField(encrypted, nonce, tag, sessionId);
     }
 
     /// <summary>

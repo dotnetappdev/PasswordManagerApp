@@ -128,6 +128,10 @@ public class PuxDetails
 
     [JsonPropertyName("passwordHistory")]
     public List<PuxPasswordHistory> PasswordHistory { get; set; } = new();
+
+    /// <summary>"Password" category items (categoryUuid 005) keep their password here, not in loginFields.</summary>
+    [JsonPropertyName("password")]
+    public string? Password { get; set; }
 }
 
 public class PuxLoginField

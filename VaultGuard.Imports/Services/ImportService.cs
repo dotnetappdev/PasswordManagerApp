@@ -27,7 +27,8 @@ public class ImportService : IImportService
         ICategoryInterface categoryService,
         ITagService tagService,
         PluginDiscoveryService pluginDiscovery,
-        IVaultSessionService? vaultSessionService = null)
+        IVaultSessionService? vaultSessionService = null,
+        IEnumerable<IPasswordImportProvider>? registeredProviders = null)
     {
         _passwordItemService = passwordItemService;
         _collectionService = collectionService;
@@ -36,6 +37,10 @@ public class ImportService : IImportService
         _pluginDiscovery = pluginDiscovery;
         _vaultSessionService = vaultSessionService;
         _importProviders = new Dictionary<string, IPasswordImportProvider>();
+        // Providers the host registered in DI. Assembly scanning only sees assemblies that happen to be loaded
+        // already, which isn't reliable (the MAUI app's import list came up empty), so hosts register them.
+        foreach (var provider in registeredProviders ?? Enumerable.Empty<IPasswordImportProvider>())
+            RegisterProvider(provider);
     }
 
     public void RegisterProvider(IPasswordImportProvider provider)
@@ -286,6 +291,9 @@ public class ImportService : IImportService
                 if (!string.IsNullOrEmpty(userId))
                     collection.UserId = userId;
 
+                // The provider's Id is only a temporary key for linking its items; let the database assign the
+                // real one (inserting the temporary value collided with existing rows on every later import).
+                collection.Id = 0;
                 var created = await _collection_service_CreateAsync_with_fallback(collection);
                 if (created != null)
                 {
@@ -346,6 +354,7 @@ public class ImportService : IImportService
                 if (!string.IsNullOrEmpty(userId))
                     category.UserId = userId;
 
+                category.Id = 0; // temporary provider key — see EnsureCollectionsExistAsync
                 var created = await _categoryService.CreateAsync(category);
                 if (created != null)
                 {

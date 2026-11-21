@@ -178,6 +178,8 @@ public static class MauiProgram
 		// Register import services
 		builder.Services.AddSingleton<PluginDiscoveryService>();
 		builder.Services.AddScoped<IImportService, ImportService>();
+		// The importers this app ships (registered explicitly so the Import page always lists them).
+		builder.Services.AddSingleton<IPasswordImportProvider, VaultGuardImports.OnePassword.Providers.OnePasswordImportProvider>();
 
 		// Add QuickGrid
 

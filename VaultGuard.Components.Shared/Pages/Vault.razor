@@ -410,10 +410,19 @@
                                 <div style="font-size:11px; font-weight:700; letter-spacing:.8px; color:var(--mud-palette-text-secondary); text-transform:uppercase; margin-bottom:2px;">
                                     @capturedField.Name
                                 </div>
-                                <div style="font-size:14px; word-break:break-all; color:var(--mud-palette-text-primary);">
-                                    @capturedField.Value
+                                @{ var cfKey = $"cf-{capturedIdx}"; var cfShown = !capturedField.IsSecret || revealedFields.Contains(cfKey); }
+                                <div style="font-size:14px; word-break:break-all; color:var(--mud-palette-text-primary);@(capturedField.IsSecret ? " font-family:monospace;" : "")">
+                                    @(cfShown ? capturedField.Value : new string('•', Math.Min(capturedField.Value?.Length ?? 0, 12)))
                                 </div>
                             </div>
+                            @if (capturedField.IsSecret && !string.IsNullOrEmpty(capturedField.Value))
+                            {
+                                <!-- concealed/password fields: masked until shown, like the item's own password -->
+                                <MudIconButton Icon="@(cfShown ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                               Size="Size.Small" Color="Color.Default" Style="flex-shrink:0;"
+                                               Title="@(cfShown ? "Hide" : "Show")"
+                                               OnClick="@(() => ToggleReveal(cfKey))" />
+                            }
                             <!-- copy + delete -->
                             <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small"
                                            Color="Color.Default" Style="flex-shrink:0;"
@@ -971,7 +980,7 @@
             b.AddAttribute(52, "Size", Size.Small);
             b.AddAttribute(53, "Color", Color.Default);
             b.AddAttribute(54, "Title", $"Copy {label}");
-            b.AddAttribute(55, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
+            b.AddAttribute(55, "OnClick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, async () => await CopyAsync(value, label)));
             b.CloseComponent();
         }
         b.CloseElement(); // value row
@@ -1050,7 +1059,7 @@
         b.AddAttribute(62, "Size", Size.Small);
         b.AddAttribute(63, "Color", Color.Default);
         b.AddAttribute(64, "Title", "Copy URL");
-        b.AddAttribute(65, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(url, label)));
+        b.AddAttribute(65, "OnClick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, async () => await CopyAsync(url, label)));
         b.CloseComponent();
 
         b.CloseElement(); // value row
@@ -1096,7 +1105,7 @@
         b.AddAttribute(52, "Size", Size.Small);
         b.AddAttribute(53, "Color", Color.Default);
         b.AddAttribute(54, "Title", capturedShow ? "Hide" : "Show");
-        b.AddAttribute(55, "OnClick", EventCallback.Factory.Create(this, () => ToggleReveal(key)));
+        b.AddAttribute(55, "OnClick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () => ToggleReveal(key)));
         b.CloseComponent();
 
         // copy
@@ -1105,7 +1114,7 @@
         b.AddAttribute(62, "Size", Size.Small);
         b.AddAttribute(63, "Color", Color.Default);
         b.AddAttribute(64, "Title", $"Copy {label}");
-        b.AddAttribute(65, "OnClick", EventCallback.Factory.Create(this, async () => await CopyAsync(value, label)));
+        b.AddAttribute(65, "OnClick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, async () => await CopyAsync(value, label)));
         b.CloseComponent();
 
         b.CloseElement(); // value row

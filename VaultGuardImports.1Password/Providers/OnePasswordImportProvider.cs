@@ -1,4 +1,3 @@
-using FileHelpers;
 using VaultGuard.Imports.Interfaces;
 using VaultGuard.Models;
 using VaultGuardImports.OnePassword.Models;
@@ -41,16 +40,30 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         return result;
     }
 
+    // Header names 1Password has used across versions (and that people produce by editing exports), lower-cased.
+    private static readonly Dictionary<string, string[]> CsvColumns = new()
+    {
+        ["title"]    = new[] { "title", "name" },
+        ["url"]      = new[] { "url", "urls", "website", "login_uri", "login url", "website address" },
+        ["username"] = new[] { "username", "user name", "login", "login_username", "email" },
+        ["password"] = new[] { "password", "login_password" },
+        ["otp"]      = new[] { "otpauth", "otp", "totp", "one-time password", "one time password", "login_totp" },
+        ["favorite"] = new[] { "favorite", "favourite" },
+        ["archived"] = new[] { "archived" },
+        ["tags"]     = new[] { "tags" },
+        ["notes"]    = new[] { "notes", "notesplain", "note" },
+        ["type"]     = new[] { "type", "category" },
+    };
+
     private async Task<ImportResult> ImportFromCsvAsync(Stream fileStream, string fileName)
     {
         var result = new ImportResult();
 
         try
         {
-            using var reader = new StreamReader(fileStream);
+            using var reader = new StreamReader(fileStream, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
             var csvContent = await reader.ReadToEndAsync();
 
-            // Check if the CSV content is valid
             if (string.IsNullOrWhiteSpace(csvContent))
             {
                 result.Success = false;
@@ -58,295 +71,140 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                 return result;
             }
 
-            // Detect which CSV format by checking the header more robustly
-            var lines = csvContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            if (lines.Length == 0)
+            var rows = ParseCsv(csvContent.TrimStart('\uFEFF'));
+            if (rows.Count == 0)
             {
                 result.Success = false;
                 result.ErrorMessage = "The CSV file is empty.";
                 return result;
             }
 
-            var headerLine = lines[0].Trim();
-            var headers = headerLine.Split(',').Select(h => h.Trim().Trim('"')).ToArray();
-
-            // New format has "URL" and "Type" columns, no "OTPAuth" — case-insensitive
-            bool isNewFormat = headers.Any(h => h.Equals("URL", StringComparison.OrdinalIgnoreCase)) &&
-                              headers.Any(h => h.Equals("Type", StringComparison.OrdinalIgnoreCase)) &&
-                              !headers.Any(h => h.Equals("OTPAuth", StringComparison.OrdinalIgnoreCase));
-
-            OnePasswordCsvRecord[]? records = null;
-            OnePasswordCsvRecordNew[]? recordsNew = null;
-
-            try
+            // Map columns by header name, so any column order (and old/new 1Password layouts) works.
+            var header = rows[0].Select(h => h.Trim().Trim('\uFEFF').ToLowerInvariant()).ToList();
+            var col = new Dictionary<string, int>();
+            foreach (var (key, names) in CsvColumns)
             {
-                if (isNewFormat)
-                {
-                    // Try new format (Title,URL,Username,Password,Notes,Type)
-                    var engineNew = new FileHelperEngine<OnePasswordCsvRecordNew>();
-                    recordsNew = engineNew.ReadString(csvContent);
-                    result.TotalItemsProcessed = recordsNew.Length;
-                }
-                else
-                {
-                    // Try old format (Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes)
-                    var engine = new FileHelperEngine<OnePasswordCsvRecord>();
-                    records = engine.ReadString(csvContent);
-                    result.TotalItemsProcessed = records.Length;
-                }
+                var idx = header.FindIndex(h => names.Contains(h));
+                if (idx >= 0) col[key] = idx;
             }
-            catch (Exception csvEx)
+            if (!col.ContainsKey("title") || !col.ContainsKey("password"))
             {
                 result.Success = false;
-                result.ErrorMessage = $"Failed to parse CSV file. Please ensure it's a valid 1Password export file. Error: {csvEx.Message}";
+                result.ErrorMessage = "This doesn't look like a 1Password CSV export: it needs at least Title and Password columns.";
                 return result;
             }
+            // Any other columns are kept as custom fields rather than dropped.
+            var known = col.Values.ToHashSet();
+            var extraColumns = Enumerable.Range(0, header.Count).Where(i => !known.Contains(i) && rows[0][i].Trim().Length > 0).ToList();
 
-            // Track collections and categories we need to create
-            // Temp IDs start at 1 so ImportService's > 0 check passes and dict keys are unique
             var collectionsToCreate = new Dictionary<string, Collection>();
             var categoriesToCreate = new Dictionary<string, (Category Category, string CollectionName)>();
             int tempCollId = 1;
             int tempCatId = 1;
 
-            // Process records based on format
-            if (isNewFormat && recordsNew != null)
+            foreach (var row in rows.Skip(1))
             {
-                foreach (var record in recordsNew)
+                string Get(string key) => col.TryGetValue(key, out var i) && i < row.Count ? row[i] : string.Empty;
+                var title = Get("title").Trim();
+                var url = Get("url").Trim();
+                var username = Get("username").Trim();
+                var password = Get("password"); // exactly as exported — spaces can be part of a password
+                if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(username) && string.IsNullOrEmpty(password))
+                    continue; // blank line
+                result.TotalItemsProcessed++;
+
+                try
                 {
-                    try
+                    if (string.IsNullOrWhiteSpace(title)) title = !string.IsNullOrWhiteSpace(url) ? ExtractDomain(url) : "Untitled";
+                    var collectionName = DetermineCollection(url, title);
+                    var categoryName = DetermineCategory(url, title);
+
+                    if (!collectionsToCreate.ContainsKey(collectionName))
                     {
-                        // Skip empty records
-                        if (string.IsNullOrWhiteSpace(record.Title) &&
-                            string.IsNullOrWhiteSpace(record.Username) &&
-                            string.IsNullOrWhiteSpace(record.Password))
+                        collectionsToCreate[collectionName] = new Collection
                         {
-                            continue;
-                        }
+                            Id = tempCollId++,
+                            Name = collectionName,
+                            Icon = GetCollectionIcon(collectionName),
+                            Color = GetCollectionColor(collectionName),
+                            IsDefault = collectionName == "Banking"
+                        };
+                    }
+                    var collection = collectionsToCreate[collectionName];
 
-                        // Determine collection based on URL/title analysis
-                        var collectionName = DetermineCollection(record.URL, record.Title);
-                        var categoryName = DetermineCategory(record.URL, record.Title);
-
-                        // Ensure collection exists
-                        if (!collectionsToCreate.ContainsKey(collectionName))
+                    var categoryKey = $"{collectionName}:{categoryName}";
+                    if (!categoriesToCreate.ContainsKey(categoryKey))
+                    {
+                        categoriesToCreate[categoryKey] = (new Category
                         {
-                            collectionsToCreate[collectionName] = new Collection
-                            {
-                                Id = tempCollId++,
-                                Name = collectionName,
-                                Icon = GetCollectionIcon(collectionName),
-                                Color = GetCollectionColor(collectionName),
-                                IsDefault = collectionName == "Banking"
-                            };
-                        }
-
-                        var collection = collectionsToCreate[collectionName];
-
-                        // Ensure category exists
-                        var categoryKey = $"{collectionName}:{categoryName}";
-                        if (!categoriesToCreate.ContainsKey(categoryKey))
-                        {
-                            var newCategory = new Category
-                            {
-                                Id = tempCatId++,
-                                Name = categoryName,
-                                CollectionId = collection.Id,
-                                Icon = GetCategoryIcon(categoryName),
-                                Color = GetCategoryColor(categoryName)
-                            };
-                            categoriesToCreate[categoryKey] = (newCategory, collectionName);
-                        }
-
-                        var category = categoriesToCreate[categoryKey].Category;
-
-                        // Create the password item
-                        var passwordItem = new PasswordItem
-                        {
-                            Title = record.Title?.Trim() ?? string.Empty,
-                            Type = MapCsvTypeToItemType(record.Type),
+                            Id = tempCatId++,
+                            Name = categoryName,
                             CollectionId = collection.Id,
-                            CategoryId = category.Id,
-                            CreatedAt = DateTime.UtcNow,
-                            LastModified = DateTime.UtcNow,
-                            LoginItem = new LoginItem
-                            {
-                                Website = record.URL?.Trim() ?? string.Empty,
-                                WebsiteUrl = record.URL?.Trim() ?? string.Empty,
-                                Username = record.Username?.Trim() ?? string.Empty,
-                                Password = record.Password?.Trim() ?? string.Empty,
-                                Email = IsEmail(record.Username?.Trim() ?? string.Empty) ? record.Username.Trim() : null,
-                                Notes = !string.IsNullOrWhiteSpace(record.Notes) ? record.Notes.Trim() : null,
-                                TotpSecret = null // Not available in new format
-                            },
-                            Tags = new List<Tag>()
-                        };
-
-                        // Add import tag
-                        passwordItem.Tags.Add(new Tag { Name = "Imported", Color = "#8b5cf6" });
-
-                        // Add high priority tag if applicable
-                        if (IsHighPriority(record.Title, record.URL))
-                        {
-                            passwordItem.Tags.Add(new Tag { Name = "High Priority", Color = "#ef4444" });
-                        }
-
-                        result.ImportedItems.Add(passwordItem);
+                            Icon = GetCategoryIcon(categoryName),
+                            Color = GetCategoryColor(categoryName)
+                        }, collectionName);
                     }
-                    catch (Exception ex)
+                    var category = categoriesToCreate[categoryKey].Category;
+
+                    var notes = Get("notes");
+                    var otp = Get("otp").Trim();
+                    var type = MapCsvTypeToItemType(Get("type"));
+                    var passwordItem = new PasswordItem
                     {
-                        result.Warnings.Add($"Failed to process record '{record.Title}': {ex.Message}");
+                        Title = title,
+                        // A CSV row only carries login columns, so it's always stored with a login body.
+                        Type = type is ItemType.Password ? ItemType.Password : ItemType.Login,
+                        CollectionId = collection.Id,
+                        CategoryId = category.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        LastModified = DateTime.UtcNow,
+                        LoginItem = new LoginItem
+                        {
+                            Website = url,
+                            WebsiteUrl = url,
+                            Username = username,
+                            Password = password,
+                            Email = IsEmail(username) ? username : null,
+                            Notes = !string.IsNullOrWhiteSpace(notes) ? notes.Trim() : null,
+                            TotpSecret = otp.Length > 0 ? otp : null
+                        },
+                        Tags = new List<Tag>(),
+                        CustomFields = new List<CustomField>()
+                    };
+
+                    var order = 0;
+                    foreach (var i in extraColumns)
+                    {
+                        var value = i < row.Count ? row[i] : string.Empty;
+                        if (string.IsNullOrWhiteSpace(value)) continue;
+                        var name = rows[0][i].Trim();
+                        var secret = name.Contains("password", StringComparison.OrdinalIgnoreCase) || name.Contains("pin", StringComparison.OrdinalIgnoreCase)
+                                     || name.Contains("secret", StringComparison.OrdinalIgnoreCase) || name.Contains("cvv", StringComparison.OrdinalIgnoreCase);
+                        passwordItem.CustomFields.Add(new CustomField
+                        {
+                            Name = name, Value = value, DisplayOrder = order++,
+                            Type = secret ? CustomFieldType.Password : CustomFieldType.Text, IsProtected = secret
+                        });
                     }
+
+                    passwordItem.Tags.Add(new Tag { Name = "Imported", Color = "#8b5cf6" });
+                    if (IsTrue(Get("favorite"))) passwordItem.Tags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
+                    if (IsTrue(Get("archived"))) passwordItem.Tags.Add(new Tag { Name = "Archived", Color = "#6b7280" });
+                    foreach (var tagName in Get("tags").Split(',', ';').Select(t => t.Trim()).Where(t => t.Length > 0))
+                        passwordItem.Tags.Add(new Tag { Name = tagName, Color = "#a855f7" });
+                    if (IsHighPriority(title, url))
+                        passwordItem.Tags.Add(new Tag { Name = "High Priority", Color = "#ef4444" });
+
+                    result.ImportedItems.Add(passwordItem);
                 }
-            }
-            else if (records != null)
-            {
-                foreach (var record in records)
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        // Skip empty records
-                        if (string.IsNullOrWhiteSpace(record.Title) &&
-                            string.IsNullOrWhiteSpace(record.Username) &&
-                            string.IsNullOrWhiteSpace(record.Password))
-                        {
-                            continue;
-                        }
-
-                        // Determine collection based on URL/title analysis (no folder in new format)
-                        var collectionName = DetermineCollection(record.Url, record.Title);
-                        var categoryName = DetermineCategory(record.Url, record.Title);
-
-                        // Ensure collection exists
-                        if (!collectionsToCreate.ContainsKey(collectionName))
-                        {
-                            collectionsToCreate[collectionName] = new Collection
-                            {
-                                Id = tempCollId++,
-                                Name = collectionName,
-                                Icon = GetCollectionIcon(collectionName),
-                                Color = GetCollectionColor(collectionName),
-                                IsDefault = collectionName == "Banking"
-                            };
-                        }
-
-                        var collection = collectionsToCreate[collectionName];
-
-                        // Ensure category exists
-                        var categoryKey = $"{collectionName}:{categoryName}";
-                        if (!categoriesToCreate.ContainsKey(categoryKey))
-                        {
-                            var newCategory = new Category
-                            {
-                                Id = tempCatId++,
-                                Name = categoryName,
-                                CollectionId = collection.Id,
-                                Icon = GetCategoryIcon(categoryName),
-                                Color = GetCategoryColor(categoryName)
-                            };
-                            categoriesToCreate[categoryKey] = (newCategory, collectionName);
-                        }
-
-                        var category = categoriesToCreate[categoryKey].Category;
-
-                        // Create the password item with notes properly set
-                        var passwordItem = new PasswordItem
-                        {
-                            Title = record.Title?.Trim() ?? string.Empty,
-                            Type = ItemType.Login,
-                            CollectionId = collection.Id, // Will be updated after collection creation
-                            CategoryId = category.Id, // Will be updated after category creation
-                            CreatedAt = DateTime.UtcNow,
-                            LastModified = DateTime.UtcNow,
-                            LoginItem = new LoginItem
-                            {
-                                Website = record.Url?.Trim() ?? string.Empty,
-                                WebsiteUrl = record.Url?.Trim() ?? string.Empty,
-                                Username = record.Username?.Trim() ?? string.Empty,
-                                Password = record.Password?.Trim() ?? string.Empty, // NotMapped - will be encrypted by service
-                                Email = IsEmail(record.Username?.Trim() ?? string.Empty) ? record.Username.Trim() : null,
-                                Notes = !string.IsNullOrWhiteSpace(record.Notes) ? record.Notes.Trim() : null, // NotMapped - will be encrypted by service
-                                TotpSecret = !string.IsNullOrWhiteSpace(record.OTPAuth) ? record.OTPAuth.Trim() : null // NotMapped - will be encrypted by service
-                            },
-                            Tags = new List<Tag>()
-                        };
-
-                        // Add import tag
-                        var importTag = new Tag
-                        {
-                            Name = "Imported",
-                            Color = "#8b5cf6"
-                        };
-
-                        passwordItem.Tags.Add(importTag);
-
-                        // Handle favorite items
-                        if (!string.IsNullOrWhiteSpace(record.Favorite) &&
-                            (record.Favorite.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Favorite == "1"))
-                        {
-                            var favoriteTag = new Tag
-                            {
-                                Name = "Favorite",
-                                Color = "#fbbf24"
-                            };
-                            passwordItem.Tags.Add(favoriteTag);
-                        }
-
-                        // Handle archived items
-                        if (!string.IsNullOrWhiteSpace(record.Archived) &&
-                            (record.Archived.Equals("true", StringComparison.OrdinalIgnoreCase) || record.Archived == "1"))
-                        {
-                            var archivedTag = new Tag
-                            {
-                                Name = "Archived",
-                                Color = "#6b7280"
-                            };
-                            passwordItem.Tags.Add(archivedTag);
-                        }
-
-                        // Handle custom tags from 1Password
-                        if (!string.IsNullOrWhiteSpace(record.Tags))
-                        {
-                            var tags = record.Tags.Split(',', ';')
-                                .Where(t => !string.IsNullOrWhiteSpace(t))
-                                .Select(t => t.Trim());
-
-                            foreach (var tagName in tags)
-                            {
-                                var customTag = new Tag
-                                {
-                                    Name = tagName,
-                                    Color = "#a855f7" // Purple for custom tags
-                                };
-                                passwordItem.Tags.Add(customTag);
-                            }
-                        }
-
-                        // Add high priority tag if it looks important
-                        if (IsHighPriority(record.Title, record.Url))
-                        {
-                            var highPriorityTag = new Tag
-                            {
-                                Name = "High Priority",
-                                Color = "#ef4444"
-                            };
-                            passwordItem.Tags.Add(highPriorityTag);
-                        }
-
-                        result.ImportedItems.Add(passwordItem);
-                    }
-                    catch (Exception ex)
-                    {
-                        result.Warnings.Add($"Failed to process record '{record.Title}': {ex.Message}");
-                    }
+                    result.Warnings.Add($"Failed to process record '{title}': {ex.Message}");
                 }
             }
 
-            // Add required collections, categories, and tags to result
             result.RequiredCollections.AddRange(collectionsToCreate.Values);
             result.RequiredCategories.AddRange(categoriesToCreate.Values.Select(c => c.Category));
-
-            // Add standard tags
             result.RequiredTags.Add(new Tag { Name = "Imported", Color = "#8b5cf6" });
             result.RequiredTags.Add(new Tag { Name = "High Priority", Color = "#ef4444" });
             result.RequiredTags.Add(new Tag { Name = "Favorite", Color = "#fbbf24" });
@@ -358,10 +216,64 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         catch (Exception ex)
         {
             result.Success = false;
-            result.ErrorMessage = ex.Message;
+            result.ErrorMessage = $"Failed to read the CSV file. Please make sure it's a 1Password export. Error: {ex.Message}";
         }
 
         return result;
+    }
+
+    private static bool IsTrue(string? v) =>
+        !string.IsNullOrWhiteSpace(v) && (v.Trim().Equals("true", StringComparison.OrdinalIgnoreCase) || v.Trim() == "1" || v.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// RFC 4180 CSV: quoted fields may contain commas, line breaks and doubled quotes; CRLF or LF line endings.
+    /// Values are returned exactly as written (no trimming), so passwords keep leading/trailing spaces.
+    /// </summary>
+    internal static List<List<string>> ParseCsv(string text)
+    {
+        var rows = new List<List<string>>();
+        var row = new List<string>();
+        var field = new System.Text.StringBuilder();
+        var inQuotes = false;
+        var fieldStarted = false;
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (inQuotes)
+            {
+                if (c == '"')
+                {
+                    if (i + 1 < text.Length && text[i + 1] == '"') { field.Append('"'); i++; }
+                    else inQuotes = false;
+                }
+                else field.Append(c);
+                continue;
+            }
+
+            switch (c)
+            {
+                case '"' when !fieldStarted || field.Length == 0:
+                    inQuotes = true; fieldStarted = true; break;
+                case ',':
+                    row.Add(field.ToString()); field.Clear(); fieldStarted = false; break;
+                case '\r':
+                    break;
+                case '\n':
+                    row.Add(field.ToString()); field.Clear(); fieldStarted = false;
+                    if (row.Count > 1 || row[0].Length > 0) rows.Add(row);
+                    row = new List<string>();
+                    break;
+                default:
+                    field.Append(c); fieldStarted = true; break;
+            }
+        }
+        if (fieldStarted || field.Length > 0 || row.Count > 0)
+        {
+            row.Add(field.ToString());
+            if (row.Count > 1 || row[0].Length > 0) rows.Add(row);
+        }
+        return rows;
     }
 
     private static ItemType MapCsvTypeToItemType(string? csvType) =>
@@ -691,6 +603,19 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                         totalItemsAttempted++;
                         try
                         {
+                            // 1PUX writes explicit nulls for empty values; normalise so nothing below can trip on them.
+                            item.Overview ??= new PuxOverview();
+                            item.Overview.Title ??= string.Empty;
+                            item.Overview.Url ??= string.Empty;
+                            item.Overview.Tags ??= new List<string>();
+                            item.Overview.Urls ??= new List<PuxUrlObject>();
+                            item.Details ??= new PuxDetails();
+                            item.Details.LoginFields ??= new List<PuxLoginField>();
+                            item.Details.Sections ??= new List<PuxSection>();
+                            item.Details.NotesPlain ??= string.Empty;
+                            foreach (var sec in item.Details.Sections) { sec.Fields ??= new List<PuxField>(); foreach (var f in sec.Fields) f.Value ??= new PuxFieldValue(); }
+                            if (string.IsNullOrWhiteSpace(item.Overview.Title)) item.Overview.Title = "Untitled";
+
                             // Skip archived items if desired (currently importing all)
                             // if (item.State == "archived") continue;
 
@@ -744,18 +669,29 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
                             foreach (var loginField in item.Details.LoginFields)
                             {
+                                var v = loginField.Value ?? string.Empty;
                                 if (loginField.Designation == "username")
-                                    username = loginField.Value;
+                                    username = v;
                                 else if (loginField.Designation == "password")
-                                    password = loginField.Value;
+                                    password = v;
                                 else if (loginField.FieldType == "OTP" || loginField.Type?.ToUpperInvariant() == "TOTP")
-                                    totpSecret = loginField.Value;
+                                    totpSecret = v;
                             }
+                            // Older exports sometimes leave out designations: fall back to the field's type/name.
+                            if (string.IsNullOrEmpty(password))
+                                password = item.Details.LoginFields.FirstOrDefault(f => f.FieldType == "P" || string.Equals(f.Name, "password", StringComparison.OrdinalIgnoreCase))?.Value ?? string.Empty;
+                            if (string.IsNullOrEmpty(username))
+                                username = item.Details.LoginFields.FirstOrDefault(f => f.FieldType is "E" or "T" && f.Designation != "password"
+                                    && (f.Name ?? "").ToLowerInvariant() is "username" or "email" or "login" or "user")?.Value ?? string.Empty;
+                            // "Password" category items keep the password in details.password.
+                            if (string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(item.Details.Password))
+                                password = item.Details.Password;
 
                             // TOTP may also live in section fields (1Password stores it there for some items)
+                            PuxField? totpSectionField = null;
                             if (string.IsNullOrWhiteSpace(totpSecret))
                             {
-                                var totpSectionField = item.Details.Sections
+                                totpSectionField = item.Details.Sections
                                     .SelectMany(s => s.Fields)
                                     .FirstOrDefault(f => !string.IsNullOrWhiteSpace(f.Value.Totp));
                                 if (totpSectionField != null)
@@ -864,6 +800,19 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                                 };
                                 // No LoginItem — would fail with null Username constraint.
                             }
+                            else if (itemType == ItemType.WiFi)
+                            {
+                                // 1Password "Wireless Router": base station (router admin) + the wireless network itself.
+                                passwordItem.WiFiItem = new WiFiItem
+                                {
+                                    NetworkName    = FirstNonEmpty(SectionVal("network_name"), SectionVal("name"), passwordItem.Title),
+                                    Password       = SectionVal("wireless_password"),
+                                    RouterPassword = SectionVal("password"),
+                                    RouterIP       = SectionVal("server"),
+                                    SecurityType   = ParseWifiSecurity(SectionVal("wireless_security")),
+                                    Notes          = !string.IsNullOrWhiteSpace(item.Details.NotesPlain) ? item.Details.NotesPlain.Trim() : null,
+                                };
+                            }
                             else
                             {
                                 passwordItem.LoginItem = new LoginItem
@@ -871,8 +820,8 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                                     Website    = itemUrl.Trim(),
                                     WebsiteUrl = itemUrl.Trim(),
                                     Username   = username?.Trim() ?? string.Empty,
-                                    Password   = password?.Trim() ?? string.Empty,
-                                    Email      = IsEmail(username?.Trim() ?? string.Empty) ? username.Trim() : null,
+                                    Password   = password ?? string.Empty, // exactly as exported — spaces can be part of a password
+                                    Email      = IsEmail(username?.Trim() ?? string.Empty) ? username!.Trim() : null,
                                     Notes      = !string.IsNullOrWhiteSpace(item.Details.NotesPlain) ? item.Details.NotesPlain.Trim() : null,
                                     TotpSecret = !string.IsNullOrWhiteSpace(totpSecret) ? totpSecret.Trim() : null
                                 };
@@ -888,6 +837,11 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                                 "phonelocal","phoneLocal","billingaddress"
                             };
 
+                            var wifiKnownIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                            {
+                                "network_name","wireless_password","password","server","wireless_security"
+                            };
+
                             var displayOrder = 0;
                             foreach (var section in item.Details.Sections)
                             {
@@ -898,6 +852,13 @@ public class OnePasswordImportProvider : IPasswordImportProvider
 
                                     // Skip known credit card fields already in CreditCardItem
                                     if (itemType == ItemType.CreditCard && creditCardKnownIds.Contains(field.Id ?? string.Empty))
+                                        continue;
+
+                                    if (itemType == ItemType.WiFi && wifiKnownIds.Contains(field.Id ?? string.Empty))
+                                        continue;
+
+                                    // The authenticator is already on the login (TotpSecret); don't store it twice.
+                                    if (ReferenceEquals(field, totpSectionField))
                                         continue;
 
                                     var fieldValue = GetFieldValue(field.Value);
@@ -940,7 +901,7 @@ public class OnePasswordImportProvider : IPasswordImportProvider
                             }
 
                             // Add high priority tag if applicable
-                            if (IsHighPriority(item.Overview.Title, item.Overview.Url))
+                            if (IsHighPriority(item.Overview.Title, itemUrl))
                             {
                                 passwordItem.Tags.Add(new Tag { Name = "High Priority", Color = "#ef4444" });
                             }
@@ -1001,6 +962,20 @@ public class OnePasswordImportProvider : IPasswordImportProvider
         }
 
         return raw;
+    }
+
+    private static string FirstNonEmpty(params string?[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+
+    // 1Password menu values: "none", "wep", "wpa", "wpa2p" (personal), "wpa2e" (enterprise), "wpa3p", "wpa3e"
+    private static SecurityType ParseWifiSecurity(string? raw)
+    {
+        var v = (raw ?? string.Empty).ToLowerInvariant();
+        if (v.StartsWith("wpa3")) return SecurityType.WPA3;
+        if (v.StartsWith("wpa2")) return SecurityType.WPA2;
+        if (v.StartsWith("wpa")) return SecurityType.WPA;
+        if (v.StartsWith("wep")) return SecurityType.WEP;
+        if (v is "none" or "open") return SecurityType.Open;
+        return SecurityType.WPA2;
     }
 
     private static CardType ParseCardType(string? rawType)

@@ -2,7 +2,8 @@
 @using VaultGuard.Models
 @using System.Net.Http.Headers
 @using System.Net.Http.Json
-@inject HttpClient Http
+@inject VaultGuard.Imports.Interfaces.IImportService ImportService
+@inject VaultGuard.Services.Interfaces.IAuthService AuthService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 
@@ -167,12 +168,14 @@
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<PluginsResponse>("/api/importexport/plugins");
-            if (response?.Success == true && response.Plugins != null)
-            {
-                availablePlugins = response.Plugins;
-                selectedPlugin = availablePlugins.FirstOrDefault();
-            }
+            // Import runs in this app against the local vault — the standalone app has no API server to call
+            // (it used to request /api/importexport/*, so the source list was always empty and import failed).
+            var providers = await ImportService.GetAvailableProvidersAsync();
+            availablePlugins = providers
+                .Select(p => new PluginInfo { Name = p.ProviderName, DisplayName = p.DisplayName, Version = p.Version, SupportedExtensions = p.SupportedFileExtensions })
+                .OrderBy(p => p.DisplayName)
+                .ToList();
+            selectedPlugin = availablePlugins.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -180,14 +183,35 @@
         }
     }
 
-    private void HandleFileSelected(InputFileChangeEventArgs e)
+    // The file is read when it's chosen: the <InputFile> only exists on step 1, and once step 2 replaces it
+    // the browser-side file handle is gone ("Cannot read properties of null (reading '_blazorFilesById')").
+    private byte[]? selectedFileBytes;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        selectedFile = e.File;
+        selectedFile = null;
+        selectedFileBytes = null;
+        try
+        {
+            using var ms = new MemoryStream();
+            await using (var rs = e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024))
+                await rs.CopyToAsync(ms);
+            selectedFileBytes = ms.ToArray();
+            selectedFile = e.File;
+        }
+        catch (IOException)
+        {
+            Snackbar.Add("That file is larger than 10 MB, which is the import limit.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't read that file: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task PerformImport()
     {
-        if (selectedFile == null || selectedPlugin == null)
+        if (selectedFile == null || selectedFileBytes == null || selectedPlugin == null)
             return;
 
         isImporting = true;
@@ -195,25 +219,20 @@
 
         try
         {
-            using var content = new MultipartFormDataContent();
-            var fileContent = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            content.Add(fileContent, "File", selectedFile.Name);
-            content.Add(new StringContent(selectedPlugin.Name), "PluginName");
+            using var ms = new MemoryStream(selectedFileBytes, writable: false); // seekable: .1pux files are zip archives
 
-            var response = await Http.PostAsync("/api/importexport/import", content);
-            var result = await response.Content.ReadFromJsonAsync<ImportResponse>();
-            
-            if (result != null)
+            var result = await ImportService.ImportPasswordsAsync(selectedPlugin.Name, ms, selectedFile.Name, AuthService.CurrentUser?.Id);
             {
                 importResult = new ImportResultInfo
                 {
                     Success = result.Success,
-                    Message = result.Success ? result.Message : result.Error,
-                    TotalProcessed = result.TotalProcessed,
+                    Message = result.Success
+                        ? $"Imported {result.SuccessfulImports} of {result.TotalItemsProcessed} item(s) from {selectedFile.Name}."
+                        : result.ErrorMessage ?? "Import failed.",
+                    TotalProcessed = result.TotalItemsProcessed,
                     SuccessfulImports = result.SuccessfulImports,
                     FailedImports = result.FailedImports,
-                    CollectionsCreated = result.CollectionsCreated,
+                    CollectionsCreated = result.RequiredCollections.Count,
                     Warnings = result.Warnings
                 };
 
@@ -224,7 +243,7 @@
                 }
                 else
                 {
-                    Snackbar.Add(result.Error ?? "Import failed", Severity.Error);
+                    Snackbar.Add(result.ErrorMessage ?? "Import failed", Severity.Error);
                 }
             }
         }
@@ -242,6 +261,7 @@
     {
         currentStep = 1;
         selectedFile = null;
+        selectedFileBytes = null;
         importResult = null;
     }
 

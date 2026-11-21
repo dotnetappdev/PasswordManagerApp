@@ -262,23 +262,13 @@ public static class CustomFieldHelper
     // ── Build value input for given type ──────────────────────────────────
     private static FrameworkElement BuildValueControl(CustomField field, Action<CustomField> onChanged)
     {
+        // Password fields, and fields imported as concealed (e.g. a 1Password "recovery code"), are masked
+        // with an eye button to show/hide them — never displayed in plain text by default.
+        if (field.IsSecret && field.Type != CustomFieldType.OneTimePassword)
+            return BuildSecretValueControl(field, onChanged);
+
         switch (field.Type)
         {
-            case CustomFieldType.Password:
-            {
-                var pw = new PasswordBox
-                {
-                    Password              = field.Value,
-                    Background            = BrushTransp,
-                    Foreground            = BrushPrimary,
-                    BorderThickness       = new Thickness(0),
-                    Padding               = new Thickness(0),
-                    FontSize              = 14,
-                    VerticalContentAlignment = VerticalAlignment.Center,
-                };
-                pw.PasswordChanged += (_, _) => { field.Value = pw.Password; onChanged?.Invoke(field); };
-                return pw;
-            }
 
             case CustomFieldType.Date:
             {
@@ -383,6 +373,73 @@ public static class CustomFieldHelper
         if (!string.IsNullOrEmpty(placeholder))
             tb.Tag = placeholder;
         return tb;
+    }
+
+    /// <summary>Masked value (PasswordBox) + plain TextBox, swapped by an eye toggle; both edit the field.</summary>
+    private static FrameworkElement BuildSecretValueControl(CustomField field, Action<CustomField> onChanged)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var masked = new PasswordBox
+        {
+            Password                 = field.Value ?? string.Empty,
+            Background               = BrushTransp,
+            Foreground               = BrushPrimary,
+            BorderThickness          = new Thickness(0),
+            Padding                  = new Thickness(0),
+            FontSize                 = 14,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
+        var plain = PlainTextBox(field.Value);
+        plain.FontFamily = new FontFamily("Consolas");
+        plain.Visibility = Visibility.Collapsed;
+
+        var syncing = false;
+        masked.PasswordChanged += (_, _) =>
+        {
+            if (syncing) return;
+            field.Value = masked.Password; onChanged?.Invoke(field);
+        };
+        plain.TextChanged += (_, _) =>
+        {
+            if (syncing) return;
+            field.Value = plain.Text; onChanged?.Invoke(field);
+        };
+
+        var eye = new System.Windows.Controls.Button
+        {
+            Content         = "\uE7B3", // Segoe MDL2 "RedEye" (show)
+            FontFamily      = new FontFamily("Segoe MDL2 Assets"),
+            FontSize        = 14,
+            Background      = BrushTransp,
+            Foreground      = BrushSecondary,
+            BorderThickness = new Thickness(0),
+            Padding         = new Thickness(6, 2, 6, 2),
+            Cursor          = Cursors.Hand,
+            ToolTip         = "Show",
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        eye.Click += (_, _) =>
+        {
+            var show = plain.Visibility != Visibility.Visible;
+            syncing = true;
+            if (show) plain.Text = field.Value ?? string.Empty; else masked.Password = field.Value ?? string.Empty;
+            syncing = false;
+            plain.Visibility  = show ? Visibility.Visible : Visibility.Collapsed;
+            masked.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+            eye.Content = show ? "\uED1A" : "\uE7B3"; // "Hide" / "RedEye"
+            eye.ToolTip = show ? "Hide" : "Show";
+        };
+
+        Grid.SetColumn(masked, 0);
+        Grid.SetColumn(plain, 0);
+        Grid.SetColumn(eye, 1);
+        grid.Children.Add(masked);
+        grid.Children.Add(plain);
+        grid.Children.Add(eye);
+        return grid;
     }
 
     // ── Helpers used by AddPasswordDialog type picker ─────────────────────
