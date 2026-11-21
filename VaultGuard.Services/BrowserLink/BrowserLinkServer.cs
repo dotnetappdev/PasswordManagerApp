@@ -133,6 +133,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
             "getCredentials" => await GetCredentialsAsync(db, userId, cipher, req.Utf8("domain"), ct),
             "getCreditCards" => await GetCreditCardsAsync(db, userId, cipher, ct),
             "saveTotpSecret" => await SaveTotpAsync(db, userId, cipher, req, ct),
+            "getTotpCode" => await GetTotpCodeAsync(db, userId, cipher, req, ct),
             _ => new { success = false, code = "UNSUPPORTED", error = $"Unknown action '{action}'." }
         };
     }
@@ -252,6 +253,30 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         item.LastModified = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return new { success = true, created, updated = !created, itemId = item.Id, title = item.Title };
+    }
+
+    /// <summary>
+    /// The current one-time code for a login, for filling a 2FA field. Only for an item saved for the page's site,
+    /// and only the code — the authenticator secret itself never leaves the app.
+    /// </summary>
+    private static async Task<object> GetTotpCodeAsync(VaultGuardDbContext db, string userId, VaultCipher cipher, JsonElement req, CancellationToken ct)
+    {
+        var domain = req.Utf8("domain");
+        if (!req.TryGetProperty("itemId", out var idEl) || !idEl.TryGetInt32(out var itemId) || string.IsNullOrWhiteSpace(domain))
+            return new { success = false, error = "itemId and domain are required" };
+        var item = await db.PasswordItems.AsNoTracking()
+            .Include(p => p.LoginItem).Include(p => p.CustomFields)
+            .FirstOrDefaultAsync(p => p.Id == itemId && p.UserId == userId && !p.IsDeleted, ct);
+        if (item?.LoginItem == null || !SiteMatcher.Matches(item.LoginItem.WebsiteUrl ?? item.LoginItem.Website ?? item.Website ?? "", domain))
+            return new { success = false, error = "No matching login for this site." };
+        cipher.Open(item);
+        var secret = TotpHelper.GetSecret(item) ?? item.LoginItem.TotpSecret;
+        var totp = new VaultGuard.Services.Services.TotpService();
+        var code = totp.TryParse(secret, out _, out _, out var period) ? totp.GenerateCode(secret) : null;
+        VaultItemSecrets.Forget(item);
+        return code == null
+            ? new { success = false, error = "This login has no authenticator set up." }
+            : new { success = true, code, secondsRemaining = totp.GetRemainingSeconds(period) };
     }
 
     private static string FirstNonEmpty(params string[] values) => values.First(v => !string.IsNullOrWhiteSpace(v));

@@ -17,6 +17,8 @@ public static class TotpHelper
             .FirstOrDefault(field => string.Equals(field.Name, TotpCustomFieldName, StringComparison.OrdinalIgnoreCase))
             ?.Value;
 
+        // The apps keep the secret in the "TOTP" custom field; the API and sync store it on the login itself.
+        if (string.IsNullOrWhiteSpace(value)) value = item?.LoginItem?.TotpSecret;
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 

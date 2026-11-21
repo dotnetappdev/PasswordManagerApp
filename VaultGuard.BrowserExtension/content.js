@@ -9,9 +9,9 @@ class VaultGuardContentScript {
 
   init() {
     this.loadSettings();
-    this.scanForForms();
-    this.setupDOMObserver();
-    this.setupKeyboardShortcuts();
+    // Field icons, the suggestions menu and the Ctrl/Cmd+\ shortcut now live in autofill.js (a Shadow DOM
+    // overlay that never rewrites the page's markup). This script keeps the popup fill handlers, the
+    // authenticator-QR detector and the passkey bridge.
     this.totpDetector = new TotpSetupDetector(this);
     this.totpDetector.scan();
   }

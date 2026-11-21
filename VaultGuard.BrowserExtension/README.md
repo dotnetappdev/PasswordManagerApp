@@ -1,270 +1,96 @@
 # Vault Guard Browser Extension
 
-A secure browser extension that integrates directly with your local Vault Guard SQLite database to provide seamless autofill functionality for login and registration forms.
+Fills your Vault Guard logins, one-time codes and cards into web pages, and suggests strong
+passwords on sign-up forms. It talks to the **Vault Guard desktop app** (WPF or MAUI on Windows)
+over a local, paired link. Your vault stays in the app and is decrypted there, only for the site
+you're on.
+
+> **Want to try it right now?** Follow **[TESTING_LOCALLY.md](TESTING_LOCALLY.md)**. You load the
+> extension unpacked: no store, no certificate, about five minutes.
 
 ## Documentation
 
-- **[INSTALLATION.md](INSTALLATION.md)** - Complete installation guide for end users
-- **[PACKAGING.md](PACKAGING.md)** - Extension packaging and distribution guide
-- **[HELP.md](HELP.md)** - Usage guide and troubleshooting
-- **[CONTEXT_DETECTION.md](CONTEXT_DETECTION.md)** - Form detection details
+- **[TESTING_LOCALLY.md](TESTING_LOCALLY.md)**: run and test the extension on your own machine,
+  step by step, with troubleshooting.
+- **[../docs/BROWSER_LINK.md](../docs/BROWSER_LINK.md)**: how the app ↔ browser link works
+  (pairing, the helper, registration, security).
+- **[PACKAGING.md](PACKAGING.md)**: packaging for the Chrome Web Store, Edge Add-ons and
+  Firefox AMO.
+- **[INSTALLATION.md](INSTALLATION.md)**, **[HELP.md](HELP.md)**,
+  **[CONTEXT_DETECTION.md](CONTEXT_DETECTION.md)**, **[PASSKEYS_SETUP.md](PASSKEYS_SETUP.md)**:
+  older, more detailed notes.
 
 ## Features
 
-- **🔐 Secure Autofill**: Automatically detect and fill login forms using your stored credentials
-- **⚡ Password Generation**: Generate strong passwords with customizable options
-- **🎯 Smart Detection**: Recognizes username, email, and password fields across websites
-- **💾 Multiple Connection Modes**: Connect via Native Messaging, Web API, or localStorage
-- **🔧 Database Path Configuration**: Configure custom database path for native messaging
-- **🔒 Native Messaging**: Uses secure native messaging for database communication
-- **🎨 1Password-style UI**: Familiar icon-based interface for easy credential access  
-- **🌐 Cross-browser Support**: Works with Chrome, Firefox, and other Chromium-based browsers
-- **🔌 Offline Support**: Works completely offline once configured
+- **Padlock icon in form fields.** Appears on sign-in, sign-up, one-time-code and card fields.
+  Click it, focus the field, or press **Ctrl + \\** (**⌘ + \\** on Mac) to open the Vault Guard
+  menu.
+- **Suggestions menu.** Lists your logins for the current site with coloured initials. Use
+  ↑ / ↓ and Enter, or click. Esc closes it. Light and dark mode follow your system.
+- **Strong password suggestion** on sign-up and change-password forms. It fills both the
+  "new" and "confirm" boxes.
+- **One-time codes** from logins that have an authenticator set up.
+- **Cards** at checkout: number, name, expiry and CVC.
+- **Authenticator QR detection.** When a site shows a 2FA setup QR code, the extension offers to
+  save it to the matching login.
+- **Passkeys bridge** (see PASSKEYS_SETUP.md).
+- **Popup.** Shows connection status, search, copy, generator and settings.
 
-## Quick Start
+### Safe-by-default filling
 
-### For End Users
+- **Nothing fills on page load.** Filling happens only when you choose an item.
+- **Only visible fields are filled.** Hidden "harvesting" inputs get nothing.
+- **Passwords go only to the matching site.** The app checks the site against the login's saved
+  website before decrypting, and the popup's vault browser never receives passwords.
+- **The page can't see or change the menu.** The icons and menu are drawn in a closed Shadow DOM
+  layer. Page scripts can't read it, page CSS can't restyle it, and the page's own HTML is never
+  modified.
+- **The link is paired and per-user.** It only works for your Windows user, and the browser must
+  be approved once in the app.
 
-**Installation:**
-- See [INSTALLATION.md](INSTALLATION.md) for complete installation instructions
-- Install from Chrome Web Store or Microsoft Edge Add-ons (when published)
-- Or load as unpacked extension for testing
+## How it works
 
-### For Developers
-
-**Development Setup:**
-
-1. Clone the repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the `VaultGuard.BrowserExtension` folder
-5. The extension will appear in your browser toolbar
-
-**Package for Distribution:**
-
-```bash
-# Linux/macOS
-./package-extension.sh
-
-# Windows
-package-extension.bat
+```
+ web page ──► autofill.js (field icons + menu)      popup.html/js
+                     │ chrome.runtime.sendMessage        │
+                     └──────────► background.js ◄────────┘
+                                     │ native messaging (stdio)
+                                     ▼
+                VaultGuard.BrowserExtension.NativeHost.exe   ← shipped in the app's BrowserSupport\ folder
+                                     │ named pipe (current user only)
+                                     ▼
+                    Vault Guard app (WPF / MAUI): pairing check → unlocked vault → answer
 ```
 
-See [PACKAGING.md](PACKAGING.md) for detailed packaging and distribution instructions.
+- The app registers the helper with Chrome, Edge, Brave, Chromium, Vivaldi and Firefox
+  **every time it starts**, for your user only, so it keeps working after updates or moves.
+- The extension's ID is fixed (`niapolneagndnohemlljncmndahkoncp`) by the `key` in
+  `manifest.json`. Firefox uses `vaultguard@dotnetappdevni.com`.
 
-## Installation
+## Files
 
-### Prerequisites
+| File | Purpose |
+|---|---|
+| `manifest.json` | Manifest V3; fixed `key`; `nativeMessaging` permission |
+| `background.js` | Service worker: link status, pairing, routes requests to the helper |
+| `autofill.js` | In-page field icons, suggestions menu, filling (Shadow DOM) |
+| `content.js` | Popup fill handlers, authenticator-QR detector, passkey bridge |
+| `inpage.js` | Passkey (WebAuthn) page hook |
+| `jsQR.js` | QR decoding for authenticator setup |
+| `popup.html` / `popup.js` / `popup.css` | Toolbar popup |
+| `icons/` | `icon.svg` master plus 16/32/48/128 PNGs |
+| `test-page.html`, `test-context-detection.html` | Local test forms |
 
-1. **Native Messaging Host**: You must install the native messaging host component first
-   - See `VaultGuard.BrowserExtension.NativeHost/README.md` for detailed instructions
-   - This component handles secure communication with your local database
+## Browser compatibility
 
-### Browser Extension Installation
-
-#### For Development
-
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" in the top right
-3. Click "Load unpacked" and select the `VaultGuard.BrowserExtension` folder
-4. The extension will appear in your browser toolbar
-
-#### For Firefox
-
-1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-2. Click "Load Temporary Add-on"
-3. Select the `manifest.json` file from the extension folder
-
-#### For Production
-
-See [INSTALLATION.md](INSTALLATION.md) for end-user installation instructions and [PACKAGING.md](PACKAGING.md) for creating distributable packages.
-
-## Setup
-
-### Connection Configuration
-
-The extension supports three connection modes:
-
-1. **Auto Mode (Recommended)**: Tries all connection methods automatically
-   - Tries Native Messaging first (most secure)
-   - Falls back to Web API if native host unavailable
-   - Uses localStorage as last resort
-
-2. **Native Messaging**: Direct local database access
-   - Most secure option
-   - Requires native host installation
-   - Allows custom database path configuration
-   - Works completely offline
-
-3. **Web API**: Connect to API server
-   - Requires Vault Guard API running
-   - Configure API URL in settings
-   - Supports remote access
-
-4. **localStorage**: Offline cached credentials
-   - Limited functionality
-   - Use only when other methods unavailable
-
-### Initial Setup Steps
-
-1. **Install Native Host** (for Native Messaging mode):
-   - Follow the installation guide in `VaultGuard.BrowserExtension.NativeHost/README.md`
-   
-2. **Configure Connection**:
-   - Click the extension icon
-   - Go to Settings
-   - Select connection mode
-   - For Native Messaging: Configure database path if not using default location
-   - For Web API: Configure API URL
-   - Click "Save Settings"
-
-3. **Test Connection**:
-   - Click "Test Connection" in settings
-   - Verify successful connection
-
-4. **Login**:
-   - Use your Vault Guard email and master password to authenticate
-   
-5. **Start Using**:
-   - Visit any website with login forms
-   - Icons will appear next to username and password fields
-
-### Database Path Configuration
-
-For Native Messaging mode, you can configure a custom database path:
-
-- **Default Paths** (automatically detected):
-  - Windows: `%APPDATA%\VaultGuard\passwordmanager.db`
-  - macOS: `~/Library/Application Support/VaultGuard/passwordmanager.db`
-  - Linux: `~/.local/share/VaultGuard/passwordmanager.db`
-
-- **Custom Path**: 
-  - Go to Settings → Database Path
-  - Enter the full path to your SQLite database
-  - This is useful if you've configured the WinUI app or Web UI to use a custom location
-  - Click "Save Settings" to apply
-
-## How It Works
-
-### Form Detection
-The extension automatically scans web pages for:
-- Login forms with username/email and password fields
-- Registration forms
-- Standalone credential input fields
-
-### Autofill Process
-1. **Icon Display**: Blue icons (👤 for username, 🔑 for password) appear next to detected fields
-2. **Credential Selection**: Click username icon to see matching credentials for the current website
-3. **Auto-fill**: Select a credential to automatically fill both username and password fields
-4. **Password Generation**: Click password icon to generate or fill existing passwords
-
-### Security Features
-- **Local Database Access**: Directly accesses your encrypted SQLite database - no network communication required
-- **Master Password Protection**: Uses your master password to decrypt credentials locally
-- **Native Messaging Security**: Secure communication through browser's native messaging API
-- **Session-based**: Requires authentication with your master password
-- **Domain Matching**: Intelligently matches stored websites with current domains
-- **Memory Protection**: Encryption keys are cleared from memory after use
-
-## Database Integration
-
-The extension connects to your local Vault Guard SQLite database through a native messaging host:
-- **Direct SQLite Access**: No API server required - reads directly from your database
-- **Local Decryption**: Passwords are decrypted locally using your master password
-- **Offline Operation**: Works completely offline once authentication is complete
-- **Cross-platform**: Supports Windows, macOS, and Linux
-
-### Database Security
-- Passwords are stored encrypted using AES-256-GCM
-- Master password derives encryption keys using PBKDF2 with 600,000 iterations
-- All decryption happens in the native messaging host process
-- No plaintext credentials are ever stored locally
-
-## Browser Permissions
-
-The extension requests minimal permissions:
-- `activeTab`: Access current tab for form detection and filling
-- `storage`: Store authentication tokens and settings
-- `notifications`: Show success/error messages  
-- `nativeMessaging`: Communicate with the native messaging host
-
-## Development
-
-### File Structure
-```
-VaultGuard.BrowserExtension/
-├── manifest.json          # Extension manifest (Manifest V3)
-├── background.js          # Service worker for API communication
-├── content.js            # Content script for form detection
-├── content.css           # Styling for injected UI elements
-├── popup.html            # Extension popup interface
-├── popup.js              # Popup functionality
-├── popup.css             # Popup styling
-├── icons/                # Extension icons
-└── README.md            # This file
-```
-
-### Key Components
-
-**Content Script (`content.js`)**
-- Detects login/registration forms
-- Injects autofill icons
-- Handles user interactions with forms
-
-**Background Script (`background.js`)**
-- Manages native messaging communication
-- Handles authentication through native host
-- Generates passwords locally
-- Stores/retrieves settings
-
-## Security Considerations
-
-- **Local Encryption**: All decryption happens locally in the native messaging host
-- **Master Password Required**: Your master password is required for each session
-- **Memory Protection**: Encryption keys are cleared from memory after use
-- **No Network Dependencies**: No internet connection required after setup
-- **Browser Sandbox**: Native messaging host runs outside browser sandbox for security
-
-## Troubleshooting
-
-### Extension shows "Failed to communicate with native host"
-- Verify the native messaging host is properly installed and registered
-- Check that the extension ID in the native host manifest matches your extension
-- Ensure the native host executable path is correct
-- Try restarting the browser after installation
-
-### "Database connection failed"
-- Verify the database file exists and is accessible
-- Check that the database file isn't locked by another process  
-- Ensure the native messaging host has read permissions for the database
-- Verify the database path in the native host configuration
-
-### Login fails
-- Ensure you're using the correct email and master password
-- Check that your user exists in the database
-- Verify the database contains your encrypted passwords
-
-### Icons not appearing
-- Refresh the page after installing the extension
-- Check if the website's CSP blocks extension content scripts
-- Verify extension has proper permissions
+| Browser | Support |
+|---|---|
+| Chrome, Edge, Brave, Chromium, Vivaldi | Recent versions (Manifest V3) |
+| Firefox | 115+ |
+| Safari | Not supported (it uses a different extension system) |
 
 ## Contributing
 
-This extension is part of the larger Vault Guard App project. To contribute:
-
-1. Fork the repository
-2. Create a feature branch
-3. Test thoroughly across different websites
-4. Submit a pull request
-
-## Browser Compatibility
-
-- **Chrome**: 88+ (Manifest V3 support)
-- **Firefox**: 109+ (Manifest V3 support)
-- **Edge**: 88+ (Chromium-based)
-- **Safari**: Not supported (different extension system)
-
-## License
-
-This extension is part of the Vault Guard App and is licensed under the MIT License.
+Test changes against real sign-in, sign-up, 2-step and checkout pages, in both light and dark
+mode, before opening a pull request. TESTING_LOCALLY.md explains how to reload the extension and
+where to find the logs.

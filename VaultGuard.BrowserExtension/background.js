@@ -57,6 +57,15 @@ class VaultGuardBackground {
         case 'getSettings':
           await this.getSettings(sendResponse);
           break;
+        case 'getTotpCode':
+          if (!(await this.hasAccess())) { sendResponse({ success: false, error: 'Not connected' }); break; }
+          sendResponse(await this.sendNativeMessage({ action: 'getTotpCode', itemId: request.itemId, domain: request.domain || '' }));
+          break;
+        case 'openPopup':
+          // Lets the in-page menu send the user to "Connect" (chrome.action.openPopup needs Chrome 127+).
+          try { await chrome.action.openPopup(); sendResponse({ success: true }); }
+          catch (e) { sendResponse({ success: false, error: 'Click the Vault Guard button in the toolbar.' }); }
+          break;
         case 'getLinkStatus':
           sendResponse({ success: true, link: await this.refreshLink(true) });
           break;
