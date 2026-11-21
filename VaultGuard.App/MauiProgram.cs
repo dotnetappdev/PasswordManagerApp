@@ -144,6 +144,8 @@ public static class MauiProgram
 		// Injected by shared pages MAUI routes to (Vault, Settings, ChildManagement) but previously never
 		// registered here, so opening those pages threw "An unhandled error has occurred". Mirrors Web.
 		builder.Services.AddSingleton<ITotpService, TotpService>();
+		// QR codes (sharing Wi-Fi with guests, authenticator setup).
+		builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 		builder.Services.AddScoped<IApiKeySqliteMirror, ApiKeySqliteMirrorService>();
 		builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 		builder.Services.AddScoped<IDatabaseResetService, DatabaseResetService>();

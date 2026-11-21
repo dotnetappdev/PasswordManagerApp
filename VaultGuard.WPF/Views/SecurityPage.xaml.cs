@@ -64,6 +64,7 @@ public sealed partial class SecurityPage : Page
             _items = items?.ToList() ?? new List<PasswordItem>();
             _report = _auditService.Analyze(_items);
             Render(_report);
+            RenderExpiry(_items);
         }
         catch
         {
@@ -71,6 +72,22 @@ public sealed partial class SecurityPage : Page
             _report = _auditService.Analyze(Array.Empty<PasswordItem>());
             Render(_report);
         }
+    }
+
+    private sealed record ExpiryRow(string ItemTitle, string What, string DateText, string When, System.Windows.Media.Brush Brush);
+
+    /// <summary>"Coming up": cards, passports and anything with an expiry/renewal date, soonest first.</summary>
+    private void RenderExpiry(IEnumerable<PasswordItem> items)
+    {
+        var reminders = VaultGuard.Services.Utilities.ExpiryReminders.Find(items, DateOnly.FromDateTime(DateTime.Today));
+        System.Windows.Media.Brush BrushFor(VaultGuard.Services.Utilities.ExpiryStatus s) => s switch
+        {
+            VaultGuard.Services.Utilities.ExpiryStatus.Expired => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xDC, 0x26, 0x26)),
+            VaultGuard.Services.Utilities.ExpiryStatus.Soon => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xD9, 0x77, 0x06)),
+            _ => (System.Windows.Media.Brush)FindResource("ModernTextSecondaryBrush")
+        };
+        ExpiryList.ItemsSource = reminders.Select(r => new ExpiryRow(r.ItemTitle, r.What, r.Date.ToString("d MMM yyyy"), r.When, BrushFor(r.Status))).ToList();
+        ExpiryBorder.Visibility = reminders.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // On-demand Have I Been Pwned scan (k-anonymity). Network call, so it's a separate button.

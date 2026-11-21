@@ -112,6 +112,36 @@
                 </Grid>
             </Grid>
 
+            <!-- Coming up: cards / passports / licences that expired or expire within 90 days -->
+            <Border x:Name="ExpiryBorder" Style="{StaticResource ModernCardStyle}" Padding="16" Margin="0,12,0,0" Visibility="Collapsed">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="#D97706" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Coming up" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}" VerticalAlignment="Center"/>
+                        <TextBlock Text="  ·  expired or expiring in the next 90 days" FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <ItemsControl x:Name="ExpiryList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding ItemTitle}" FontWeight="SemiBold" Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
+                                        <TextBlock FontSize="12" Foreground="{DynamicResource ModernTextSecondaryBrush}">
+                                            <Run Text="{Binding What, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding DateText, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding When}" FontWeight="SemiBold" Foreground="{Binding Brush}" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <!-- All clear -->
             <Border x:Name="AllClearBorder" Style="{StaticResource ModernCardStyle}" Padding="16" Margin="0,12,0,0" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">

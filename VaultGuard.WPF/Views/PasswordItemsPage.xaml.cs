@@ -818,6 +818,27 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         }
     }
 
+    /// <summary>Wi-Fi: show a QR code guests scan with their phone camera to join (main or guest network).</summary>
+    private async void ShareWifiQrButton_Click(object sender, RoutedEventArgs e)
+    {
+        var item = _selectedItem;
+        if (item?.WiFiItem == null || _serviceProvider == null) return;
+        try
+        {
+            var reveal = _serviceProvider.GetService<IPasswordRevealService>();
+            reveal?.OpenItem(item, await GetSessionIdAsync() ?? string.Empty); // the password is needed in the code
+            var networks = VaultGuard.Services.Utilities.WifiQr.NetworksFor(item.WiFiItem, item.Title);
+            if (networks.Count == 0) { ToastService.Instance.Show("This Wi-Fi item has no network name.", ToastType.Warning); return; }
+            var qr = _serviceProvider.GetRequiredService<IQrCodeService>();
+            await Dialogs.WifiQrDialog.ShowAsync(networks, qr);
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("Couldn't show the Wi-Fi QR code", ex);
+            ToastService.Instance.Show("Couldn't create the QR code.", ToastType.Error);
+        }
+    }
+
     private void RevealCvvButton_Click(object sender, RoutedEventArgs e)
     {
         var tb = GetElement<TextBlock>("DetailCardCvv");
@@ -894,6 +915,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (creditCardSection != null) creditCardSection.Visibility = Visibility.Collapsed;
         var revealCardNumberBtn = GetElement<Button>("RevealCardNumberButton");
         if (revealCardNumberBtn != null) revealCardNumberBtn.Visibility = Visibility.Collapsed;
+        var shareWifiBtn = GetElement<Button>("ShareWifiQrButton");
+        if (shareWifiBtn != null) shareWifiBtn.Visibility = item.WiFiItem != null ? Visibility.Visible : Visibility.Collapsed;
 
         if (item.Type == ItemType.CreditCard)
         {

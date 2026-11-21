@@ -1,0 +1,50 @@
+@* "Coming up": cards, passports, licences and memberships that have expired or expire soon (shared by the web
+   dashboard and the MAUI dashboard). Renders nothing when there's nothing to show. *@
+@using VaultGuard.Models
+@using VaultGuard.Services.Utilities
+
+@if (_reminders.Count > 0)
+{
+    <MudPaper Class="pa-4 rounded-lg mb-4" Elevation="2" data-testid="expiry-reminders">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+            <MudIcon Icon="@Icons.Material.Filled.EventNote" Color="@(_reminders.Any(r => r.Status != ExpiryStatus.Upcoming) ? Color.Warning : Color.Primary)" />
+            <MudText Typo="Typo.h6" Style="font-weight:600">Coming up</MudText>
+            <MudSpacer />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Next @ExpiryReminders.DefaultHorizonDays days</MudText>
+        </MudStack>
+        @foreach (var r in _reminders.Take(MaxRows))
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="py-2"
+                      Style="border-top:1px solid var(--mud-palette-divider); cursor:pointer;"
+                      @onclick="@(() => OnOpen.InvokeAsync(r.ItemId))">
+                <MudIcon Icon="@(r.ItemType == ItemType.CreditCard ? Icons.Material.Filled.CreditCard : Icons.Material.Filled.Badge)" Size="Size.Small" />
+                <MudStack Spacing="0" Style="flex:1; min-width:0;">
+                    <MudText Typo="Typo.body1" Style="font-weight:500">@r.ItemTitle</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@r.What · @r.Date.ToString("d MMM yyyy")</MudText>
+                </MudStack>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                         Color="@(r.Status switch { ExpiryStatus.Expired => Color.Error, ExpiryStatus.Soon => Color.Warning, _ => Color.Default })"
+                         Text="@r.When" />
+            </MudStack>
+        }
+        @if (_reminders.Count > MaxRows)
+        {
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mt-2">and @(_reminders.Count - MaxRows) more</MudText>
+        }
+    </MudPaper>
+}
+
+@code {
+    /// <summary>The vault items to look through (already loaded by the page).</summary>
+    [Parameter] public IEnumerable<PasswordItem>? Items { get; set; }
+
+    /// <summary>Called with the item id when a reminder is clicked.</summary>
+    [Parameter] public EventCallback<int> OnOpen { get; set; }
+
+    [Parameter] public int MaxRows { get; set; } = 6;
+
+    private IReadOnlyList<ExpiryReminder> _reminders = Array.Empty<ExpiryReminder>();
+
+    protected override void OnParametersSet() =>
+        _reminders = Items == null ? Array.Empty<ExpiryReminder>() : ExpiryReminders.Find(Items, DateOnly.FromDateTime(DateTime.Today));
+}

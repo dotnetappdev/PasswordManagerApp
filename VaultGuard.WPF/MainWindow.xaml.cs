@@ -821,6 +821,7 @@ public sealed partial class MainWindow : Window
         }
 
         SetAuthenticationState(true);
+        _ = RemindAboutExpiriesAsync();
 
         try
         {
@@ -875,6 +876,29 @@ public sealed partial class MainWindow : Window
             while (ContentFrame.CanGoBack) ContentFrame.RemoveBackEntry();
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't clear the page on lock", ex); }
+    }
+
+    /// <summary>
+    /// After unlocking, a gentle nudge if something has expired or expires within 30 days (cards, passports…);
+    /// the full list is in Security Center → Coming up.
+    /// </summary>
+    private async Task RemindAboutExpiriesAsync()
+    {
+        try
+        {
+            await Task.Delay(1500); // let the vault page settle first
+            var svc = _serviceProvider?.GetService<IPasswordItemService>();
+            if (svc == null || !_isAuthenticated) return;
+            var urgent = VaultGuard.Services.Utilities.ExpiryReminders.Find(await svc.GetAllAsync(), DateOnly.FromDateTime(DateTime.Today))
+                .Where(r => r.Status != VaultGuard.Services.Utilities.ExpiryStatus.Upcoming).ToList();
+            if (urgent.Count == 0) return;
+            var first = urgent[0];
+            var text = urgent.Count == 1
+                ? $"{first.ItemTitle}: {first.What.ToLowerInvariant()} {first.When}."
+                : $"{urgent.Count} items need attention, e.g. {first.ItemTitle} ({first.When}). See Security Center → Coming up.";
+            Services.ToastService.Instance.Show(text, Services.ToastType.Warning);
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't check expiry reminders", ex); }
     }
 
     /// <summary>True while a user is signed in and the vault is open.</summary>

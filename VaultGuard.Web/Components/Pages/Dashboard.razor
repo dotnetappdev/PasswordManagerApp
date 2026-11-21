@@ -76,6 +76,8 @@ else
         </MudItem>
     </MudGrid>
 
+    <VaultGuard.Components.Shared.Components.ExpiryRemindersCard Items="activeItemsForReminders" OnOpen="@(id => Nav.NavigateTo($"/passwords?item={id}"))" />
+
     <MudGrid>
         <MudItem xs="12" md="8">
             <MudPaper Class="pa-4 rounded-lg" Elevation="2">
@@ -140,6 +142,7 @@ else
     bool isLoading = true;
     int totalPasswords, favoriteCount, vaultCount, categoryCount;
     List<PasswordItem>? recentItems;
+    List<PasswordItem>? activeItemsForReminders;
     Dictionary<ItemType, int> itemTypeCounts = new();
 
     protected override async Task OnInitializedAsync()
@@ -159,6 +162,7 @@ else
             var activeItems = allItems.Where(x => !x.IsDeleted && !x.IsArchived).ToList();
 
             recentItems = activeItems.OrderByDescending(x => x.LastModified).Take(10).ToList();
+            activeItemsForReminders = activeItems;
             totalPasswords = activeItems.Count;
             favoriteCount = activeItems.Count(x => x.IsFavorite);
 

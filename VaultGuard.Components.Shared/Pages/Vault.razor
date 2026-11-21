@@ -12,6 +12,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject IPasswordRevealService PasswordRevealService
+@inject VaultGuard.Services.Interfaces.IQrCodeService QrCodes
 @inject ISnackbar Snackbar
 @inject ITotpService TotpService
 @inject ITwoFactorService TwoFactorService
@@ -306,6 +307,7 @@
                     {
                         @DetailPasswordField("Router Password", wifi!.RouterPassword, "router")
                     }
+                    @WifiQrPanel(wifi, selectedItem.Title)
                     @if (!string.IsNullOrEmpty(wifi?.GuestNetworkName))
                     {
                         @DetailField("Guest Network", wifi!.GuestNetworkName)
@@ -666,6 +668,7 @@
     {
         selectedItem = item;
         revealedFields.Clear();
+        _showWifiQr = false;
         StartTotpTimer(item);
         // The details panel renders plaintext secrets (password, card number/CVV, Wi-Fi passwords…),
         // which aren't stored — decrypt them once per selection (already-decrypted fields are skipped).
@@ -1067,6 +1070,45 @@
         b.CloseElement(); // content column
         b.CloseElement(); // outer
     };
+
+    // Share Wi-Fi: a QR code guests scan with their phone camera to join (main or guest network).
+    RenderFragment WifiQrPanel(VaultGuard.Models.WiFiItem? wifi, string title)
+    {
+        var networks = VaultGuard.Services.Utilities.WifiQr.NetworksFor(wifi, title);
+        if (networks.Count == 0) return _ => { };
+        return @<div style="margin:4px 0 18px;">
+            @if (!_showWifiQr)
+            {
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.QrCode2"
+                           OnClick="@(() => { _showWifiQr = true; _wifiQrIndex = 0; })" data-testid="share-wifi">Share as QR code</MudButton>
+            }
+            else
+            {
+                var n = networks[Math.Min(_wifiQrIndex, networks.Count - 1)];
+                <MudPaper Outlined="true" Class="pa-4 rounded-lg" Style="max-width:340px; text-align:center;">
+                    @if (networks.Count > 1)
+                    {
+                        <MudButtonGroup Size="Size.Small" Variant="Variant.Outlined" Class="mb-3">
+                            @for (var i = 0; i < networks.Count; i++)
+                            {
+                                var idx = i;
+                                <MudButton Color="@(idx == _wifiQrIndex ? Color.Primary : Color.Default)" OnClick="@(() => _wifiQrIndex = idx)">@networks[idx].Label</MudButton>
+                            }
+                        </MudButtonGroup>
+                    }
+                    <div style="background:#fff; border-radius:8px; padding:8px; display:inline-block;">
+                        <img src="@QrCodes.GeneratePngDataUrl(VaultGuard.Services.Utilities.WifiQr.Payload(n), 8)" alt="Wi-Fi QR code for @n.Ssid"
+                             style="width:240px; height:240px; image-rendering:pixelated; display:block;" data-testid="wifi-qr" />
+                    </div>
+                    <MudText Typo="Typo.subtitle2" Class="mt-2">@n.Ssid@(string.IsNullOrEmpty(n.Password) ? " (no password)" : "")</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Point a phone camera at the code to join. Anyone who sees it can join this network.</MudText>
+                    <div><MudButton Size="Size.Small" Class="mt-2" OnClick="@(() => _showWifiQr = false)">Hide</MudButton></div>
+                </MudPaper>
+            }
+        </div>;
+    }
+    bool _showWifiQr;
+    int _wifiQrIndex;
 
     private RenderFragment DetailPasswordField(string label, string? value, string key) => b =>
     {
