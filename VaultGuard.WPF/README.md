@@ -39,7 +39,8 @@ and theme files are in place and working.
 - **Auto-lock and clipboard clearing** (Settings → Security). The vault locks after the chosen idle time,
   measured system-wide so using the browser extension counts as activity, and, by default, when Windows locks or
   the PC sleeps. Locking (auto-lock, Ctrl+L, the tray's *Lock Vault*, sign-out) removes the vault key from
-  memory; it used to only switch screens. Copied values are kept out of Windows clipboard history and cloud sync,
+  memory, closes every open dialog and window (so no password stays on screen over the sign-in page), and drops
+  the current page and its history; it used to only switch screens. Copied values are kept out of Windows clipboard history and cloud sync,
   and wiped after the chosen time if they're still on the clipboard. **Same as Windows** follows the lock timeout
   Windows enforces (machine inactivity limit policy, or a password-protected screen saver), and organizations can
   cap the times or force lock-with-Windows through Group Policy — see [`docs/POLICIES.md`](../docs/POLICIES.md).

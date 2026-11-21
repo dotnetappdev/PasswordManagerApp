@@ -9,6 +9,9 @@ public partial class App : Application
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		return new Window(new MainPage()) { Title = "1Password" };
+		var window = new Window(new MainPage()) { Title = "Vault Guard" };
+		// Phones: lock when the app goes to the background or the screen turns off (see MauiDeviceLock).
+		window.Stopped += (_, _) => VaultGuard.App.Services.MauiDeviceLock.OnAppBackgrounded();
+		return window;
 	}
 }

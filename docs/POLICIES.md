@@ -24,6 +24,19 @@ switching user.
 
 > In the MAUI app, "Same as Windows" uses Windows' timeout, but measures inactivity inside the app.
 
+## Locking when Windows or the device locks
+
+| App | Locks when | Setting |
+|---|---|---|
+| WPF | Windows is locked (Win+L, Ctrl+Alt+Del → Lock, screen-saver lock), the PC sleeps, the user switches account or a remote session disconnects | Settings → Security → **Lock when Windows locks or the PC sleeps** (on by default) |
+| MAUI on Windows | The same Windows events | Settings → Lock & Clipboard → **Lock when Windows locks or the PC sleeps** (on by default) |
+| MAUI on Android / iOS | The app goes to the background or the screen turns off | Settings → Lock & Clipboard → **Lock when the app goes to the background or the screen turns off** (on by default) |
+
+The `LockOnWindowsLock` policy below forces this on in all of them. Locking removes the vault key from memory
+straight away, closes any open item or password dialog, clears what was on screen, wipes copied values, and
+shows the sign-in page ("locked because this device was locked"). The browser extension then reports the vault
+as locked until you unlock the app.
+
 ## Organization policy (Group Policy / Intune)
 
 These values live under `SOFTWARE\Policies\VaultGuard` in `HKEY_LOCAL_MACHINE` (whole PC) or

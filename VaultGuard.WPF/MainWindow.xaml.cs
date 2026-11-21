@@ -843,6 +843,28 @@ public sealed partial class MainWindow : Window
     }
 
     // Public method to handle logout
+    /// <summary>
+    /// On lock, nothing decrypted may stay on screen or in the page objects: close dialogs and other windows
+    /// (item details, password views), and drop the current page and navigation history, which hold the
+    /// decrypted items. Unlocking navigates to a fresh page.
+    /// </summary>
+    private void ClearVaultFromScreen()
+    {
+        Helpers.DialogManager.CloseAll();
+        foreach (Window w in Application.Current.Windows.Cast<Window>().ToList())
+        {
+            if (ReferenceEquals(w, this)) continue;
+            try { w.Close(); }
+            catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning($"Couldn't close {w.GetType().Name} on lock", ex); }
+        }
+        try
+        {
+            ContentFrame.Content = null;
+            while (ContentFrame.CanGoBack) ContentFrame.RemoveBackEntry();
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't clear the page on lock", ex); }
+    }
+
     /// <summary>True while a user is signed in and the vault is open.</summary>
     public bool IsVaultUnlocked => _isAuthenticated;
 
@@ -867,6 +889,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't clear the vault session on lock", ex); }
         Helpers.SecureClipboard.ClearIfStillOurs();
+        ClearVaultFromScreen();
 
         // Show login frame and hide main navigation
         SetAuthenticationState(false);

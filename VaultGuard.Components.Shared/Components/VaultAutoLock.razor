@@ -13,7 +13,7 @@
 @inject IServiceProvider Services
 
 @code {
-    /// <summary>Where to go once locked (Web: "/login", MAUI: "/masterpassword").</summary>
+    /// <summary>The sign-in page to go to once locked; "?locked=idle" or "?locked=device" is appended.</summary>
     [Parameter] public string LockRoute { get; set; } = "/login";
 
     /// <summary>Raised after the vault has locked (e.g. to show a message).</summary>
@@ -24,6 +24,19 @@
     private System.Threading.Timer? _timer;
     private long _lastActivityTicks = DateTime.UtcNow.Ticks;
     private int _locking;
+    private VaultLockSignal? _signal;
+
+    protected override void OnInitialized()
+    {
+        // Platform code (Windows session lock, phone going to the background) can lock through this signal.
+        _signal = Services.GetService(typeof(VaultLockSignal)) as VaultLockSignal;
+        if (_signal != null) _signal.LockRequested += OnLockRequested;
+    }
+
+    private void OnLockRequested(string reason) => _ = InvokeAsync(async () =>
+    {
+        if (AuthService.IsAuthenticated) await LockAsync(0, reason);
+    });
 
     /// <summary>The timeout in force: the user's choice ("Same as Windows" follows Windows' own lock timeout),
     /// capped by any organization policy. Re-read on every check so changes apply immediately.</summary>
@@ -65,17 +78,17 @@
         if (Timeout is not { } timeout || !AuthService.IsAuthenticated) return;
         var idle = DateTime.UtcNow - new DateTime(Interlocked.Read(ref _lastActivityTicks), DateTimeKind.Utc);
         if (idle < timeout) return;
-        await LockAsync((int)Math.Ceiling(timeout.TotalMinutes));
+        await LockAsync((int)Math.Ceiling(timeout.TotalMinutes), VaultLockSignal.Idle);
     }
 
-    private async Task LockAsync(int minutes)
+    private async Task LockAsync(int minutes, string reason)
     {
         if (Interlocked.Exchange(ref _locking, 1) == 1) return;
         try
         {
             await AuthService.LogoutAsync();
             await Clipboard.ClearNowAsync();
-            Navigation.NavigateTo(LockRoute, forceLoad: false);
+            Navigation.NavigateTo($"{LockRoute}?locked={reason}", forceLoad: false);
             if (OnLocked.HasDelegate) await OnLocked.InvokeAsync(minutes);
         }
         catch (Exception ex)
@@ -92,6 +105,7 @@
     public async ValueTask DisposeAsync()
     {
         _timer?.Dispose();
+        if (_signal != null) _signal.LockRequested -= OnLockRequested;
         try { if (_module != null) await _module.InvokeVoidAsync("stopWatching"); }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException) { }
         _ref?.Dispose();

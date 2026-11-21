@@ -5,16 +5,20 @@
 {
     <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined" Class="mb-3" Style="width:100%;"
               Icon="@Icons.Material.Filled.Lock" data-testid="locked-notice">
-        Vault Guard locked after a period of inactivity. Unlock to continue.
+        @_text
     </MudAlert>
 }
 
 @code {
     private bool _show;
+    private string _text = "";
 
     protected override void OnInitialized()
     {
         var query = new Uri(Navigation.Uri).Query;
-        _show = query.Contains("locked=idle", StringComparison.OrdinalIgnoreCase);
+        if (query.Contains("locked=idle", StringComparison.OrdinalIgnoreCase))
+            (_show, _text) = (true, "Vault Guard locked after a period of inactivity. Unlock to continue.");
+        else if (query.Contains("locked=device", StringComparison.OrdinalIgnoreCase))
+            (_show, _text) = (true, "Vault Guard locked because this device was locked. Unlock to continue.");
     }
 }

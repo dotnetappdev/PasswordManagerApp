@@ -129,6 +129,18 @@
                     </MudSelect>
                     <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">@VaultGuard.Services.Security.VaultSecuritySettings.ResolveClipboard(clipboardClearSeconds, lockPolicy).Explanation</MudText>
                 </MudItem>
+                @if (OperatingSystem.IsWindows() || OperatingSystem.IsAndroid() || OperatingSystem.IsIOS())
+                {
+                    <MudItem xs="12">
+                        <MudSwitch T="bool" Value="lockOnDeviceLock" ValueChanged="SetLockOnDeviceLock" Color="Color.Primary"
+                                   Disabled="@lockPolicy.ForceLockOnWindowsLock"
+                                   Label="@(OperatingSystem.IsWindows() ? "Lock when Windows locks or the PC sleeps" : "Lock when the app goes to the background or the screen turns off")" />
+                        @if (lockPolicy.ForceLockOnWindowsLock)
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Required by your organization.</MudText>
+                        }
+                    </MudItem>
+                }
             </MudGrid>
         </MudPaper>
 
@@ -953,6 +965,15 @@
         autoLockMinutes == VaultGuard.Services.Security.VaultSecuritySettings.SameAsWindows ? VaultGuard.Services.Security.WindowsLockPolicy.Read() : VaultGuard.Services.Security.WindowsLockInfo.None,
         lockPolicy).Explanation;
 
+    private bool lockOnDeviceLock = VaultGuard.Services.Security.VaultSecuritySettings.DefaultLockOnSystemLock;
+
+    private void SetLockOnDeviceLock(bool on)
+    {
+        lockOnDeviceLock = on;
+        AppSettings.Set(VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey, on);
+        AppSettings.Save();
+    }
+
     private void SetAutoLock(int minutes)
     {
         autoLockMinutes = minutes;
@@ -971,6 +992,8 @@
     {
         autoLockMinutes = VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutes(AppSettings);
         clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSeconds(AppSettings);
+        lockOnDeviceLock = VaultGuard.Services.Security.VaultSecuritySettings.ResolveLockOnSystemLock(
+            AppSettings.GetBool(VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey, VaultGuard.Services.Security.VaultSecuritySettings.DefaultLockOnSystemLock), lockPolicy);
         selectedTheme = ThemeService.CurrentThemeMode;
         await LoadUserProfile();
         await LoadApiKeys();

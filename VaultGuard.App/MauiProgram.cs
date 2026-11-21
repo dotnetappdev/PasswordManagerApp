@@ -125,6 +125,8 @@ public static class MauiProgram
 		builder.Services.AddScoped<IPasswordRevealService, PasswordRevealService>();
 		// Copies vault values and wipes them after the "Clear clipboard after" setting.
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.SecureClipboard>();
+		// Lets platform code (device lock, app backgrounded) lock the vault UI.
+		builder.Services.AddSingleton<VaultGuard.Services.Security.VaultLockSignal>();
 		// Scope every vault query to the owner of the unlocked session (profiles share this database).
 		builder.Services.AddScoped<VaultGuard.Services.Security.ICurrentVaultUser, VaultGuard.Services.Security.SessionVaultUser>();
 		builder.Services.AddScoped<IAppSyncService, AppSyncService>();
@@ -206,6 +208,8 @@ public static class MauiProgram
 
 		// Browser extension link (Windows): registered with the browsers on every start, so updates keep it current.
 		VaultGuard.App.Services.MauiBrowserLink.Start(app.Services);
+		// Lock when Windows locks / the PC sleeps, or (phones) when the app goes to the background.
+		VaultGuard.App.Services.MauiDeviceLock.Start(app.Services);
 
 		return app;
 	}

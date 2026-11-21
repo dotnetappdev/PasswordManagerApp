@@ -114,6 +114,8 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.80" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.9" />
         <PackageReference Include="Sentry.Maui" Version="6.6.0" />
+        <!-- Windows build: session lock / sleep events, so the app locks when Windows locks. -->
+        <PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.9" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
         <PackageReference Include="Syncfusion.Blazor.Grid" Version="34.1.30" />
     </ItemGroup>
 

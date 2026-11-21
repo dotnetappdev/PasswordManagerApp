@@ -67,8 +67,9 @@ built in.
   [`TESTING_LOCALLY.md`](VaultGuard.BrowserExtension/TESTING_LOCALLY.md).
 - **Auto-lock and clipboard clearing.** Every app locks the vault after the idle time you choose (1 minute to
   4 hours, or never) and wipes copied passwords from the clipboard after the time you choose (10 seconds to
-  5 minutes). Locking removes the vault key from memory. On Windows the desktop app also locks when Windows locks
-  or sleeps, and copied secrets are kept out of clipboard history (Win+V) and cloud clipboard sync. Choose
+  5 minutes). Locking removes the vault key from memory and clears the screen. The apps also lock the moment the
+  device locks: when Windows locks (Win+L or Ctrl+Alt+Del → Lock) or sleeps, or when the phone app goes to the
+  background. On Windows, copied secrets are kept out of clipboard history (Win+V) and cloud clipboard sync. Choose
   **Same as Windows** to follow the lock timeout Windows enforces (its inactivity policy or a password-protected
   screen saver), and IT can cap both times through Group Policy or Intune with the included ADMX template — see
   [`docs/POLICIES.md`](docs/POLICIES.md).

@@ -220,6 +220,7 @@ public partial class App : Application
         VaultGuard.WPF.Services.ToastSettings.Load();
 
         InitTrayIcon();
+        VaultGuard.WPF.Helpers.DialogManager.Initialize(); // lets a lock close every open dialog
         // Auto-lock after the configured idle time, and when Windows locks or sleeps (Settings → Security).
         VaultGuard.WPF.Services.WpfAutoLock.Start(Dispatcher,
             isUnlocked: () => (m_window as MainWindow)?.IsVaultUnlocked == true,
