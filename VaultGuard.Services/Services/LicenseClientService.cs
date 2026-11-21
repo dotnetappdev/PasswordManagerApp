@@ -39,14 +39,17 @@ public class LicenseClientService : ILicenseClientService
         _logger = logger;
     }
 
-    public bool IsProUnlocked => _current is not null && _current.Plan != LicensePlan.Free;
+    // Vault Guard is free forever: there are no paid features, so every feature is always available, whatever
+    // licence (if any) is cached. Keeping these answers fixed means no code can ever lock a feature behind a
+    // licence again. The rest of this class is unused legacy (see docs/LICENSING.md).
+    public bool IsProUnlocked => true;
     public LicensePlan CurrentPlan => _current?.Plan ?? LicensePlan.Free;
-    public LicenseFeature CurrentFeatures => _current?.Features ?? LicenseFeature.None;
+    public LicenseFeature CurrentFeatures => LicenseFeature.All;
     public DateTime? ExpiresAt => _current?.ExpiresAt;
     public string? ActiveKeyCode => _settings.Contains(KeyCodeKey) ? _settings.Get(KeyCodeKey) : null;
     public string? LastError { get; private set; }
 
-    public bool HasFeature(LicenseFeature feature) => (CurrentFeatures & feature) == feature;
+    public bool HasFeature(LicenseFeature feature) => true; // every feature, for everyone (free forever)
 
     public void LoadCached()
     {

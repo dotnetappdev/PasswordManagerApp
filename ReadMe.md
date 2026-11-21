@@ -6,7 +6,7 @@
 
 **A free, self-hosted password manager for Windows, web and mobile - one encrypted vault, the same app everywhere.**
 
-**Free. No subscription, no payments, no paid tier: every feature is included.**
+**Free forever. Every feature is included for everyone: no subscription, no payments, no paid "Pro" tier.**
 
 [![Build WPF](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-wpf.yml)
 [![Build Web (Blazor)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml/badge.svg)](https://github.com/dotnetappdev/PasswordManagerApp/actions/workflows/build-web.yml)

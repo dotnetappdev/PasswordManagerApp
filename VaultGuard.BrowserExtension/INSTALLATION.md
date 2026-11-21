@@ -1,6 +1,7 @@
 # Installing the Vault Guard browser extension
 
-Vault Guard is **free**: no account to buy, no subscription, no payments, and every feature is included. The
+Vault Guard is **free forever**: every feature is included for everyone, with no subscription, no payments and
+no paid tier. The
 browser extension works with the **Vault Guard desktop app** on Windows (the WPF app or the Windows MAUI app).
 Your passwords stay in the app, on your PC. The extension asks the app for the one login it needs, for the site
 you're on.

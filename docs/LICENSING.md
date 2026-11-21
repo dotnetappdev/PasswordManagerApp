@@ -1,7 +1,8 @@
 # Licensing (CD Keys / Pro Feature Unlock)
 
-> **Not in use: Vault Guard is free.** There is no subscription, no payment and no paid tier, and every feature
-> is available to everyone. The apps no longer check licences: API key management is open to all users, and the
+> **Not in use: Vault Guard is free forever.** There is no subscription, no payment and no paid tier, and every
+> feature is available to everyone. `LicenseClientService` always reports every feature as available (guarded by
+> `FreeForeverTests`), so nothing can be locked behind a licence again. The apps no longer check licences: API key management is open to all users, and the
 > License tab is hidden in the web and desktop settings. The licensing code described below (and the Admin app's
 > License Keys / Subscriptions pages) is kept in the codebase only for reference and isn't needed to run Vault Guard.
 

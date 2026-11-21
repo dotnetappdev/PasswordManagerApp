@@ -5,8 +5,8 @@ passwords on sign-up forms. It talks to the **Vault Guard desktop app** (WPF or 
 over a local, paired link. Your vault stays in the app and is decrypted there, only for the site
 you're on.
 
-> **Installing it?** Follow **[INSTALLATION.md](INSTALLATION.md)**. Vault Guard is free: no subscription or
-> payments, every feature included.
+> **Installing it?** Follow **[INSTALLATION.md](INSTALLATION.md)**. Vault Guard is free forever: every feature
+> is included, with no subscription, payments or paid tier.
 >
 > **Want to try it right now?** Follow **[TESTING_LOCALLY.md](TESTING_LOCALLY.md)**. You load the
 > extension unpacked: no store, no certificate, about five minutes.

@@ -3,7 +3,7 @@
 The installation guide lives next to the extension:
 **[VaultGuard.BrowserExtension/INSTALLATION.md](../VaultGuard.BrowserExtension/INSTALLATION.md)**
 
-In short: Vault Guard is free. Install and open the Vault Guard desktop app, add the extension to your browser
+In short: Vault Guard is free forever, with every feature included. Install and open the Vault Guard desktop app, add the extension to your browser
 (from the release zip with **Load unpacked**, or temporarily in Firefox), click **Connect to Vault Guard app** and
 then **Allow** in the app. No certificates, admin rights or registry edits are needed.
 
