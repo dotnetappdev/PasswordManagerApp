@@ -146,7 +146,7 @@ public sealed partial class TwoFactorSetupDialog : ModernWpf.Controls.ContentDia
     {
         if (_setup?.BackupCodes is { Count: > 0 })
         {
-            Clipboard.SetText(string.Join(Environment.NewLine, _setup.BackupCodes));
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(string.Join(Environment.NewLine, _setup.BackupCodes));
         }
     }
 
@@ -236,7 +236,7 @@ public sealed partial class TwoFactorSetupDialog : ModernWpf.Controls.ContentDia
     {
         if (_regeneratedCodes is { Count: > 0 })
         {
-            Clipboard.SetText(string.Join(Environment.NewLine, _regeneratedCodes));
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(string.Join(Environment.NewLine, _regeneratedCodes));
         }
     }
 

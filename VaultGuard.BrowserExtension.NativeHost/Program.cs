@@ -19,7 +19,7 @@ public class Program
     private static string? _callerOrigin;
 
     // Requests answered by the running desktop app when it's open (see AppLinkClient).
-    private static readonly HashSet<string> AppLinkActions = new() { "hello", "pair", "getCredentials", "getCreditCards", "saveTotpSecret", "getTotpCode" };
+    private static readonly HashSet<string> AppLinkActions = new() { "hello", "pair", "getCredentials", "getCreditCards", "saveTotpSecret", "getTotpCode", "saveLogin" };
 
     public static async Task Main(string[] args)
     {

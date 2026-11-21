@@ -618,8 +618,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var pwd = await GetDecryptedSelectedPasswordAsync();
             if (!string.IsNullOrEmpty(pwd))
             {
-                System.Windows.Clipboard.SetText(pwd);
-                ToastService.Instance.Success("Password copied to clipboard");
+                VaultGuard.WPF.Helpers.SecureClipboard.Copy(pwd);
+                ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Password"));
                 return;
             }
             await ShowTemporaryMessageAsync("No password available — vault may be locked");
@@ -693,19 +693,19 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         // Copy username now, then the password a few seconds later so each is ready to paste in turn.
         if (!string.IsNullOrEmpty(username))
         {
-            try { System.Windows.Clipboard.SetText(username); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy username to clipboard", ex); }
+            try { VaultGuard.WPF.Helpers.SecureClipboard.Copy(username); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy username to clipboard", ex); }
             ToastService.Instance.Info("Username copied — paste it (Ctrl+V), then Tab to the password field.");
 
             if (!string.IsNullOrEmpty(password))
             {
                 await Task.Delay(9000);
-                try { System.Windows.Clipboard.SetText(password); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy password to clipboard", ex); }
+                try { VaultGuard.WPF.Helpers.SecureClipboard.Copy(password); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy password to clipboard", ex); }
                 ToastService.Instance.Success("Password copied — paste it into the password field.");
             }
         }
         else if (!string.IsNullOrEmpty(password))
         {
-            try { System.Windows.Clipboard.SetText(password); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy password to clipboard", ex); }
+            try { VaultGuard.WPF.Helpers.SecureClipboard.Copy(password); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy password to clipboard", ex); }
             ToastService.Instance.Success("Password copied — paste it into the password field.");
         }
     }
@@ -794,7 +794,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (string.IsNullOrEmpty(url)) url = _selectedItem?.Website ?? _selectedItem?.LoginItem?.WebsiteUrl;
         if (!string.IsNullOrEmpty(url))
         {
-            try { System.Windows.Clipboard.SetText(url); ToastService.Instance.Success("Website copied to clipboard"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy website URL to clipboard", ex); }
+            try { VaultGuard.WPF.Helpers.SecureClipboard.Copy(url); ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Website")); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy website URL to clipboard", ex); }
         }
     }
 
@@ -827,7 +827,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     private void CopyCvvButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(_currentCardCvv)) return;
-        try { System.Windows.Clipboard.SetText(_currentCardCvv); ToastService.Instance.Success("CVV copied to clipboard"); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy CVV to clipboard", ex); }
+        try { VaultGuard.WPF.Helpers.SecureClipboard.Copy(_currentCardCvv); ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("CVV")); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy CVV to clipboard", ex); }
     }
 
     private void ShowItemDetails(PasswordItem item)
@@ -1474,8 +1474,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             var code = _totpService?.GenerateCode(_currentTotpSecret);
             if (!string.IsNullOrEmpty(code))
             {
-                System.Windows.Clipboard.SetText(code);
-                ToastService.Instance.Success("Verification code copied to clipboard");
+                VaultGuard.WPF.Helpers.SecureClipboard.Copy(code);
+                ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Verification code"));
             }
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Operation failed", ex); }
@@ -2164,8 +2164,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 return;
             }
 
-            System.Windows.Clipboard.SetText(username);
-            ToastService.Instance.Success("Username copied to clipboard");
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(username);
+            ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Username"));
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", ex); }
     }

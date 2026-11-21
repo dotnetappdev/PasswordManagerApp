@@ -6,6 +6,7 @@
 @inject VaultGuard.Services.Interfaces.IAuthService AuthService
 @inject VaultGuard.Services.Interfaces.IVaultService VaultService
 @inject NavigationManager Navigation
+@inject VaultGuard.Components.Shared.Services.SecureClipboard Clipboard
 
 @if (!_authorized)
 {
@@ -19,6 +20,8 @@
 else
 {
 <MudThemeProvider Theme="_theme" IsDarkMode="@ThemeService.IsDarkMode" />
+@* Locks the vault after the "Auto-lock after" setting's worth of inactivity. *@
+<VaultGuard.Components.Shared.Components.VaultAutoLock LockRoute="/login?locked=idle" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -255,6 +258,7 @@ else
     {
         try { await AuthService.LogoutAsync(); }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Sign out failed", ex); }
+        await Clipboard.ClearNowAsync();
         Navigation.NavigateTo("/login");
     }
 

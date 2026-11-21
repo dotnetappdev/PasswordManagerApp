@@ -106,7 +106,7 @@ public class WpfPlatformService : IPlatformService
             // For WPF, copy to clipboard
             await Task.Run(() =>
             {
-                Clipboard.SetText(text);
+                VaultGuard.WPF.Helpers.SecureClipboard.Copy(text);
             });
             return true;
         }

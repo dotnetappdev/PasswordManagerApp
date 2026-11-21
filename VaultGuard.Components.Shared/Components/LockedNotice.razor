@@ -1,0 +1,20 @@
+@* Shown on the sign-in / unlock page after an automatic lock (…?locked=idle). *@
+@inject NavigationManager Navigation
+
+@if (_show)
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Outlined" Class="mb-3" Style="width:100%;"
+              Icon="@Icons.Material.Filled.Lock" data-testid="locked-notice">
+        Vault Guard locked after a period of inactivity. Unlock to continue.
+    </MudAlert>
+}
+
+@code {
+    private bool _show;
+
+    protected override void OnInitialized()
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        _show = query.Contains("locked=idle", StringComparison.OrdinalIgnoreCase);
+    }
+}

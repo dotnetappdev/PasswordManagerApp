@@ -179,6 +179,8 @@ builder.Services.AddSingleton<IPassphraseGenerator, VaultGuard.Services.Services
 builder.Services.AddSingleton<VaultGuard.Services.Interfaces.IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 builder.Services.AddScoped<ICollectionService, VaultGuard.Services.Services.CollectionService>();
 builder.Services.AddScoped<IAuthService, VaultGuard.Services.Services.AuthService>();
+// Copies vault values and wipes them after the "Clear clipboard after" setting.
+builder.Services.AddScoped<VaultGuard.Components.Shared.Services.SecureClipboard>();
 builder.Services.AddScoped<IUserProfileService, VaultGuard.Services.Services.UserProfileService>();
 // Per-user local SQLite mirror of the API-key store (dual-store; see ApiKeySqliteMirrorService).
 builder.Services.AddScoped<IApiKeySqliteMirror, VaultGuard.Services.Services.ApiKeySqliteMirrorService>();

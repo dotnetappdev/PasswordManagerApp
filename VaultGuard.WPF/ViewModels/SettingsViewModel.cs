@@ -21,7 +21,9 @@ public class SettingsViewModel : BaseViewModel
     private bool _requireCodeOnItemDelete = false;
     private string _exportPath = string.Empty;
     private string _selectedTheme = "System";
-    private int _sessionTimeoutMinutes = 30;
+    private int _sessionTimeoutMinutes = VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
+    private int _clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds;
+    private bool _lockOnSystemLock = VaultGuard.Services.Security.VaultSecuritySettings.DefaultLockOnSystemLock;
     private string _authenticationMode = "Local Database";
     private string _apiBaseUrl = "https://localhost:7001/api";
     private string _apiKey = string.Empty;
@@ -106,7 +108,7 @@ public class SettingsViewModel : BaseViewModel
         return VaultGuard.WPF.Services.UpdateService.DefaultManifestUrl;
     }
 
-    private static Dictionary<string, string> LoadLocalSettings()
+    internal static Dictionary<string, string> LoadLocalSettings()
     {
         try
         {
@@ -121,7 +123,7 @@ public class SettingsViewModel : BaseViewModel
         return new();
     }
 
-    private static void SaveLocalSettings(Dictionary<string, string> values)
+    internal static void SaveLocalSettings(Dictionary<string, string> values)
     {
         try
         {
@@ -198,10 +200,25 @@ public class SettingsViewModel : BaseViewModel
         set => SetProperty(ref _selectedTheme, value);
     }
 
+    /// <summary>Auto-lock after this many idle minutes (0 = never). Enforced by WpfAutoLock.</summary>
     public int SessionTimeoutMinutes
     {
         get => _sessionTimeoutMinutes;
         set => SetProperty(ref _sessionTimeoutMinutes, value);
+    }
+
+    /// <summary>Wipe copied values from the clipboard after this many seconds (0 = never).</summary>
+    public int ClipboardClearSeconds
+    {
+        get => _clipboardClearSeconds;
+        set => SetProperty(ref _clipboardClearSeconds, value);
+    }
+
+    /// <summary>Also lock when Windows locks, sleeps or switches user.</summary>
+    public bool LockOnSystemLock
+    {
+        get => _lockOnSystemLock;
+        set => SetProperty(ref _lockOnSystemLock, value);
     }
 
     public string AuthenticationMode
@@ -521,7 +538,13 @@ public class SettingsViewModel : BaseViewModel
 
     public List<string> AuthenticationModes { get; } = new() { "Local Database", "API Server" };
 
-    public List<int> TimeoutOptions { get; } = new() { 5, 10, 15, 30, 60, 120 };
+    public sealed record Choice(int Value, string Label);
+
+    public List<Choice> TimeoutOptions { get; } =
+        VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoices.Select(m => new Choice(m, VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(m))).ToList();
+
+    public List<Choice> ClipboardOptions { get; } =
+        VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoices.Select(s => new Choice(s, VaultGuard.Services.Security.VaultSecuritySettings.DescribeClipboard(s))).ToList();
 
     private async Task LoadSettingsAsync()
     {
@@ -532,7 +555,12 @@ public class SettingsViewModel : BaseViewModel
             // Load theme setting from application data
             var localSettings = LoadLocalSettings();
             SelectedTheme = localSettings.TryGetValue("SelectedTheme", out var theme) ? theme : "System";
-            SessionTimeoutMinutes = localSettings.TryGetValue("SessionTimeout", out var timeout) ? Convert.ToInt32(timeout) : 30;
+            SessionTimeoutMinutes = localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutesKey, out var timeout) && int.TryParse(timeout, out var tm)
+                ? VaultGuard.Services.Security.VaultSecuritySettings.Sanitize(tm, 0, 24 * 60, VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes) : VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
+            ClipboardClearSeconds = localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSecondsKey, out var clip) && int.TryParse(clip, out var cs)
+                ? VaultGuard.Services.Security.VaultSecuritySettings.Sanitize(cs, 0, 3600, VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds) : VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds;
+            LockOnSystemLock = localSettings.TryGetValue(VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey, out var lsl) && bool.TryParse(lsl, out var lb)
+                ? lb : VaultGuard.Services.Security.VaultSecuritySettings.DefaultLockOnSystemLock;
             AuthenticationMode = localSettings.TryGetValue("AuthMode", out var authMode) ? authMode : "Local Database";
             ApiBaseUrl = localSettings.TryGetValue("ApiBaseUrl", out var apiUrl) ? apiUrl : "https://localhost:7001/api";
             ApiKey = localSettings.TryGetValue("ApiKey", out var apiKey) ? apiKey : string.Empty;
@@ -651,7 +679,7 @@ public class SettingsViewModel : BaseViewModel
         {
             // Use defaults on error
             SelectedTheme = "System";
-            SessionTimeoutMinutes = 30;
+            SessionTimeoutMinutes = VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
             AuthenticationMode = "Local Database";
             ApiBaseUrl = "https://localhost:7001/api";
             ApiKey = string.Empty;
@@ -680,7 +708,9 @@ public class SettingsViewModel : BaseViewModel
             // Save settings to application data
             var localSettings = LoadLocalSettings();
             localSettings["SelectedTheme"] = SelectedTheme;
-            localSettings["SessionTimeout"] = SessionTimeoutMinutes.ToString();
+            localSettings[VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutesKey] = SessionTimeoutMinutes.ToString();
+            localSettings[VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSecondsKey] = ClipboardClearSeconds.ToString();
+            localSettings[VaultGuard.Services.Security.VaultSecuritySettings.LockOnSystemLockKey] = LockOnSystemLock.ToString();
             localSettings["AuthMode"] = AuthenticationMode;
             localSettings["ApiBaseUrl"] = ApiBaseUrl;
             localSettings["ApiKey"] = ApiKey;

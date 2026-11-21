@@ -253,7 +253,7 @@ public sealed partial class DashboardPage : System.Windows.Controls.Page
     {
         try
         {
-            System.Windows.Clipboard.SetText(text);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(text);
         }
         catch (Exception ex)
         {

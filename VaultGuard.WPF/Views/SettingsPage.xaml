@@ -632,16 +632,39 @@
                         </Button>
 
                         <StackPanel Margin="8">
-                            <TextBlock Text="Session Timeout" 
+                            <TextBlock Text="Auto-lock after"
                                       Style="{StaticResource ModernCaptionStyle}"
                                       FontWeight="SemiBold"/>
                             <ComboBox x:Name="SessionTimeoutComboBox"
                                      ItemsSource="{Binding TimeoutOptions}"
-                                     SelectedItem="{Binding SessionTimeoutMinutes, Mode=TwoWay}"
+                                     DisplayMemberPath="Label"
+                                     SelectedValuePath="Value"
+                                     SelectedValue="{Binding SessionTimeoutMinutes, Mode=TwoWay}"
                                      SelectionChanged="SessionTimeoutComboBox_SelectionChanged"
+                                     ToolTip="Locks the vault when there's been no keyboard or mouse activity on this PC for this long"
                                      Style="{StaticResource ModernComboBoxStyle}"
                                      MinWidth="200"/>
                         </StackPanel>
+
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Clear clipboard after"
+                                      Style="{StaticResource ModernCaptionStyle}"
+                                      FontWeight="SemiBold"/>
+                            <ComboBox x:Name="ClipboardClearComboBox"
+                                     ItemsSource="{Binding ClipboardOptions}"
+                                     DisplayMemberPath="Label"
+                                     SelectedValuePath="Value"
+                                     SelectedValue="{Binding ClipboardClearSeconds, Mode=TwoWay}"
+                                     SelectionChanged="SessionTimeoutComboBox_SelectionChanged"
+                                     ToolTip="Copied passwords and other values are wiped from the clipboard after this long (and never kept in Windows clipboard history)"
+                                     Style="{StaticResource ModernComboBoxStyle}"
+                                     MinWidth="200"/>
+                        </StackPanel>
+
+                        <CheckBox x:Name="LockOnSystemLockCheckBox" Margin="8"
+                                  Content="Lock when Windows locks or the PC sleeps"
+                                  IsChecked="{Binding LockOnSystemLock, Mode=TwoWay}"
+                                  Checked="LockOnSystemLockCheckBox_Changed" Unchecked="LockOnSystemLockCheckBox_Changed"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

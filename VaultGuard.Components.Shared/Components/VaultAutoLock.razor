@@ -1,0 +1,97 @@
+@* Locks the vault after the "Auto-lock after" setting's worth of inactivity (Web and MAUI). Place it once in the
+   main layout. Locking signs out of the vault (IAuthService.LogoutAsync wipes the vault key from memory), wipes
+   the clipboard, and returns to the host's unlock page. *@
+@implements IAsyncDisposable
+@using Microsoft.JSInterop
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Services.Security
+@using VaultGuard.Components.Shared.Services
+@inject IJSRuntime JS
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject SecureClipboard Clipboard
+@inject IServiceProvider Services
+
+@code {
+    /// <summary>Where to go once locked (Web: "/login", MAUI: "/masterpassword").</summary>
+    [Parameter] public string LockRoute { get; set; } = "/login";
+
+    /// <summary>Raised after the vault has locked (e.g. to show a message).</summary>
+    [Parameter] public EventCallback<int> OnLocked { get; set; }
+
+    private DotNetObjectReference<VaultAutoLock>? _ref;
+    private IJSObjectReference? _module;
+    private System.Threading.Timer? _timer;
+    private long _lastActivityTicks = DateTime.UtcNow.Ticks;
+    private int _locking;
+
+    /// <summary>For tests and diagnostics: the timeout currently in force.</summary>
+    public TimeSpan? Timeout
+    {
+        get
+        {
+            var settings = Services.GetService(typeof(IAppSettingsService)) as IAppSettingsService;
+            var minutes = settings != null ? VaultSecuritySettings.AutoLockMinutes(settings) : VaultSecuritySettings.DefaultAutoLockMinutes;
+            return minutes <= 0 ? null : TimeSpan.FromMinutes(minutes);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _ref = DotNetObjectReference.Create(this);
+            _module = await Clipboard.ModuleAsync();
+            await _module.InvokeVoidAsync("watchActivity", _ref, 15_000);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+        {
+            VaultGuard.Services.Logging.AppLogger.Warning("Auto-lock activity watcher couldn't start", ex);
+        }
+        // Checked every 15 s; the deadline is re-read each time so a settings change applies immediately.
+        _timer = new System.Threading.Timer(_ => _ = InvokeAsync(CheckNow), null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
+    }
+
+    [JSInvokable]
+    public void ReportActivity() => Interlocked.Exchange(ref _lastActivityTicks, DateTime.UtcNow.Ticks);
+
+    /// <summary>Also called when the tab/app becomes visible again, so a laptop that slept locks immediately.</summary>
+    [JSInvokable]
+    public async Task CheckNow()
+    {
+        if (Timeout is not { } timeout || !AuthService.IsAuthenticated) return;
+        var idle = DateTime.UtcNow - new DateTime(Interlocked.Read(ref _lastActivityTicks), DateTimeKind.Utc);
+        if (idle < timeout) return;
+        await LockAsync((int)timeout.TotalMinutes);
+    }
+
+    private async Task LockAsync(int minutes)
+    {
+        if (Interlocked.Exchange(ref _locking, 1) == 1) return;
+        try
+        {
+            await AuthService.LogoutAsync();
+            await Clipboard.ClearNowAsync();
+            Navigation.NavigateTo(LockRoute, forceLoad: false);
+            if (OnLocked.HasDelegate) await OnLocked.InvokeAsync(minutes);
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Warning("Auto-lock failed", ex);
+        }
+        finally
+        {
+            ReportActivity();
+            Interlocked.Exchange(ref _locking, 0);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _timer?.Dispose();
+        try { if (_module != null) await _module.InvokeVoidAsync("stopWatching"); }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException) { }
+        _ref?.Dispose();
+    }
+}

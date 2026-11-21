@@ -134,6 +134,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
             "getCreditCards" => await GetCreditCardsAsync(db, userId, cipher, ct),
             "saveTotpSecret" => await SaveTotpAsync(db, userId, cipher, req, ct),
             "getTotpCode" => await GetTotpCodeAsync(db, userId, cipher, req, ct),
+            "saveLogin" => await SaveLoginAsync(db, userId, cipher, req, ct),
             _ => new { success = false, code = "UNSUPPORTED", error = $"Unknown action '{action}'." }
         };
     }
@@ -253,6 +254,73 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         item.LastModified = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return new { success = true, created, updated = !created, itemId = item.Id, title = item.Title };
+    }
+
+    /// <summary>
+    /// "Save this login?" from the extension: creates a login for the site, or (with itemId) updates the saved
+    /// password of an existing login for the same site, keeping the old one in password history. The site comes
+    /// from the browser tab the form was submitted in; an existing item is only touched if it belongs to the
+    /// signed-in user and is saved for that same site.
+    /// </summary>
+    private static async Task<object> SaveLoginAsync(VaultGuardDbContext db, string userId, VaultCipher cipher, JsonElement req, CancellationToken ct)
+    {
+        var url = req.Utf8("url");
+        var domain = req.Utf8("domain");
+        var username = req.Utf8("username").Trim();
+        // "loginPassword", not "password": the helper strips any "password" field so a master password can never
+        // travel over the link.
+        var password = req.Utf8("loginPassword"); // exactly as typed
+        if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrEmpty(password))
+            return new { success = false, error = "domain and password are required" };
+        if (password.Length > 4096 || username.Length > 512)
+            return new { success = false, error = "That login is too long to save." };
+        // The URL must be on the site the request is for; only its scheme + host are stored.
+        var site = Uri.TryCreate(url, UriKind.Absolute, out var u) && u.Scheme is "https" or "http" && SiteMatcher.Matches(u.Host, domain)
+            ? $"{u.Scheme}://{u.Host}" : "https://" + domain.Trim().TrimEnd('.');
+
+        if (req.TryGetProperty("itemId", out var idEl) && idEl.ValueKind == JsonValueKind.Number && idEl.TryGetInt32(out var itemId))
+        {
+            var item = await db.PasswordItems
+                .Include(p => p.LoginItem).Include(p => p.CustomFields)
+                .FirstOrDefaultAsync(p => p.Id == itemId && p.UserId == userId && !p.IsDeleted, ct);
+            if (item?.LoginItem == null || !SiteMatcher.Matches(item.LoginItem.WebsiteUrl ?? item.LoginItem.Website ?? item.Website ?? "", domain))
+                return new { success = false, error = "No matching login for this site." };
+
+            var previous = (item.LoginItem.EncryptedPassword, item.LoginItem.PasswordNonce, item.LoginItem.PasswordAuthTag);
+            cipher.Open(item);
+            if (item.LoginItem.Password == password)
+            {
+                VaultItemSecrets.Forget(item);
+                return new { success = true, created = false, updated = false, itemId = item.Id, title = item.Title };
+            }
+            item.LoginItem.Password = password;
+            if (!string.IsNullOrEmpty(username)) item.LoginItem.Username = username;
+            cipher.Seal(item);
+            if (!string.IsNullOrEmpty(previous.EncryptedPassword))
+                PasswordHistoryHelper.Append(item, previous.EncryptedPassword, previous.PasswordNonce, previous.PasswordAuthTag);
+            item.LastModified = DateTime.UtcNow;
+            VaultItemSecrets.Forget(item);
+            await db.SaveChangesAsync(ct);
+            return new { success = true, created = false, updated = true, itemId = item.Id, title = item.Title };
+        }
+
+        var title = req.Utf8("title").Trim();
+        if (title.Length == 0) title = SiteMatcher.Host(domain) ?? domain;
+        if (title.Length > 200) title = title[..200];
+        var created = new PasswordItem
+        {
+            Title = title, Type = ItemType.Login, UserId = userId, CreatedAt = DateTime.UtcNow, LastModified = DateTime.UtcNow,
+            LoginItem = new LoginItem
+            {
+                Username = username, Password = password, WebsiteUrl = site, Website = site, UserId = userId,
+                Email = username.Contains('@') ? username : null
+            }
+        };
+        cipher.Seal(created); // never stored in plaintext
+        VaultItemSecrets.Forget(created);
+        db.PasswordItems.Add(created);
+        await db.SaveChangesAsync(ct);
+        return new { success = true, created = true, updated = false, itemId = created.Id, title = created.Title };
     }
 
     /// <summary>

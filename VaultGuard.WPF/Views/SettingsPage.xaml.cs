@@ -689,10 +689,15 @@ public sealed partial class SettingsPage : Page
 
     private async void SessionTimeoutComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_viewModel != null && SessionTimeoutComboBox.SelectedItem != null)
+        if (_viewModel != null && sender is ComboBox { SelectedItem: not null } && IsLoaded)
         {
             await _viewModel.SaveSettingsAsync();
         }
+    }
+
+    private async void LockOnSystemLockCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null && IsLoaded) await _viewModel.SaveSettingsAsync();
     }
 
     private async void AuthModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

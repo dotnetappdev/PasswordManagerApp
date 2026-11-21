@@ -61,6 +61,18 @@ class VaultGuardBackground {
           if (!(await this.hasAccess())) { sendResponse({ success: false, error: 'Not connected' }); break; }
           sendResponse(await this.sendNativeMessage({ action: 'getTotpCode', itemId: request.itemId, domain: request.domain || '' }));
           break;
+        case 'captureLogin':
+          sendResponse(await this.captureLogin(request, sender));
+          break;
+        case 'getPendingSave':
+          sendResponse(await this.getPendingSave(sender));
+          break;
+        case 'savePendingLogin':
+          sendResponse(await this.savePendingLogin(request, sender));
+          break;
+        case 'dismissPendingSave':
+          sendResponse(await this.dismissPendingSave(request, sender));
+          break;
         case 'openPopup':
           // Lets the in-page menu send the user to "Connect" (chrome.action.openPopup needs Chrome 127+).
           try { await chrome.action.openPopup(); sendResponse({ success: true }); }
@@ -307,6 +319,106 @@ class VaultGuardBackground {
       success: true,
       password: password
     };
+  }
+
+  // ---------- "Save this login?" ----------
+  // A submitted login is held for up to 2 minutes so the prompt can appear on the page the form leads to.
+  // It lives in chrome.storage.session (memory only, never written to disk, not visible to content scripts),
+  // keyed by tab, and is dropped as soon as the user answers.
+
+  static PENDING_TTL_MS = 120000;
+
+  pendingKey(tabId) { return `pendingSave:${tabId}`; }
+
+  async sessionStore() {
+    return chrome.storage.session ?? { // older browsers: keep it in this worker's memory
+      _m: (this._pendingMem ??= {}),
+      async get(k) { return { [k]: this._m[k] }; },
+      async set(o) { Object.assign(this._m, o); },
+      async remove(k) { delete this._m[k]; }
+    };
+  }
+
+  /** The site the message really came from — the tab's URL, never a value the page could choose. */
+  senderSite(sender) {
+    try {
+      const u = new URL(sender?.tab?.url || sender?.url || '');
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+      return { url: `${u.protocol}//${u.host}`, host: u.hostname.replace(/^www\./, '') };
+    } catch { return null; }
+  }
+
+  async neverSaveSites() {
+    const r = await chrome.storage.local.get(['neverSaveSites', 'offerToSaveLogins']);
+    return { list: r.neverSaveSites || [], enabled: r.offerToSaveLogins !== false };
+  }
+
+  async captureLogin(request, sender) {
+    const site = this.senderSite(sender);
+    const password = typeof request.password === 'string' ? request.password : '';
+    if (!site || !sender?.tab?.id || !password || password.length > 4096) return { success: false };
+    const prefs = await this.neverSaveSites();
+    if (!prefs.enabled || prefs.list.includes(site.host)) return { success: false, skipped: true };
+    const store = await this.sessionStore();
+    await store.set({ [this.pendingKey(sender.tab.id)]: {
+      host: site.host, url: site.url, username: String(request.username || '').slice(0, 512), password,
+      isNew: !!request.isNew, at: Date.now()
+    } });
+    return { success: true };
+  }
+
+  async readPending(sender) {
+    if (!sender?.tab?.id) return null;
+    const store = await this.sessionStore();
+    const key = this.pendingKey(sender.tab.id);
+    const p = (await store.get(key))[key];
+    if (!p) return null;
+    const site = this.senderSite(sender);
+    // Only offer on the same site (sign-in pages may redirect within the site), and not after it expired.
+    const sameSite = site && (site.host === p.host || site.host.endsWith('.' + p.host) || p.host.endsWith('.' + site.host));
+    if (!sameSite || Date.now() - p.at > VaultGuardBackground.PENDING_TTL_MS) { await store.remove(key); return null; }
+    return p;
+  }
+
+  /** What to offer for the tab's pending login: nothing, "save" or "update". The password never goes back to the page. */
+  async getPendingSave(sender) {
+    const p = await this.readPending(sender);
+    if (!p) return { offer: null };
+    const link = await this.refreshLink(true);
+    if (!link?.linked || !link?.paired) return { offer: null };
+    if (!link.unlocked) return { offer: { mode: 'locked', host: p.host, username: p.username } };
+    const r = await this.sendNativeMessage({ action: 'getCredentials', domain: p.host });
+    const creds = (r?.credentials || []);
+    const sameUser = creds.filter(c => (c.username || '').toLowerCase() === p.username.toLowerCase());
+    if (sameUser.some(c => c.password === p.password)) {            // already saved: nothing to ask
+      await (await this.sessionStore()).remove(this.pendingKey(sender.tab.id));
+      return { offer: null };
+    }
+    const existing = sameUser[0] || (!p.username && creds.length === 1 ? creds[0] : null);
+    return existing
+      ? { offer: { mode: 'update', host: p.host, username: p.username || existing.username, itemId: existing.id, title: existing.title } }
+      : { offer: { mode: 'save', host: p.host, username: p.username, title: p.host } };
+  }
+
+  async savePendingLogin(request, sender) {
+    const p = await this.readPending(sender);
+    if (!p) return { success: false, error: 'Nothing to save — the sign-in was too long ago.' };
+    const message = { action: 'saveLogin', domain: p.host, url: p.url, username: p.username, loginPassword: p.password,
+                      title: String(request.title || p.host).slice(0, 200) };
+    if (Number.isInteger(request.itemId)) message.itemId = request.itemId;
+    const r = await this.sendNativeMessage(message);
+    if (r?.success) await (await this.sessionStore()).remove(this.pendingKey(sender.tab.id));
+    return r || { success: false, error: 'Vault Guard did not answer.' };
+  }
+
+  async dismissPendingSave(request, sender) {
+    const p = await this.readPending(sender);
+    if (sender?.tab?.id) await (await this.sessionStore()).remove(this.pendingKey(sender.tab.id));
+    if (request.never && p) {
+      const prefs = await this.neverSaveSites();
+      if (!prefs.list.includes(p.host)) await chrome.storage.local.set({ neverSaveSites: [...prefs.list, p.host] });
+    }
+    return { success: true };
   }
 
   browserName() {

@@ -219,7 +219,7 @@ public sealed partial class PasskeysPage : Page
     {
         if (sender is Button { Tag: PasskeyDisplayItem item } && !string.IsNullOrEmpty(item.Website))
         {
-            try { Clipboard.SetText(item.Website); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy website to clipboard", ex); }
+            try { VaultGuard.WPF.Helpers.SecureClipboard.Copy(item.Website); } catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error($"Failed to copy website to clipboard", ex); }
         }
     }
 

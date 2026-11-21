@@ -6,6 +6,7 @@
 @using VaultGuard.Imports.Interfaces
 @using VaultGuard.Crypto.Interfaces
 @* @using VaultGuard.App.Components *@
+@inject VaultGuard.Components.Shared.Services.SecureClipboard SecureClipboard
 @inject IPasswordItemService PasswordItemService
 @inject ITagService TagService
 @inject ICategoryInterface CategoryService
@@ -2370,7 +2371,7 @@
     {
         if (!string.IsNullOrEmpty(text))
         {
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            await SecureClipboard.CopyAsync(text);
         }
     }
 
@@ -2431,7 +2432,7 @@
             var decryptedPassword = await PasswordRevealService.RevealPasswordAsync(loginItem, sessionId);
             if (!string.IsNullOrEmpty(decryptedPassword))
             {
-                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", decryptedPassword);
+                await SecureClipboard.CopyAsync(decryptedPassword);
             }
         }
         catch (Exception ex)
@@ -2484,7 +2485,7 @@
 
     private void CopyGeneratedPassword()
     {
-        JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", generatedPassword);
+        SecureClipboard.CopyAsync(generatedPassword);
     }
 
     private void UseGeneratedPassword()

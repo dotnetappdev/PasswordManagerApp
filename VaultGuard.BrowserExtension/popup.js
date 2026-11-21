@@ -242,6 +242,21 @@ class VaultGuardPopup {
     }
   }
 
+  /** "Offer to save logins" switch + the sites the user chose "Never for this site" on. */
+  async renderSaveLoginSettings() {
+    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites']);
+    const offerEl = document.getElementById('offerToSaveLogins');
+    if (offerEl) offerEl.checked = local.offerToSaveLogins !== false;
+    const never = local.neverSaveSites || [];
+    const summary = document.getElementById('neverSaveSummary');
+    const clearBtn = document.getElementById('clearNeverSaveBtn');
+    if (summary) summary.textContent = never.length ? `Never asked on: ${never.join(', ')}.` : '';
+    if (clearBtn) {
+      clearBtn.style.display = never.length ? '' : 'none';
+      clearBtn.onclick = async () => { await chrome.storage.local.set({ neverSaveSites: [] }); await this.renderSaveLoginSettings(); };
+    }
+  }
+
   async showSettings() {
     // Load current settings before showing settings screen
     const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl', 'databasePath', 'interceptPasskeys']);
@@ -256,6 +271,7 @@ class VaultGuardPopup {
     databasePathInput.value = settings.databasePath || '';
     // Default ON (preserves the original always-intercept behaviour) unless explicitly disabled.
     if (interceptPasskeysInput) interceptPasskeysInput.checked = settings.interceptPasskeys !== false;
+    await this.renderSaveLoginSettings();
     
     // Show/hide fields based on connection mode
     this.handleConnectionModeChange({ target: connectionModeSelect });
@@ -295,6 +311,8 @@ class VaultGuardPopup {
     const messageDiv = document.getElementById('settingsMessage');
 
     try {
+      const offerEl = document.getElementById('offerToSaveLogins');
+      if (offerEl) await chrome.storage.local.set({ offerToSaveLogins: offerEl.checked });
       await chrome.storage.sync.set({
         connectionMode: connectionMode,
         apiUrl: apiUrl,

@@ -31,6 +31,20 @@ A shared Blazor component library that provides reusable UI components for both 
 - One-click password copying
 - CRUD operations for all item types
 
+#### Settings.razor — Lock & Clipboard
+- "Auto-lock after" and "Clear clipboard after", saved as soon as they change (shared keys in
+  `VaultSecuritySettings`).
+
+### Security components (Components/)
+- **`VaultAutoLock`**: place once in the main layout with the host's sign-in route
+  (`LockRoute="/login?locked=idle"`). It watches activity through `wwwroot/js/vault-security.js`, and after the
+  idle time it signs out of the vault (`IAuthService.LogoutAsync` wipes the key), wipes the clipboard and goes to
+  the sign-in page, where `LockedNotice` explains what happened. It also checks immediately when the app or tab
+  becomes visible again, so a device that slept locks straight away.
+- **`SecureClipboard`** (service, register as scoped): use `CopyAsync` for every vault value instead of calling
+  `navigator.clipboard.writeText`. It wipes the clipboard after the user's setting, waiting for the page to
+  regain focus if needed.
+
 #### Import.razor
 - Import from 1Password (CSV and 1PUX) and other managers, using the **local** `IImportService` (the
   standalone MAUI app has no API server). The file is read as soon as it's chosen.

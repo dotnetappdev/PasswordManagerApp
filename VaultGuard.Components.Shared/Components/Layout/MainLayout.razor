@@ -5,8 +5,12 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject ThemeService ThemeService
+@inject VaultGuard.Services.Interfaces.IAuthService AuthService
+@inject SecureClipboard Clipboard
 
 <MudThemeProvider Theme="@_theme" @bind-IsDarkMode="@_isDarkMode" />
+@* Locks the vault after the "Auto-lock after" setting's worth of inactivity. *@
+<VaultGuard.Components.Shared.Components.VaultAutoLock LockRoute="/login?locked=idle" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -197,6 +201,11 @@
 
     private async Task Logout()
     {
+        // Lock for real: this used to only navigate, leaving the vault key in memory (and the browser link
+        // answering from it).
+        try { await AuthService.LogoutAsync(); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Sign out failed", ex); }
+        await Clipboard.ClearNowAsync();
         Navigation.NavigateTo("/masterpassword");
     }
 }

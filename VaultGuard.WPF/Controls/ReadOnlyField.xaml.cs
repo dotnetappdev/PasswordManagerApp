@@ -38,7 +38,7 @@ namespace VaultGuard.WPF.Controls
         {
             // Use WPF Clipboard API
             var textToCopy = CopyText ?? Text ?? string.Empty;
-            System.Windows.Clipboard.SetText(textToCopy);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(textToCopy);
         }
 
         private void Root_GotFocus(object sender, RoutedEventArgs e)

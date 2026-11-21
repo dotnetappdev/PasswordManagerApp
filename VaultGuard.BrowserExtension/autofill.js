@@ -95,6 +95,9 @@
     fields.set(f, { kind, icon });
     f.addEventListener('focus', () => { if (!dismissed.has(f)) openMenu(f, false); });
     f.addEventListener('keydown', (e) => onFieldKey(e, f));
+    // Typing your own value means you don't want a suggestion: get out of the way (the menu sits over the
+    // next field and the sign-in button). The icon or Ctrl/Cmd+\ brings it back.
+    f.addEventListener('input', (e) => { if (e.isTrusted && menu && menu.field === f) { dismissed.add(f); closeMenu(); } });
     position();
   }
 
@@ -352,6 +355,26 @@
     .toast { position: fixed; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 9px 12px;
       color: #fff; background: #172033; border-radius: 10px; box-shadow: 0 10px 30px rgb(0 0 0 / .25); transition: opacity .35s, transform .35s; }
     .toast.out { opacity: 0; transform: translateY(6px); }
+    .save-card { position: fixed; top: 16px; right: 16px; width: 340px; max-width: calc(100vw - 32px); box-sizing: border-box;
+      color: #172033; background: #fff; border: 1px solid rgb(16 24 40 / .10); border-radius: 14px;
+      box-shadow: 0 18px 50px -12px rgb(16 24 40 / .35), 0 4px 12px rgb(16 24 40 / .08); animation: pop .16s ease-out; }
+    .save-body { padding: 12px; display: grid; gap: 10px; }
+    .save-text { color: #344054; }
+    .save-user { color: #667085; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .save-label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: #475467; }
+    .save-title { font: inherit; font-weight: 400; color: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid #d0d5dd; background: transparent; }
+    .save-title:focus { outline: 2px solid #4A72EC; outline-offset: -1px; }
+    .save-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .btn.ghost { background: transparent; color: #344054; font-weight: 600; }
+    .btn.ghost:hover { background: rgb(16 24 40 / .06); }
+    .btn:disabled { opacity: .6; cursor: default; }
+    @media (prefers-color-scheme: dark) {
+      .save-card { color: #e6e9f0; background: #1c2130; border-color: rgb(255 255 255 / .09); }
+      .save-text, .btn.ghost { color: #cfd5e2; }
+      .save-user, .save-label { color: #98a2b3; }
+      .save-title { border-color: #3a4257; }
+      .btn.ghost:hover { background: rgb(255 255 255 / .08); }
+    }
     @media (prefers-color-scheme: dark) {
       .menu { color: #e6e9f0; background: #1c2130; border-color: rgb(255 255 255 / .09); }
       .head { border-color: rgb(255 255 255 / .07); }
@@ -363,6 +386,108 @@
     }`;
   }
 
+  // ---------- "Save this login?" ----------
+  // When a sign-in or sign-up form is submitted, the typed username + password go to the extension's background
+  // (held in memory for 2 minutes, never on disk), and on the page that follows we ask whether to save it — or,
+  // if a login for this site and username already exists with another password, whether to update it.
+  const USER_KEY = '__vaultguard_last_username'; // two-step sign-ins: the username is typed on the page before
+  let lastCaptureAt = 0;
+  let saveCard = null;
+
+  function rememberUsername(scope) {
+    const u = [...scope.querySelectorAll('input')].find(i => fields.get(i)?.kind === 'username' && i.value.trim() && isVisible(i));
+    if (u) { try { sessionStorage.setItem(USER_KEY, u.value.trim()); } catch { /* storage blocked */ } }
+  }
+
+  function usernameIn(scope, pw) {
+    const tracked = [...scope.querySelectorAll('input')].filter(i => fields.get(i)?.kind === 'username' && i.value.trim() && isVisible(i));
+    if (tracked.length) return tracked[0].value.trim();
+    // any visible text/email box before the password field
+    const before = [...scope.querySelectorAll('input')].filter(i => TEXTY.has((i.type || '').toLowerCase()) && i.value.trim() && isVisible(i)
+      && (i.compareDocumentPosition(pw) & Node.DOCUMENT_POSITION_FOLLOWING));
+    if (before.length) return before[before.length - 1].value.trim();
+    try { return sessionStorage.getItem(USER_KEY) || ''; } catch { return ''; }
+  }
+
+  function capture(from) {
+    if (!from || !(from instanceof Element)) return;
+    const scope = scopeOf(from instanceof HTMLFormElement ? from.querySelector('input') || from : from);
+    const pws = [...scope.querySelectorAll('input[type="password"]')].filter(p => p.value && isVisible(p));
+    if (!pws.length) { rememberUsername(scope); return; }      // username-only step
+    if (Date.now() - lastCaptureAt < 1500) return;              // submit + click for the same action
+    lastCaptureAt = Date.now();
+    // Sign-up / change-password: save the new password (current + new + confirm → the new one).
+    const fresh = pws.filter(p => attr(p, 'autocomplete') === 'new-password');
+    const isNew = fresh.length > 0 || pws.length >= 2;
+    const pw = fresh[0] || (pws.length >= 3 ? pws[1] : pws.length === 2 ? pws[0] : pws[0]);
+    send({ action: 'captureLogin', username: usernameIn(scope, pw), password: pw.value, isNew });
+    // Single-page apps often don't navigate after signing in: look for the offer here too.
+    setTimeout(checkPendingSave, 2500);
+  }
+
+  const looksLikeSubmit = (b) => b.matches('button:not([type]), button[type="submit"], input[type="submit"], input[type="image"]')
+    || /(sign|log)\s*(in|on|up)|continue|next|submit|create|register|save|change|update/i.test(b.textContent || b.value || '');
+
+  document.addEventListener('submit', (e) => capture(e.target), true);
+  document.addEventListener('click', (e) => {
+    const b = e.target instanceof Element && e.target.closest('button, input[type="submit"], input[type="button"], input[type="image"], [role="button"]');
+    if (b && !e.composedPath().includes(host) && looksLikeSubmit(b)) capture(b);
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLInputElement && fields.has(e.target) && !(menu && menu.field === e.target)) capture(e.target);
+  }, true);
+
+  async function checkPendingSave() {
+    if (saveCard) return;
+    const r = await send({ action: 'getPendingSave' });
+    if (r?.offer) showSaveCard(r.offer);
+  }
+
+  function closeSaveCard() { if (saveCard) { saveCard.remove(); saveCard = null; } }
+
+  function showSaveCard(offer) {
+    closeSaveCard();
+    const el = document.createElement('div');
+    el.className = 'save-card';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Vault Guard');
+    const user = offer.username ? `<div class="save-user">${esc(offer.username)}</div>` : '';
+    if (offer.mode === 'update') {
+      el.innerHTML = `<div class="head">${logoSvg(18)}<span class="brand">Update password?</span><button class="close" type="button" aria-label="Close">✕</button></div>
+        <div class="save-body"><div class="save-text">Update the saved password for <strong>${esc(offer.title || offer.host)}</strong> to the one you just used?</div>${user}
+        <div class="save-actions"><button class="btn primary" data-act="update" type="button">Update</button><button class="btn ghost" data-act="later" type="button">Not now</button></div></div>`;
+    } else if (offer.mode === 'locked') {
+      el.innerHTML = `<div class="head">${logoSvg(18)}<span class="brand">Save login?</span><button class="close" type="button" aria-label="Close">✕</button></div>
+        <div class="save-body"><div class="save-text">Unlock Vault Guard to save this login for <strong>${esc(offer.host)}</strong>.</div>${user}
+        <div class="save-actions"><button class="btn primary" data-act="retry" type="button">I've unlocked it</button><button class="btn ghost" data-act="later" type="button">Not now</button></div></div>`;
+    } else {
+      el.innerHTML = `<div class="head">${logoSvg(18)}<span class="brand">Save login to Vault Guard?</span><button class="close" type="button" aria-label="Close">✕</button></div>
+        <div class="save-body"><label class="save-label">Name<input class="save-title" type="text" maxlength="200" value="${esc(offer.title || offer.host)}"></label>${user}
+        <div class="save-actions"><button class="btn primary" data-act="save" type="button">Save</button><button class="btn ghost" data-act="never" type="button">Never for this site</button><button class="btn ghost" data-act="later" type="button">Not now</button></div></div>`;
+    }
+    const act = async (what) => {
+      if (what === 'retry') { closeSaveCard(); return checkPendingSave(); }
+      if (what === 'later' || what === 'never') { closeSaveCard(); await send({ action: 'dismissPendingSave', never: what === 'never' }); return; }
+      el.querySelectorAll('button').forEach(b => b.disabled = true);
+      const title = el.querySelector('.save-title')?.value || offer.title || offer.host;
+      const r = await send({ action: 'savePendingLogin', title, itemId: what === 'update' ? offer.itemId : undefined });
+      closeSaveCard();
+      toast(r?.success ? (r.updated ? 'Password updated in Vault Guard' : r.created ? 'Saved to Vault Guard' : 'Already saved in Vault Guard')
+                       : (r?.error || "Couldn't save to Vault Guard"));
+    };
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      act(b.classList.contains('close') ? 'later' : b.dataset.act);
+    });
+    el.addEventListener('keydown', (e) => {
+      e.stopPropagation(); // typing the name mustn't trigger the page's shortcuts
+      if (e.key === 'Escape') act('later');
+      if (e.key === 'Enter' && e.target.classList.contains('save-title')) act('save');
+    });
+    layer.appendChild(el);
+    saveCard = el;
+  }
+
   // ---------- lifecycle ----------
   scan();
   new MutationObserver(() => { clearTimeout(scan.t); scan.t = setTimeout(scan, 150); })
@@ -371,4 +496,5 @@
   window.addEventListener('resize', position);
   document.addEventListener('mousedown', (e) => { if (menu && e.target !== menu.field && !e.composedPath().includes(host)) closeMenu(); }, true);
   document.addEventListener('focusin', (e) => { if (menu && e.target !== menu.field) closeMenu(); });
+  setTimeout(checkPendingSave, 700); // a sign-in on the previous page may be waiting to be saved
 })();

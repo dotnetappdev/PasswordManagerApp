@@ -7,6 +7,7 @@
 @using VaultGuard.Models
 @using VaultGuard.Models.DTOs.Auth
 @using VaultGuard.Models.Configuration
+@inject VaultGuard.Components.Shared.Services.SecureClipboard SecureClipboard
 @inject IUserProfileService UserProfileService
 @inject IApiKeyService ApiKeyService
 @inject IDatabaseConfigurationService DatabaseConfigurationService
@@ -98,6 +99,33 @@
                 </MudItem>
                 <MudItem xs="12">
                     <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ResetAccessibility">Reset to defaults</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Lock & Clipboard -->
+        <MudPaper Class="pa-4" >
+            <MudText Typo="Typo.h6" Style="margin-bottom: 16px;">Lock &amp; Clipboard</MudText>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int" Value="autoLockMinutes" ValueChanged="SetAutoLock" Label="Auto-lock after"
+                               HelperText="Locks the vault when the app hasn't been used for this long"
+                               Variant="Variant.Outlined">
+                        @foreach (var m in VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoices)
+                        {
+                            <MudSelectItem T="int" Value="@m">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(m)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int" Value="clipboardClearSeconds" ValueChanged="SetClipboardClear" Label="Clear clipboard after"
+                               HelperText="Copied passwords and other values are wiped from the clipboard after this long"
+                               Variant="Variant.Outlined">
+                        @foreach (var sec in VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoices)
+                        {
+                            <MudSelectItem T="int" Value="@sec">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeClipboard(sec)</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
             </MudGrid>
         </MudPaper>
@@ -914,8 +942,27 @@
         BrowseCountChanged();
     }
 
+    private int autoLockMinutes = VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
+    private int clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds;
+
+    private void SetAutoLock(int minutes)
+    {
+        autoLockMinutes = minutes;
+        AppSettings.Set(VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutesKey, minutes);
+        AppSettings.Save();
+    }
+
+    private void SetClipboardClear(int seconds)
+    {
+        clipboardClearSeconds = seconds;
+        AppSettings.Set(VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSecondsKey, seconds);
+        AppSettings.Save();
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        autoLockMinutes = VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutes(AppSettings);
+        clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSeconds(AppSettings);
         selectedTheme = ThemeService.CurrentThemeMode;
         await LoadUserProfile();
         await LoadApiKeys();
@@ -1086,7 +1133,7 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", generatedApiKey);
+            await SecureClipboard.CopyAsync(generatedApiKey);
             // Show success notification
         }
         catch (Exception ex)
@@ -1099,7 +1146,7 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", apiKey);
+            await SecureClipboard.CopyAsync(apiKey);
             Snackbar.Add("API key copied.", Severity.Success);
         }
         catch (Exception ex)

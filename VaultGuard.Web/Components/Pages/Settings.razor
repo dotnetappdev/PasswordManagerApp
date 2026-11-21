@@ -2,6 +2,7 @@
 @using VaultGuard.Services.Interfaces
 @using VaultGuard.Models
 @using VaultGuard.Models.DTOs.Auth
+@inject VaultGuard.Components.Shared.Services.SecureClipboard SecureClipboard
 @inject IAuthService AuthService
 @inject IUserProfileService UserProfileService
 @inject IVaultService VaultService
@@ -159,12 +160,20 @@
                 <MudPaper Class="pa-4 rounded-lg mt-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:600;">Session &amp; Lock</MudText>
                     <MudSelect T="int" @bind-Value="_autoLockMinutes" Label="Auto-lock after"
+                               HelperText="Locks the vault when there's been no mouse or keyboard activity for this long"
                                Variant="Variant.Outlined" Class="mb-3">
-                        <MudSelectItem T="int" Value="5">5 minutes</MudSelectItem>
-                        <MudSelectItem T="int" Value="15">15 minutes</MudSelectItem>
-                        <MudSelectItem T="int" Value="30">30 minutes</MudSelectItem>
-                        <MudSelectItem T="int" Value="60">1 hour</MudSelectItem>
-                        <MudSelectItem T="int" Value="0">Never</MudSelectItem>
+                        @foreach (var m in VaultGuard.Services.Security.VaultSecuritySettings.AutoLockChoices)
+                        {
+                            <MudSelectItem T="int" Value="@m">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeAutoLock(m)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudSelect T="int" @bind-Value="_clipboardClearSeconds" Label="Clear clipboard after"
+                               HelperText="Copied passwords and other values are wiped from the clipboard after this long"
+                               Variant="Variant.Outlined" Class="mb-3">
+                        @foreach (var sec in VaultGuard.Services.Security.VaultSecuritySettings.ClipboardChoices)
+                        {
+                            <MudSelectItem T="int" Value="@sec">@VaultGuard.Services.Security.VaultSecuritySettings.DescribeClipboard(sec)</MudSelectItem>
+                        }
                     </MudSelect>
                     <MudSwitch T="bool" @bind-Value="_lockOnBrowserClose" Label="Lock when browser closes"
                                Color="Color.Primary" />
@@ -1105,7 +1114,7 @@
         if (_regeneratedCodes is null || _regeneratedCodes.Count == 0) return;
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", string.Join(Environment.NewLine, _regeneratedCodes));
+            await SecureClipboard.CopyAsync(string.Join(Environment.NewLine, _regeneratedCodes));
             Snackbar.Add("Backup codes copied — store them somewhere safe.", Severity.Success);
         }
         catch { Snackbar.Add("Couldn't copy automatically — select and copy them manually.", Severity.Info); }
@@ -1116,7 +1125,7 @@
         if (_setup?.BackupCodes is null || _setup.BackupCodes.Count == 0) return;
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", string.Join(Environment.NewLine, _setup.BackupCodes));
+            await SecureClipboard.CopyAsync(string.Join(Environment.NewLine, _setup.BackupCodes));
             Snackbar.Add("Backup codes copied — store them somewhere safe.", Severity.Success);
         }
         catch { Snackbar.Add("Couldn't copy automatically — select and copy them manually.", Severity.Info); }
@@ -1218,7 +1227,8 @@
     string _newPassword = string.Empty;
     string _confirmPassword = string.Empty;
     string _passwordHint = string.Empty;
-    int _autoLockMinutes = 30;
+    int _autoLockMinutes = VaultGuard.Services.Security.VaultSecuritySettings.DefaultAutoLockMinutes;
+    int _clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.DefaultClipboardClearSeconds;
     bool _lockOnBrowserClose = true;
     bool isSavingPassword = false;
 
@@ -1850,7 +1860,8 @@
 
     void SaveSecuritySettings()
     {
-        AppSettings.Set("SessionTimeout", _autoLockMinutes);
+        AppSettings.Set(VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutesKey, _autoLockMinutes);
+        AppSettings.Set(VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSecondsKey, _clipboardClearSeconds);
         AppSettings.Set("Web.LockOnBrowserClose", _lockOnBrowserClose);
         AppSettings.Save();
         Snackbar.Add("Security settings saved.", Severity.Success);
@@ -1881,7 +1892,8 @@
     void LoadPersistedSettings()
     {
         // Security
-        _autoLockMinutes = AppSettings.GetInt("SessionTimeout", 30);
+        _autoLockMinutes = VaultGuard.Services.Security.VaultSecuritySettings.AutoLockMinutes(AppSettings);
+        _clipboardClearSeconds = VaultGuard.Services.Security.VaultSecuritySettings.ClipboardClearSeconds(AppSettings);
         _lockOnBrowserClose = AppSettings.GetBool("Web.LockOnBrowserClose", true);
         _requireCodeOnVaultDelete = AppSettings.GetBool("Security.RequireCodeOnVaultDelete", false);
         _requireCodeOnItemDelete = AppSettings.GetBool("Security.RequireCodeOnItemDelete", false);

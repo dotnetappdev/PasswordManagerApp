@@ -30,6 +30,12 @@ extension (background.js) ──native messaging──▶ BrowserSupport\VaultGu
   - `getCredentials`: needs a page domain. It returns logins for that site only: an exact host, or a subdomain of the saved host, and never across shared-hosting suffixes such as `github.io`. With no domain, it returns a list for browsing that never contains passwords.
   - `getCreditCards`.
   - `saveTotpSecret`: the secret is stored encrypted.
+  - `getTotpCode`: the current one-time code for one login, only if it's saved for the page's site.
+  - `saveLogin`: "Save this login?" from the extension. It creates a login for the site, or (with `itemId`)
+    updates the password of an existing login saved for the same site, keeping the old one in password history.
+    The site comes from the browser tab, not the page, and the password travels as `loginPassword` (the helper
+    strips any field named `password`, so a master password can never cross the link). It's encrypted before
+    it's stored.
 - **When the app isn't running:** `hello` reports it, and the helper falls back to its older local-database mode.
 
 ## Security

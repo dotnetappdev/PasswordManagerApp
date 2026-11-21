@@ -21,7 +21,7 @@ extension ──stdio (native messaging)──► VaultGuard.BrowserExtension.Na
 
 ## What it forwards
 
-`hello`, `pair`, `getCredentials`, `getCreditCards`, `getTotpCode` and `saveTotpSecret` go to the app.
+`hello`, `pair`, `getCredentials`, `getCreditCards`, `getTotpCode`, `saveTotpSecret` and `saveLogin` go to the app.
 
 | Request | What the app does |
 |---|---|
@@ -31,6 +31,7 @@ extension ──stdio (native messaging)──► VaultGuard.BrowserExtension.Na
 | `getCreditCards` | Saved cards for checkout forms |
 | `getTotpCode` | The current one-time code for one login, after checking it matches the site |
 | `saveTotpSecret` | Saves an authenticator QR code found on a site to the matching login (encrypted) |
+| `saveLogin` | "Save this login?": creates a login for the site, or updates a changed password (old one kept in history). The site password is sent as `loginPassword`; any `password` field is stripped before forwarding |
 
 Every request carries the pairing secret and the extension's origin. The app refuses anything from an
 unpaired browser, or while the vault is locked. Protocol: 4-byte little-endian length plus UTF-8 JSON, in both

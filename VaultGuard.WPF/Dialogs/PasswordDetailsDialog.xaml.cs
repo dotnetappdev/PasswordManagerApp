@@ -292,7 +292,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
     {
         if (!string.IsNullOrEmpty(_passwordItem.LoginItem?.Username))
         {
-            System.Windows.Clipboard.SetText(_passwordItem.LoginItem.Username);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(_passwordItem.LoginItem.Username);
             ToastService.Instance.Show("Username copied.", ToastType.Info);
         }
     }
@@ -306,7 +306,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
             var cached = PasswordText.CopyText;
             if (!string.IsNullOrEmpty(cached))
             {
-                System.Windows.Clipboard.SetText(cached);
+                VaultGuard.WPF.Helpers.SecureClipboard.Copy(cached);
                 ToastService.Instance.Show("Password copied.", ToastType.Info);
                 return;
             }
@@ -314,7 +314,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
             if (!string.IsNullOrEmpty(pwd))
             {
                 PasswordText.CopyText = pwd;
-                System.Windows.Clipboard.SetText(pwd);
+                VaultGuard.WPF.Helpers.SecureClipboard.Copy(pwd);
                 ToastService.Instance.Show("Password copied.", ToastType.Info);
             }
         }
@@ -325,7 +325,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
     {
         if (!string.IsNullOrEmpty(_passwordItem.CreditCardItem?.CardholderName))
         {
-            System.Windows.Clipboard.SetText(_passwordItem.CreditCardItem.CardholderName);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(_passwordItem.CreditCardItem.CardholderName);
             ToastService.Instance.Show("Cardholder name copied.", ToastType.Info);
         }
     }
@@ -334,7 +334,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
     {
         if (!string.IsNullOrEmpty(_rawCardNumber))
         {
-            System.Windows.Clipboard.SetText(_rawCardNumber);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(_rawCardNumber);
             ToastService.Instance.Show("Card number copied.", ToastType.Info);
         }
     }
@@ -343,7 +343,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
     {
         if (!string.IsNullOrEmpty(_passwordItem.CreditCardItem?.CVV))
         {
-            System.Windows.Clipboard.SetText(_passwordItem.CreditCardItem.CVV);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(_passwordItem.CreditCardItem.CVV);
             ToastService.Instance.Show("CVV copied.", ToastType.Info);
         }
     }
@@ -353,7 +353,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
         var url = _passwordItem.LoginItem?.WebsiteUrl;
         if (!string.IsNullOrEmpty(url))
         {
-            System.Windows.Clipboard.SetText(url);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(url);
             ToastService.Instance.Show("URL copied.", ToastType.Info);
         }
     }
@@ -372,7 +372,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
     {
         if (!string.IsNullOrEmpty(_passwordItem.CreditCardItem?.ExpiryDate))
         {
-            System.Windows.Clipboard.SetText(_passwordItem.CreditCardItem.ExpiryDate);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(_passwordItem.CreditCardItem.ExpiryDate);
             ToastService.Instance.Show("Expiry date copied.", ToastType.Info);
         }
     }
@@ -382,7 +382,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
         var cardType = _passwordItem.CreditCardItem?.CardType.ToString();
         if (!string.IsNullOrEmpty(cardType))
         {
-            System.Windows.Clipboard.SetText(cardType);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(cardType);
             ToastService.Instance.Show("Card type copied.", ToastType.Info);
         }
     }
@@ -391,7 +391,7 @@ public sealed partial class PasswordDetailsDialog : ModernWpf.Controls.ContentDi
     {
         if (!string.IsNullOrEmpty(_passwordItem.CreditCardItem?.IssuingBank))
         {
-            System.Windows.Clipboard.SetText(_passwordItem.CreditCardItem.IssuingBank);
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(_passwordItem.CreditCardItem.IssuingBank);
             ToastService.Instance.Show("Bank name copied.", ToastType.Info);
         }
     }

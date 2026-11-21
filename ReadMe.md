@@ -65,6 +65,12 @@ built in.
   one-time code and saved cards. Nothing fills until you choose, hidden fields are never filled, and passwords
   are only decrypted for the site they belong to. No store or certificate is needed to try it: see
   [`TESTING_LOCALLY.md`](VaultGuard.BrowserExtension/TESTING_LOCALLY.md).
+- **Auto-lock and clipboard clearing.** Every app locks the vault after the idle time you choose (1 minute to
+  4 hours, or never) and wipes copied passwords from the clipboard after the time you choose (10 seconds to
+  5 minutes). Locking removes the vault key from memory. On Windows the desktop app also locks when Windows locks
+  or sleeps, and copied secrets are kept out of clipboard history (Win+V) and cloud clipboard sync.
+- **"Save this login?"** The extension offers to save logins you sign in or sign up with, or to update a
+  password you've changed, straight into the WPF or MAUI app.
 - **Desktop updates with a safety net.** WPF's *Help → Check for Updates…* offers to back up your vault
   before installing, and *Help → Back Up Vault Now* takes a backup at any time.
 - **Personalisation & accessibility.** Light / dark / system and a Windows-style **yellow-on-black high-contrast** theme; a custom **accent-colour** picker (palette swatches + specific colours) and selectable **fonts**; UI zoom and per-section text scaling; screen-reader labels.

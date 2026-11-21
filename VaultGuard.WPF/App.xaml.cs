@@ -220,6 +220,10 @@ public partial class App : Application
         VaultGuard.WPF.Services.ToastSettings.Load();
 
         InitTrayIcon();
+        // Auto-lock after the configured idle time, and when Windows locks or sleeps (Settings → Security).
+        VaultGuard.WPF.Services.WpfAutoLock.Start(Dispatcher,
+            isUnlocked: () => (m_window as MainWindow)?.IsVaultUnlocked == true,
+            lockVault: LockVault);
         m_window.Show();
 
         _ = Task.Run(async () =>
@@ -422,10 +426,15 @@ public partial class App : Application
         });
     }
 
-    private void LockVault()
+    private void LockVault() => LockVault("Vault locked.");
+
+    private void LockVault(string reason)
     {
-        m_window?.Dispatcher.Invoke(() => (m_window as MainWindow)?.HandleLogout());
-        _trayIcon?.ShowBalloonTip(1500, "VaultGuard", "Vault locked.", System.Windows.Forms.ToolTipIcon.Info);
+        m_window?.Dispatcher.Invoke(() =>
+        {
+            if (m_window is MainWindow mw && mw.IsVaultUnlocked) mw.HandleLogout();
+        });
+        _trayIcon?.ShowBalloonTip(1500, "VaultGuard", reason, System.Windows.Forms.ToolTipIcon.Info);
     }
 
     private void OpenSettings()
@@ -444,6 +453,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         try { VaultGuard.WPF.Services.WpfBrowserLink.StopAsync().GetAwaiter().GetResult(); } catch { /* exiting */ }
+        try { VaultGuard.WPF.Services.WpfAutoLock.Stop(); VaultGuard.WPF.Helpers.SecureClipboard.ClearIfStillOurs(); } catch { /* exiting */ }
         _trayIcon?.Dispose();
         base.OnExit(e);
     }

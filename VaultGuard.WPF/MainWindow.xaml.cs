@@ -843,10 +843,30 @@ public sealed partial class MainWindow : Window
     }
 
     // Public method to handle logout
+    /// <summary>True while a user is signed in and the vault is open.</summary>
+    public bool IsVaultUnlocked => _isAuthenticated;
+
+    /// <summary>
+    /// Locks the vault: wipes the vault key from memory (IAuthService.LogoutAsync), clears any copied secret
+    /// from the clipboard and returns to the sign-in screen. Used by Ctrl+L, the tray's "Lock Vault", sign-out
+    /// and auto-lock. (It used to only switch screens, leaving the key in memory and the browser link able to
+    /// answer from the "locked" vault.)
+    /// </summary>
     public void HandleLogout()
     {
         _isAuthenticated = false;
         _currentUserId = null;
+
+        try
+        {
+            var auth = _serviceProvider?.GetService<IAuthService>();
+            // Off the UI thread (no deadlock on the dispatcher), but finished before we return, so the key is
+            // gone by the time the sign-in screen shows.
+            if (auth != null && !Task.Run(() => auth.LogoutAsync()).Wait(TimeSpan.FromSeconds(5)))
+                VaultGuard.Services.Logging.AppLogger.Warning("Clearing the vault session on lock timed out");
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't clear the vault session on lock", ex); }
+        Helpers.SecureClipboard.ClearIfStillOurs();
 
         // Show login frame and hide main navigation
         SetAuthenticationState(false);

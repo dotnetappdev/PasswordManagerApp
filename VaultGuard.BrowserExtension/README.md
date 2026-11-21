@@ -27,6 +27,10 @@ you're on.
   menu.
 - **Suggestions menu.** Lists your logins for the current site with coloured initials. Use
   ↑ / ↓ and Enter, or click. Esc closes it. Light and dark mode follow your system.
+- **"Save this login?"** After you sign in or sign up, a small card in the corner offers to save the login
+  to Vault Guard (with a name you can edit), to **update** the saved password if it changed, or to never ask
+  on that site again. It also works on single-page apps that don't navigate after signing in. Turn it off,
+  or reset the "never" list, in the popup's Settings.
 - **Strong password suggestion** on sign-up and change-password forms. It fills both the
   "new" and "confirm" boxes.
 - **One-time codes** from logins that have an authenticator set up.
@@ -38,6 +42,9 @@ you're on.
 
 ### Safe-by-default filling
 
+- **Saving never exposes the password to the page.** A submitted login is held by the extension's background
+  in memory-only session storage for at most two minutes and dropped once you answer; the prompt only shows
+  the username.
 - **Nothing fills on page load.** Filling happens only when you choose an item.
 - **Only visible fields are filled.** Hidden "harvesting" inputs get nothing.
 - **Passwords go only to the matching site.** The app checks the site against the login's saved
