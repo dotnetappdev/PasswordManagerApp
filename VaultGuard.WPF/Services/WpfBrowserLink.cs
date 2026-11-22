@@ -21,7 +21,8 @@ public static class WpfBrowserLink
         try
         {
             var version = services.GetService<UpdateService>()?.GetCurrentVersion() ?? "1.0.0";
-            var helper = Path.Combine(AppContext.BaseDirectory, "BrowserSupport", "VaultGuard.BrowserExtension.NativeHost.exe");
+            // The browser runs its own copy (see BrowserHelperStaging), so a running helper never locks the app's files.
+            var helper = BrowserHelperStaging.Stage(Path.Combine(AppContext.BaseDirectory, "BrowserSupport", "VaultGuard.BrowserExtension.NativeHost.exe"));
             var extraIds = (services.GetService<IAppSettingsService>()?.Get("BrowserLink:ExtensionIds") ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             var reg = BrowserLinkRegistrar.EnsureRegistered(helper, extraIds);

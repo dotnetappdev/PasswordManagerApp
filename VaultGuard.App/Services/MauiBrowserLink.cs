@@ -19,7 +19,8 @@ public static class MauiBrowserLink
 #if WINDOWS
         try
         {
-            var helper = Path.Combine(AppContext.BaseDirectory, "BrowserSupport", "VaultGuard.BrowserExtension.NativeHost.exe");
+            // The browser runs its own copy (see BrowserHelperStaging), so a running helper never locks the app's files.
+            var helper = BrowserHelperStaging.Stage(Path.Combine(AppContext.BaseDirectory, "BrowserSupport", "VaultGuard.BrowserExtension.NativeHost.exe"));
             var settings = services.GetService(typeof(IAppSettingsService)) as IAppSettingsService;
             var extraIds = (settings?.Get("BrowserLink:ExtensionIds") ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
