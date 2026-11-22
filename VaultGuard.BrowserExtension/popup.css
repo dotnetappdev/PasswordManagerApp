@@ -715,3 +715,5 @@ body {
 .app-link-divider { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 11px; color: #888; }
 .app-link-divider::before, .app-link-divider::after { content: ""; flex: 1; border-top: 1px solid #ddd; }
 @media (prefers-color-scheme: dark) { .app-link-status { color: #bbb; } .app-link-divider::before, .app-link-divider::after { border-color: #444; } }
+
+.credential-action { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--primary-blue); }

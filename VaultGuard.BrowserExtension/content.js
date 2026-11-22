@@ -1288,7 +1288,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     fillPasswordFromPopup(request.password);
     sendResponse({ success: true });
   }
-  return true;
+  // Other messages (e.g. "fill and sign in") are answered by autofill.js.
+  return false;
 });
 
 function fillCredentialsFromPopup(credential) {

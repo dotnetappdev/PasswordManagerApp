@@ -242,15 +242,15 @@ class VaultGuardPopup {
     }
   }
 
-  async copyTotpAfterFill(credential, tabId) {
+  async copyTotpAfterFill(credential, tabId, domain = this.currentDomain) {
     try {
       if (!credential?.hasTotp) return;
       const pref = await chrome.storage.local.get('copyTotpAfterFill');
       if (pref.copyTotpAfterFill === false) return;
-      const t = await chrome.runtime.sendMessage({ action: 'getTotpCode', itemId: credential.id, domain: this.currentDomain });
+      const t = await chrome.runtime.sendMessage({ action: 'getTotpCode', itemId: credential.id, domain });
       if (!t?.success || !t.code) return;
       await navigator.clipboard.writeText(t.code);
-      await chrome.tabs.sendMessage(tabId, { action: 'vaultGuardToast', text: `One-time code copied (valid ${t.secondsRemaining ?? 30} s)` }).catch(() => {});
+      if (tabId != null) await chrome.tabs.sendMessage(tabId, { action: 'vaultGuardToast', text: `One-time code copied (valid ${t.secondsRemaining ?? 30} s)` }).catch(() => {});
     } catch (e) {
       console.warn('Vault Guard: could not copy the one-time code', e);
     }
@@ -277,7 +277,9 @@ class VaultGuardPopup {
 
   /** "Offer to save logins" switch + the sites the user chose "Never for this site" on. */
   async renderSaveLoginSettings() {
-    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill', 'phishingGuard', 'reuseTrustedSites']);
+    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill', 'phishingGuard', 'reuseTrustedSites', 'autoSubmitAfterFill']);
+    const submitEl = document.getElementById('autoSubmitAfterFill');
+    if (submitEl) submitEl.checked = local.autoSubmitAfterFill !== false;
     const guardEl = document.getElementById('phishingGuard');
     if (guardEl) guardEl.checked = local.phishingGuard !== false;
     const trusted = local.reuseTrustedSites || [];
@@ -356,6 +358,8 @@ class VaultGuardPopup {
       if (offerEl) await chrome.storage.local.set({ offerToSaveLogins: offerEl.checked });
       const totpEl = document.getElementById('copyTotpAfterFill');
       if (totpEl) await chrome.storage.local.set({ copyTotpAfterFill: totpEl.checked });
+      const submitEl = document.getElementById('autoSubmitAfterFill');
+      if (submitEl) await chrome.storage.local.set({ autoSubmitAfterFill: submitEl.checked });
       const guardEl = document.getElementById('phishingGuard');
       if (guardEl) await chrome.storage.local.set({ phishingGuard: guardEl.checked });
       await chrome.storage.sync.set({
@@ -522,24 +526,48 @@ class VaultGuardPopup {
     
     noCredentialsDiv.style.display = 'none';
     
-    container.innerHTML = this.filteredCredentials.map(cred => `
-      <div class="credential-item" data-id="${cred.id}">
+    container.innerHTML = this.filteredCredentials.map(cred => {
+      const here = this.isForCurrentSite(cred);
+      const action = here ? 'Fill and sign in' : cred.websiteUrl ? 'Open site and sign in ↗' : 'No website saved';
+      return `
+      <div class="credential-item" data-id="${cred.id}" title="${this.escapeHtml(action)}">
         <div class="credential-title">${this.escapeHtml(cred.title)}</div>
-        <div class="credential-username">${this.escapeHtml(cred.username)}</div>
+        <div class="credential-username">${this.escapeHtml(cred.username || 'No username')}</div>
         ${cred.websiteUrl ? `<div class="credential-url">${this.escapeHtml(cred.websiteUrl)}</div>` : ''}
-      </div>
-    `).join('');
-    
-    // Add click handlers
+        <div class="credential-action">${this.escapeHtml(action)}</div>
+      </div>`;
+    }).join('');
+
+    // Click: on its own site, fill (and sign in) here; for another site, open that site and sign in there.
     container.querySelectorAll('.credential-item').forEach(item => {
       item.addEventListener('click', () => {
         const credId = parseInt(item.dataset.id);
         const credential = this.filteredCredentials.find(c => c.id === credId);
-        if (credential) {
-          this.fillCredentialInCurrentTab(credential);
-        }
+        if (!credential) return;
+        if (this.isForCurrentSite(credential)) this.fillCredentialInCurrentTab(credential);
+        else if (credential.websiteUrl) this.openAndFill(credential);
+        else this.fillCredentialInCurrentTab(credential); // no website: the app decides whether it may fill here
       });
     });
+  }
+
+  /** Does this login belong to the page that's open (same site or a subdomain of it)? */
+  isForCurrentSite(cred) {
+    if (!cred.websiteUrl || !this.currentDomain) return false;
+    let host;
+    try { host = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(cred.websiteUrl) ? cred.websiteUrl : `https://${cred.websiteUrl}`).hostname; }
+    catch { return false; }
+    const a = host.toLowerCase().replace(/^www\./, ''), b = this.currentDomain.toLowerCase().replace(/^www\./, '');
+    return a === b || b.endsWith('.' + a) || a.endsWith('.' + b);
+  }
+
+  async openAndFill(credential) {
+    const r = await chrome.runtime.sendMessage({ action: 'openAndFill', itemId: credential.id, url: credential.websiteUrl }).catch(e => ({ success: false, error: e.message }));
+    if (!r?.success) { alert(r?.error || "Couldn't open that site."); return; }
+    let host = '';
+    try { host = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(credential.websiteUrl) ? credential.websiteUrl : `https://${credential.websiteUrl}`).hostname; } catch { /* no code */ }
+    await this.copyTotpAfterFill(credential, null, host);
+    window.close();
   }
 
   showNoCredentials() {
@@ -550,17 +578,11 @@ class VaultGuardPopup {
   async fillCredentialInCurrentTab(credential) {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
-      await chrome.tabs.sendMessage(tab.id, {
-        action: 'fillCredentials',
-        credential: credential
-      });
-
-      // A login with an authenticator: copy its current one-time code now, while the popup still has focus,
-      // so it's ready to paste on the 2-step page.
-      await this.copyTotpAfterFill(credential, tab.id);
-
-      // Close popup after filling
+      // The page's own script fetches the login for the page's real site (so the app's site check applies),
+      // fills it, copies any one-time code and signs in.
+      const r = await chrome.runtime.sendMessage({ action: 'fillInTab', itemId: credential.id, tabId: tab.id });
+      if (r?.success === false && r.error) { alert(r.error); return; }
+      await this.copyTotpAfterFill(credential, tab.id); // the popup has focus now; the page may not
       window.close();
     } catch (error) {
       console.error('Error filling credentials:', error);

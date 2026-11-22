@@ -141,7 +141,11 @@ You need at least one **Login** item saved in the app with a website URL.
 |---|---|
 | Open a site's sign-in page for which you have a Login saved | A small blue padlock icon at the right edge of the username and password fields |
 | Click into the username field | The Vault Guard menu opens under the field, listing your logins for that site |
-| Use ↑ / ↓, then **Enter** (or click a login) | Username and password are filled, and a "Filled …" toast appears at the bottom right |
+| Use ↑ / ↓, then **Enter** (or click a login) | Username and password are filled, a "Filled …" toast appears, and the form is submitted (turn off in the popup's Settings → **Sign in after filling**) |
+| A sign-in that asks for the username first, then the password on the next page | Picking the login fills the username and presses **Next**; the password page is filled and submitted too |
+| A sign-in form with a captcha | The login is filled but not submitted: "Filled. Finish the form, then sign in" |
+| In the popup, click a login for the site you're on | It's filled on the page and you're signed in |
+| In the popup, click **View All**, then a login for another site ("Open site and sign in ↗") | The site opens and you're signed in. If the site sends you somewhere that doesn't match the saved website, nothing is filled |
 | Press **Esc** | The menu closes and doesn't reopen on that field until you click the padlock |
 | Press **Ctrl + \\** (**⌘ + \\** on Mac) in a field | The menu opens |
 | Open a sign-up or change-password form | The first suggestion is **Use a strong password**. Pick it to fill both password boxes; it's also copied to the clipboard |
@@ -158,7 +162,7 @@ You need at least one **Login** item saved in the app with a website URL.
 
 Things to know:
 
-- **Nothing fills by itself.** Autofill happens only when you pick something.
+- **Nothing fills by itself.** Autofill happens only when you pick something (in the menu or the popup); signing in follows only that pick.
 - **Hidden fields are never filled.** This protects you from pages that hide extra inputs to
   harvest passwords.
 - **The menu is isolated from the page.** It's drawn in an isolated layer that the page's own
