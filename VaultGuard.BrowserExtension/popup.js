@@ -1,3 +1,5 @@
+// Firefox provides the promise-based `browser` API; Chrome, Edge and Brave provide `chrome`.
+const ext = globalThis.browser ?? globalThis.chrome;
 // Vault Guard Browser Extension Popup Script
 class VaultGuardPopup {
   constructor() {
@@ -11,13 +13,14 @@ class VaultGuardPopup {
 
   async init() {
     this.setupEventListeners();
+    this.checkSiteAccess();
     await this.getCurrentTabDomain();
     await this.checkAuthStatus();
   }
 
   async getCurrentTabDomain() {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
       if (tab && tab.url) {
         const url = new URL(tab.url);
         this.currentDomain = url.hostname;
@@ -67,7 +70,7 @@ class VaultGuardPopup {
     if (openFullHelpLink) {
       openFullHelpLink.addEventListener('click', (e) => {
         e.preventDefault();
-        chrome.tabs.create({ url: chrome.runtime.getURL('HELP.md') });
+        ext.tabs.create({ url: ext.runtime.getURL('HELP.md') });
       });
     }
 
@@ -94,7 +97,8 @@ class VaultGuardPopup {
     });
 
     // Search
-    document.getElementById('searchInput').addEventListener('click', (e) => this.filterCredentials(e.target.value));
+    document.getElementById('searchInput').addEventListener('input', (e) => this.filterCredentials(e.target.value));
+    document.getElementById('grantSiteAccessBtn').addEventListener('click', () => this.grantSiteAccess());
 
     // View all credentials
     document.getElementById('viewAllBtn').addEventListener('click', () => this.loadAllCredentials());
@@ -110,7 +114,7 @@ class VaultGuardPopup {
 
   async checkAuthStatus() {
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+      const response = await ext.runtime.sendMessage({ action: 'getSettings' });
       
       if (response.success) {
         if (response.settings.isLoggedIn) {
@@ -155,7 +159,7 @@ class VaultGuardPopup {
     status.textContent = 'Approve this browser in the Vault Guard app…';
     document.getElementById('connectAppBtn').disabled = true;
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'connectApp' });
+      const response = await ext.runtime.sendMessage({ action: 'connectApp' });
       if (!response.success) status.textContent = response.error || 'The connection wasn\'t approved.';
       await this.checkAuthStatus();
     } finally {
@@ -204,7 +208,7 @@ class VaultGuardPopup {
     errorDiv.style.display = 'none';
     
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await ext.runtime.sendMessage({
         action: 'login',
         username: username,
         password: password
@@ -229,7 +233,7 @@ class VaultGuardPopup {
 
   async logout() {
     try {
-      await chrome.runtime.sendMessage({ action: 'logout' });
+      await ext.runtime.sendMessage({ action: 'logout' });
       this.showScreen('login');
       
       // Clear form data
@@ -245,12 +249,12 @@ class VaultGuardPopup {
   async copyTotpAfterFill(credential, tabId, domain = this.currentDomain) {
     try {
       if (!credential?.hasTotp) return;
-      const pref = await chrome.storage.local.get('copyTotpAfterFill');
+      const pref = await ext.storage.local.get('copyTotpAfterFill');
       if (pref.copyTotpAfterFill === false) return;
-      const t = await chrome.runtime.sendMessage({ action: 'getTotpCode', itemId: credential.id, domain });
+      const t = await ext.runtime.sendMessage({ action: 'getTotpCode', itemId: credential.id, domain });
       if (!t?.success || !t.code) return;
       await navigator.clipboard.writeText(t.code);
-      if (tabId != null) await chrome.tabs.sendMessage(tabId, { action: 'vaultGuardToast', text: `One-time code copied (valid ${t.secondsRemaining ?? 30} s)` }).catch(() => {});
+      if (tabId != null) await ext.tabs.sendMessage(tabId, { action: 'vaultGuardToast', text: `One-time code copied (valid ${t.secondsRemaining ?? 30} s)` }).catch(() => {});
     } catch (e) {
       console.warn('Vault Guard: could not copy the one-time code', e);
     }
@@ -261,7 +265,7 @@ class VaultGuardPopup {
     const status = document.getElementById('linkSettingsStatus');
     const btn = document.getElementById('disconnectAppBtn');
     if (!status || !btn) return;
-    const r = await chrome.runtime.sendMessage({ action: 'getLinkStatus' }).catch(() => null);
+    const r = await ext.runtime.sendMessage({ action: 'getLinkStatus' }).catch(() => null);
     const link = r?.link;
     status.textContent = !link?.linked ? 'The Vault Guard app isn\'t running.'
       : !link.paired ? 'This browser isn\'t connected to Vault Guard.'
@@ -269,7 +273,7 @@ class VaultGuardPopup {
     btn.style.display = link?.paired ? '' : 'none';
     btn.onclick = async () => {
       btn.disabled = true;
-      await chrome.runtime.sendMessage({ action: 'disconnectApp' }).catch(() => {});
+      await ext.runtime.sendMessage({ action: 'disconnectApp' }).catch(() => {});
       btn.disabled = false;
       await this.renderLinkSettings();
     };
@@ -277,7 +281,7 @@ class VaultGuardPopup {
 
   /** "Offer to save logins" switch + the sites the user chose "Never for this site" on. */
   async renderSaveLoginSettings() {
-    const local = await chrome.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill', 'phishingGuard', 'reuseTrustedSites', 'autoSubmitAfterFill']);
+    const local = await ext.storage.local.get(['offerToSaveLogins', 'neverSaveSites', 'copyTotpAfterFill', 'phishingGuard', 'reuseTrustedSites', 'autoSubmitAfterFill']);
     const submitEl = document.getElementById('autoSubmitAfterFill');
     if (submitEl) submitEl.checked = local.autoSubmitAfterFill !== false;
     const guardEl = document.getElementById('phishingGuard');
@@ -295,13 +299,13 @@ class VaultGuardPopup {
     if (summary) summary.textContent = never.length ? `Never asked on: ${never.join(', ')}.` : '';
     if (clearBtn) {
       clearBtn.style.display = never.length ? '' : 'none';
-      clearBtn.onclick = async () => { await chrome.storage.local.set({ neverSaveSites: [] }); await this.renderSaveLoginSettings(); };
+      clearBtn.onclick = async () => { await ext.storage.local.set({ neverSaveSites: [] }); await this.renderSaveLoginSettings(); };
     }
   }
 
   async showSettings() {
     // Load current settings before showing settings screen
-    const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl', 'databasePath', 'interceptPasskeys']);
+    const settings = await ext.storage.sync.get(['connectionMode', 'apiUrl', 'databasePath', 'interceptPasskeys']);
 
     const connectionModeSelect = document.getElementById('connectionMode');
     const apiUrlInput = document.getElementById('apiUrl');
@@ -355,14 +359,14 @@ class VaultGuardPopup {
 
     try {
       const offerEl = document.getElementById('offerToSaveLogins');
-      if (offerEl) await chrome.storage.local.set({ offerToSaveLogins: offerEl.checked });
+      if (offerEl) await ext.storage.local.set({ offerToSaveLogins: offerEl.checked });
       const totpEl = document.getElementById('copyTotpAfterFill');
-      if (totpEl) await chrome.storage.local.set({ copyTotpAfterFill: totpEl.checked });
+      if (totpEl) await ext.storage.local.set({ copyTotpAfterFill: totpEl.checked });
       const submitEl = document.getElementById('autoSubmitAfterFill');
-      if (submitEl) await chrome.storage.local.set({ autoSubmitAfterFill: submitEl.checked });
+      if (submitEl) await ext.storage.local.set({ autoSubmitAfterFill: submitEl.checked });
       const guardEl = document.getElementById('phishingGuard');
-      if (guardEl) await chrome.storage.local.set({ phishingGuard: guardEl.checked });
-      await chrome.storage.sync.set({
+      if (guardEl) await ext.storage.local.set({ phishingGuard: guardEl.checked });
+      await ext.storage.sync.set({
         connectionMode: connectionMode,
         apiUrl: apiUrl,
         databasePath: databasePath,
@@ -391,7 +395,7 @@ class VaultGuardPopup {
     testBtn.disabled = true;
     
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'testConnection' });
+      const response = await ext.runtime.sendMessage({ action: 'testConnection' });
 
       if (response.success) {
         messageDiv.textContent = 'Connection successful!';
@@ -438,7 +442,7 @@ class VaultGuardPopup {
     detectBtn.disabled = true;
 
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'testConnection' });
+      const response = await ext.runtime.sendMessage({ action: 'testConnection' });
 
       if (response.success && response.databasePath) {
         databasePathInput.value = response.databasePath;
@@ -464,7 +468,7 @@ class VaultGuardPopup {
 
   async loadCredentials() {
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await ext.runtime.sendMessage({
         action: 'getCredentials',
         domain: this.currentDomain
       });
@@ -485,7 +489,7 @@ class VaultGuardPopup {
 
   async loadAllCredentials() {
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await ext.runtime.sendMessage({
         action: 'getCredentials',
         domain: '' // Empty domain to get all credentials
       });
@@ -500,18 +504,56 @@ class VaultGuardPopup {
     }
   }
 
-  filterCredentials(searchTerm) {
-    if (!searchTerm) {
+  /** Search covers the whole vault, not just this site: the full list is fetched once, on the first keystroke. */
+  async filterCredentials(searchTerm) {
+    const term = (searchTerm || '').trim().toLowerCase();
+    if (!term) {
       this.filteredCredentials = [...this.credentials];
-    } else {
-      const term = searchTerm.toLowerCase();
-      this.filteredCredentials = this.credentials.filter(cred => 
-        cred.title.toLowerCase().includes(term) ||
-        cred.username.toLowerCase().includes(term) ||
-        (cred.websiteUrl && cred.websiteUrl.toLowerCase().includes(term))
-      );
+      this.renderCredentials();
+      return;
     }
+    if (!this.allCredentials) {
+      const r = await ext.runtime.sendMessage({ action: 'getCredentials', domain: '' }).catch(() => null);
+      // Keep this site's entries (they carry what's needed to fill and copy here) and add the rest.
+      const here = new Set((this.credentials || []).map(c => c.id));
+      this.allCredentials = [...(this.credentials || []), ...((r?.credentials) || []).filter(c => !here.has(c.id))];
+    }
+    if ((document.getElementById('searchInput').value || '').trim().toLowerCase() !== term) return; // typed on
+    this.filteredCredentials = this.allCredentials.filter(cred =>
+      (cred.title || '').toLowerCase().includes(term) ||
+      (cred.username || '').toLowerCase().includes(term) ||
+      (cred.websiteUrl || '').toLowerCase().includes(term));
     this.renderCredentials();
+  }
+
+  /** Firefox: extensions need the user's permission to run on websites. Offer it when it's missing. */
+  async checkSiteAccess() {
+    try {
+      const ok = await ext.permissions.contains({ origins: ['<all_urls>'] });
+      document.getElementById('siteAccess').style.display = ok ? 'none' : 'flex';
+    } catch { /* permissions API unavailable: nothing to offer */ }
+  }
+
+  async grantSiteAccess() {
+    try {
+      const ok = await ext.permissions.request({ origins: ['<all_urls>'] });
+      document.getElementById('siteAccess').style.display = ok ? 'none' : 'flex';
+      if (ok) this.toast('Vault Guard can now fill on websites. Reload any open pages.');
+    } catch (e) { this.toast(e?.message || "Couldn't ask for permission"); }
+  }
+
+  toast(text) {
+    const t = document.getElementById('popupToast');
+    if (!t) return;
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  async copy(text, what) {
+    try { await navigator.clipboard.writeText(text); this.toast(`${what} copied`); }
+    catch { this.toast(`Couldn't copy the ${what.toLowerCase()}`); }
   }
 
   renderCredentials() {
@@ -529,26 +571,54 @@ class VaultGuardPopup {
     container.innerHTML = this.filteredCredentials.map(cred => {
       const here = this.isForCurrentSite(cred);
       const action = here ? 'Fill and sign in' : cred.websiteUrl ? 'Open site and sign in ↗' : 'No website saved';
+      // Passwords and codes are only handed out for the site you're on (the app checks), so copy them there only.
+      const buttons = [
+        cred.username ? `<button type="button" class="row-btn" data-act="user" title="Copy username" aria-label="Copy username">👤</button>` : '',
+        here && cred.password ? `<button type="button" class="row-btn" data-act="pw" title="Copy password" aria-label="Copy password">🔑</button>` : '',
+        here && cred.hasTotp ? `<button type="button" class="row-btn" data-act="totp" title="Copy one-time code" aria-label="Copy one-time code">⏱</button>` : '',
+      ].join('');
       return `
-      <div class="credential-item" data-id="${cred.id}" title="${this.escapeHtml(action)}">
-        <div class="credential-title">${this.escapeHtml(cred.title)}</div>
-        <div class="credential-username">${this.escapeHtml(cred.username || 'No username')}</div>
-        ${cred.websiteUrl ? `<div class="credential-url">${this.escapeHtml(cred.websiteUrl)}</div>` : ''}
-        <div class="credential-action">${this.escapeHtml(action)}</div>
+      <div class="credential-item" data-id="${cred.id}" title="${this.escapeHtml(action)}" tabindex="0">
+        <div class="credential-main">
+          <div class="credential-title">${this.escapeHtml(cred.title)}</div>
+          <div class="credential-username">${this.escapeHtml(cred.username || 'No username')}</div>
+          ${cred.websiteUrl ? `<div class="credential-url">${this.escapeHtml(cred.websiteUrl)}</div>` : ''}
+          <div class="credential-action">${this.escapeHtml(action)}</div>
+        </div>
+        ${buttons ? `<div class="row-actions">${buttons}</div>` : ''}
       </div>`;
     }).join('');
 
     // Click: on its own site, fill (and sign in) here; for another site, open that site and sign in there.
+    // The small buttons copy instead.
     container.querySelectorAll('.credential-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const credId = parseInt(item.dataset.id);
-        const credential = this.filteredCredentials.find(c => c.id === credId);
-        if (!credential) return;
-        if (this.isForCurrentSite(credential)) this.fillCredentialInCurrentTab(credential);
-        else if (credential.websiteUrl) this.openAndFill(credential);
-        else this.fillCredentialInCurrentTab(credential); // no website: the app decides whether it may fill here
+      const credential = () => this.filteredCredentials.find(c => c.id === parseInt(item.dataset.id));
+      const open = () => {
+        const c = credential();
+        if (!c) return;
+        if (this.isForCurrentSite(c)) this.fillCredentialInCurrentTab(c);
+        else if (c.websiteUrl) this.openAndFill(c);
+        else this.fillCredentialInCurrentTab(c); // no website: the app decides whether it may fill here
+      };
+      item.addEventListener('click', (e) => {
+        const btn = e.target.closest('.row-btn');
+        if (!btn) return open();
+        e.stopPropagation();
+        this.copyFromRow(credential(), btn.dataset.act);
       });
+      item.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === item) open(); });
     });
+  }
+
+  async copyFromRow(c, act) {
+    if (!c) return;
+    if (act === 'user') return this.copy(c.username, 'Username');
+    if (act === 'pw') return this.copy(c.password, 'Password');
+    if (act === 'totp') {
+      const t = await ext.runtime.sendMessage({ action: 'getTotpCode', itemId: c.id, domain: this.currentDomain }).catch(() => null);
+      if (t?.success && t.code) return this.copy(t.code, `One-time code (valid ${t.secondsRemaining ?? 30} s)`);
+      this.toast(t?.error || 'No one-time code available');
+    }
   }
 
   /** Does this login belong to the page that's open (same site or a subdomain of it)? */
@@ -562,7 +632,7 @@ class VaultGuardPopup {
   }
 
   async openAndFill(credential) {
-    const r = await chrome.runtime.sendMessage({ action: 'openAndFill', itemId: credential.id, url: credential.websiteUrl }).catch(e => ({ success: false, error: e.message }));
+    const r = await ext.runtime.sendMessage({ action: 'openAndFill', itemId: credential.id, url: credential.websiteUrl }).catch(e => ({ success: false, error: e.message }));
     if (!r?.success) { alert(r?.error || "Couldn't open that site."); return; }
     let host = '';
     try { host = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(credential.websiteUrl) ? credential.websiteUrl : `https://${credential.websiteUrl}`).hostname; } catch { /* no code */ }
@@ -577,10 +647,10 @@ class VaultGuardPopup {
 
   async fillCredentialInCurrentTab(credential) {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
       // The page's own script fetches the login for the page's real site (so the app's site check applies),
       // fills it, copies any one-time code and signs in.
-      const r = await chrome.runtime.sendMessage({ action: 'fillInTab', itemId: credential.id, tabId: tab.id });
+      const r = await ext.runtime.sendMessage({ action: 'fillInTab', itemId: credential.id, tabId: tab.id });
       if (r?.success === false && r.error) { alert(r.error); return; }
       await this.copyTotpAfterFill(credential, tab.id); // the popup has focus now; the page may not
       window.close();
@@ -599,7 +669,7 @@ class VaultGuardPopup {
     };
     
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await ext.runtime.sendMessage({
         action: 'generatePassword',
         options: options
       });
@@ -646,9 +716,9 @@ class VaultGuardPopup {
     const password = document.getElementById('passwordOutput').value;
     
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
       
-      await chrome.tabs.sendMessage(tab.id, {
+      await ext.tabs.sendMessage(tab.id, {
         action: 'fillPassword',
         password: password
       });

@@ -74,6 +74,9 @@ cd "$TEMP_DIR"
 # Create ZIP with suppressed verbose output but show errors
 if zip -r "$OUTPUT_DIR/password-manager-extension-$VERSION.zip" . -x "*.git*" "*.DS_Store" -q; then
     echo "  ✓ Created: password-manager-extension-$VERSION.zip"
+    # Firefox installs the same files; the .xpi name is what Firefox and AMO expect.
+    cp "$OUTPUT_DIR/password-manager-extension-$VERSION.zip" "$OUTPUT_DIR/password-manager-extension-$VERSION.xpi"
+    echo "  ✓ Created: password-manager-extension-$VERSION.xpi (Firefox)"
     
     echo ""
     echo "================================================"

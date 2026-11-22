@@ -3,31 +3,74 @@
   "name": "Vault Guard Extension",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmLBoqOPW/JQJJNleV0QQX1P/+NJBBgMf+X6EjmfeHIyEE4Yz7WE/DylR+5eRTp3gzIEM4wgAFPTcJz0mfTtIpBorR/GdDMtvP+RlTFS/ws2n4fmRkBkwQXsm/2WJk7R15WCi7KW/0C+Jf87fLkqed5e02DmEF6cmJY/SEeLq+9XqJkCQo30TkFaTpwPx+RglBLxpNVaY8qOuVtwTkyptSQ9hkEy9WOgus+fzfZ3RE7axaLvkni4oAlbuwCzUnDyYiY6wHsY4XRdAGrw1dILoVB/MQl3otjm9HDLOwVs3mmm8hcH3Z6yYWbxCobuN+c9IPEA94I2E6aBXpVf0asR+PQIDAQAB",
   "browser_specific_settings": {
-    "gecko": { "id": "vaultguard@dotnetappdevni.com", "strict_min_version": "115.0" }
+    "gecko": {
+      "id": "vaultguard@dotnetappdevni.com",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
   },
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Browser extension for the Vault Guard App - securely autofill login credentials and generate passwords",
-  
   "permissions": [
     "activeTab",
     "storage",
     "notifications",
-    "nativeMessaging"
+    "nativeMessaging",
+    "contextMenus",
+    "clipboardWrite"
   ],
-  
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
   },
-  
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open Vault Guard"
+    },
+    "fill-login": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Fill the login for this site and sign in"
+    },
+    "generate-password": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+G",
+        "mac": "Command+Shift+G"
+      },
+      "description": "Fill a strong new password in the selected field"
+    }
+  },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["jsQR.js", "content.js", "autofill.js"],
-      "css": ["content.css"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "jsQR.js",
+        "content.js",
+        "autofill.js"
+      ],
+      "css": [
+        "content.css"
+      ],
       "run_at": "document_end"
     }
   ],
-  
   "action": {
     "default_popup": "popup.html",
     "default_title": "Vault Guard",
@@ -38,18 +81,23 @@
       "128": "icons/icon128.png"
     }
   },
-  
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  
   "web_accessible_resources": [
     {
-      "resources": ["icons/*", "content.css", "inpage.js", "jsQR.js"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "icons/*",
+        "content.css",
+        "inpage.js",
+        "jsQR.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }

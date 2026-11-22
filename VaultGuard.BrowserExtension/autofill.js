@@ -7,6 +7,7 @@
 (() => {
   if (window.top !== window || window.__vaultGuardAutofill) return;
   window.__vaultGuardAutofill = true;
+  const ext = globalThis.browser ?? globalThis.chrome; // Firefox: `browser`; Chrome/Edge/Brave: `chrome`
 
   const HOST = location.hostname.replace(/^www\./, '');
   const MAX_ICONS = 24;
@@ -14,7 +15,7 @@
   // ---------- messaging ----------
   const send = (msg) => new Promise((resolve) => {
     try {
-      chrome.runtime.sendMessage(msg, (r) => resolve(chrome.runtime.lastError ? { success: false, error: chrome.runtime.lastError.message } : r));
+      ext.runtime.sendMessage(msg).then(resolve, (e) => resolve({ success: false, error: e?.message || String(e) }));
     } catch (e) { resolve({ success: false, error: e.message }); }
   });
 
@@ -275,7 +276,7 @@
    */
   async function copyTotpAfterFill(c) {
     if (!c?.hasTotp) return;
-    const pref = await chrome.storage.local.get('copyTotpAfterFill').catch(() => ({}));
+    const pref = await ext.storage.local.get('copyTotpAfterFill').catch(() => ({}));
     if (pref.copyTotpAfterFill === false) return;
     const t = await send({ action: 'getTotpCode', itemId: c.id, domain: HOST });
     if (!t?.success || !t.code) return;
@@ -325,7 +326,7 @@
   }
 
   async function submitAfterFill(field) {
-    const pref = await chrome.storage.local.get('autoSubmitAfterFill').catch(() => ({}));
+    const pref = await ext.storage.local.get('autoSubmitAfterFill').catch(() => ({}));
     if (pref.autoSubmitAfterFill === false) return;
     await new Promise(r => setTimeout(r, 350)); // let the page's own scripts see the new values (and enable the button)
     if (!field.isConnected) return;
@@ -344,6 +345,54 @@
       field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
       field.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
     }
+  }
+
+  // ---------- keyboard shortcuts and right-click menu ----------
+  let lastContextTarget = null;
+  document.addEventListener('contextmenu', (e) => { if (e.target instanceof HTMLInputElement) lastContextTarget = e.target; }, true);
+
+  const visibleOf = (...kinds) => [...fields.entries()].filter(([f, st]) => kinds.includes(st.kind) && isVisible(f)).map(([f]) => f);
+
+  /** Treat a field the extension didn't recognise (e.g. right-clicked) as the kind the user asked for. */
+  function adopt(f, kind) {
+    if (!(f instanceof HTMLInputElement) || !isVisible(f)) return null;
+    if (!fields.has(f)) { track(f); if (!fields.has(f)) fields.set(f, { kind, icon: document.createElement('span') }); }
+    return f;
+  }
+
+  /** Ctrl+Shift+L / "Fill login": one saved login → fill and sign in; several → show the menu to pick. */
+  async function fillLoginHere(preferred) {
+    const field = (preferred && fields.has(preferred) && preferred) || visibleOf('username')[0] || visibleOf('password')[0]
+      || (preferred && adopt(preferred, 'username'));
+    if (!field) return toast(`No sign-in fields found on ${HOST}`);
+    const r = await send({ action: 'getCredentials', domain: HOST });
+    if (r?.success === false && !r.credentials) return toast('Unlock Vault Guard to fill passwords here');
+    const creds = (r?.credentials || []).filter(c => c.password || c.username);
+    if (!creds.length) return toast(`No saved logins for ${HOST}`);
+    if (creds.length === 1) return fillLogin(field, creds[0]);
+    dismissed.delete(field);
+    field.focus();
+    openMenu(field, true);
+  }
+
+  /** Ctrl+Shift+G / "Fill a strong new password": into the selected field (or this form's new-password fields). */
+  async function fillStrongPassword(preferred) {
+    const active = document.activeElement instanceof HTMLInputElement ? document.activeElement : null;
+    const field = (preferred && adopt(preferred, 'new-password')) || (active && adopt(active, 'new-password'))
+      || visibleOf('new-password')[0] || visibleOf('password')[0];
+    if (!field) return toast('Select a password field first');
+    const g = await send({ action: 'generatePassword', options: { length: 20, includeUppercase: true, includeLowercase: true, includeNumbers: true, includeSymbols: true } });
+    if (!g?.password) return toast(g?.error || "Couldn't make a password");
+    if (field.type === 'password') fillNewPassword(field, g.password);
+    else { setValue(field, g.password); navigator.clipboard?.writeText(g.password).catch(() => {}); toast('Strong password filled and copied'); }
+  }
+
+  async function fillCardHere(preferred) {
+    const field = (preferred && fields.get(preferred)?.kind === 'card' && preferred) || visibleOf('card')[0] || (preferred && adopt(preferred, 'card'));
+    if (!field) return toast('No card fields found on this page');
+    dismissed.delete(field);
+    field.focus();
+    openMenu(field, true);
   }
 
   // ---------- open & fill ----------
@@ -671,8 +720,18 @@
   setTimeout(checkPendingSave, 700); // a sign-in on the previous page may be waiting to be saved
   schedulePendingFill();             // opened by "Open & fill" from the popup?
   // The popup fills through content.js and copies the one-time code itself; it asks us to say so.
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  ext.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.action === 'vaultGuardToast' && typeof msg.text === 'string') toast(msg.text.slice(0, 120));
     if (msg?.action === 'vaultGuardRunPendingFill') { pendingChecks = 0; schedulePendingFill(); sendResponse({ success: true }); }
+    if (msg?.action === 'vaultGuardCommand') {
+      if (msg.command === 'fill-login') fillLoginHere(document.activeElement);
+      else if (msg.command === 'generate-password') fillStrongPassword(null);
+    }
+    if (msg?.action === 'vaultGuardContext') {
+      const t = lastContextTarget;
+      if (msg.kind === 'login') fillLoginHere(t);
+      else if (msg.kind === 'password') fillStrongPassword(t);
+      else if (msg.kind === 'card') fillCardHere(t);
+    }
   });
 })();

@@ -90,6 +90,8 @@ if %ERRORLEVEL% EQU 0 (
     powershell -Command "Compress-Archive -Path '%TEMP_DIR%\*' -DestinationPath '%OUTPUT_DIR%\password-manager-extension-%VERSION%.zip' -Force"
     if %ERRORLEVEL% EQU 0 (
         echo   * Created: password-manager-extension-%VERSION%.zip
+        copy /Y "%OUTPUT_DIR%\password-manager-extension-%VERSION%.zip" "%OUTPUT_DIR%\password-manager-extension-%VERSION%.xpi" >nul
+        echo   * Created: password-manager-extension-%VERSION%.xpi ^(Firefox^)
         set "ZIP_SUCCESS=1"
         REM Clean up temp directory after successful ZIP creation
         rmdir /s /q "%TEMP_DIR%"

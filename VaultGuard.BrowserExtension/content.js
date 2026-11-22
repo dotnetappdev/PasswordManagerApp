@@ -1,3 +1,5 @@
+// Firefox provides the promise-based `browser` API; Chrome, Edge and Brave provide `chrome`.
+const ext = globalThis.browser ?? globalThis.chrome;
 // Content script for detecting and enhancing login forms
 class VaultGuardContentScript {
   constructor() {
@@ -18,7 +20,7 @@ class VaultGuardContentScript {
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['apiUrl', 'authToken']);
+      const result = await ext.storage.sync.get(['apiUrl', 'authToken']);
       if (result.apiUrl) {
         this.apiUrl = result.apiUrl;
       }
@@ -518,7 +520,7 @@ class VaultGuardContentScript {
     
     // For payment forms, also try to get credit cards and show them first
     const promises = [
-      chrome.runtime.sendMessage({
+      ext.runtime.sendMessage({
         action: 'getCredentials',
         domain: domain
       })
@@ -527,7 +529,7 @@ class VaultGuardContentScript {
     // If it's a payment or mixed form, also get credit cards
     if (formContext === 'payment' || formContext === 'mixed') {
       promises.push(
-        chrome.runtime.sendMessage({
+        ext.runtime.sendMessage({
           action: 'getCreditCards',
           domain: domain
         })
@@ -698,7 +700,7 @@ class VaultGuardContentScript {
   }
 
   async generatePassword(field) {
-    const response = await chrome.runtime.sendMessage({
+    const response = await ext.runtime.sendMessage({
       action: 'generatePassword',
       options: {
         length: 16,
@@ -763,7 +765,7 @@ class VaultGuardContentScript {
     
     // Send message to background script to get credit cards and possibly credentials
     const promises = [
-      chrome.runtime.sendMessage({
+      ext.runtime.sendMessage({
         action: 'getCreditCards',
         domain: domain
       })
@@ -772,7 +774,7 @@ class VaultGuardContentScript {
     // For mixed forms, also get login credentials
     if (formContext === 'mixed') {
       promises.push(
-        chrome.runtime.sendMessage({
+        ext.runtime.sendMessage({
           action: 'getCredentials',
           domain: domain
         })
@@ -911,7 +913,7 @@ class VaultGuardContentScript {
       const domain = window.location.hostname;
       
       // Request credentials from background script
-      const response = await chrome.runtime.sendMessage({
+      const response = await ext.runtime.sendMessage({
         action: 'getCredentials',
         domain: domain
       });
@@ -1280,7 +1282,7 @@ class VaultGuardContentScript {
 }
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+ext.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'fillCredentials') {
     fillCredentialsFromPopup(request.credential);
     sendResponse({ success: true });
@@ -1424,7 +1426,7 @@ function showNotification(message) {
   function injectHook(intercept) {
     try {
       const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('inpage.js');
+      script.src = ext.runtime.getURL('inpage.js');
       script.dataset.pmIntercept = intercept ? '1' : '0';
       script.async = false;
       (document.head || document.documentElement).appendChild(script);
@@ -1435,7 +1437,7 @@ function showNotification(message) {
   }
 
   try {
-    chrome.storage.sync.get({ interceptPasskeys: true }, (res) => {
+    ext.storage.sync.get({ interceptPasskeys: true }, (res) => {
       injectHook(res && res.interceptPasskeys !== false);
     });
   } catch (e) {
@@ -1446,7 +1448,7 @@ function showNotification(message) {
   // Live toggle: when the user flips the setting, tell the already-injected hook without a reload.
   // (Turning it back ON works instantly; the override was installed at load either way.)
   try {
-    chrome.storage.onChanged.addListener((changes, area) => {
+    ext.storage.onChanged.addListener((changes, area) => {
       if (area === 'sync' && changes.interceptPasskeys) {
         window.postMessage(
           { type: CONFIG, intercept: changes.interceptPasskeys.newValue !== false },
@@ -1465,14 +1467,10 @@ function showNotification(message) {
     const reply = (payload) => window.postMessage({ type: RESPONSE, id, payload }, window.location.origin);
 
     try {
-      chrome.runtime.sendMessage({ action, ...request }, (response) => {
-        if (chrome.runtime.lastError) {
-          // Background/native host unreachable → let the page fall back to the platform authenticator.
-          reply({ success: false, error: chrome.runtime.lastError.message, fallback: true });
-          return;
-        }
-        reply(response || { success: false, error: 'No response', fallback: true });
-      });
+      ext.runtime.sendMessage({ action, ...request }).then(
+        (response) => reply(response || { success: false, error: 'No response', fallback: true }),
+        // Background/native host unreachable → let the page fall back to the platform authenticator.
+        (e) => reply({ success: false, error: e?.message || String(e), fallback: true }));
     } catch (e) {
       reply({ success: false, error: e.message, fallback: true });
     }
@@ -1609,14 +1607,14 @@ class TotpSetupDetector {
   async _saveTotp(parsed, rawUri) {
     // Ask background to save — it will attach it to the matching vault item
     // (matched by hostname) or create a new entry if no match found
-    chrome.runtime.sendMessage({
+    ext.runtime.sendMessage({
       action: 'saveTotpSecret',
       otpauthUri: rawUri,
       issuer: parsed.issuer || location.hostname,
       account: parsed.account,
       secret: parsed.secret,
       hostname: location.hostname,
-    }, (response) => {
+    }).catch((e) => ({ success: false, error: e?.message })).then((response) => {
       const ok = response?.success;
       this.cs.showNotification(
         ok

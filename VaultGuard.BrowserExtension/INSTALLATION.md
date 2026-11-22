@@ -17,7 +17,7 @@ This guide covers everyday installation. If you're developing the extension, see
 |---|---|
 | **Windows** | Windows 10 or 11 |
 | **Vault Guard app** | The Vault Guard desktop app (WPF), or the Vault Guard Windows app (MAUI), installed |
-| **Browser** | Google Chrome, Microsoft Edge, Brave, Vivaldi or Chromium (any recent version), or Firefox 115+ |
+| **Browser** | Google Chrome, Microsoft Edge, Brave, Vivaldi or Chromium (any recent version), or Firefox 128+ |
 
 You don't need administrator rights or any certificate. You don't edit the registry or any configuration file.
 
@@ -73,6 +73,15 @@ a store. That's expected; click **Keep** or close the notice.
 Firefox removes add-ons loaded this way when it closes, so you'll need to repeat this after restarting Firefox
 until the Firefox Add-ons listing is available.
 
+Firefox asks before an extension may run on websites. If the popup shows **"Vault Guard needs permission to fill
+passwords on websites"**, click **Allow on all websites** (or open `about:addons` → Vault Guard → **Permissions**
+and turn on **Access your data for all websites**), then reload any open pages.
+
+### Brave
+
+Brave works exactly like Chrome: use `brave://extensions` above. Brave Shields don't affect the extension. On
+Linux, Brave installed as a Snap or Flatpak can't start helper programs, so use Brave's `.deb`/`.rpm` package.
+
 ---
 
 ## Step 3: Connect the extension to Vault Guard
@@ -98,6 +107,12 @@ Disconnect this browser**.
 | Fill a login that has an authenticator | Its one-time code is copied, ready to paste on the 2-step page. |
 | Type a saved password on a site it doesn't belong to | **"Is this the right site?"** warns you before you sign in: a common sign of a fake site. |
 | Checkout forms | Your saved cards are offered. |
+| Pick a login (menu or popup) | It's filled and the site's **Sign in** button is pressed for you. |
+| In the popup, click a login for another site | That site opens and you're signed in. |
+| **Ctrl + Shift + L** | Fills this site's login and signs in (shows the menu if you have several). |
+| **Ctrl + Shift + G** | Fills a strong new password in the selected field and copies it. |
+| Right-click a text field → **Vault Guard** | Fill login, fill a strong new password, or fill a card. |
+| Look at the toolbar button | The number shows how many logins you have for this site. |
 
 Nothing is filled until you choose it, and hidden fields are never filled.
 
@@ -107,6 +122,7 @@ Click the toolbar button, then **Settings**:
 
 - **Filling & saving**:
   - Warn me if I type a saved password on the wrong site.
+  - Sign in after filling.
   - Copy one-time code after filling.
   - Offer to save logins. This is also where you can reset the sites you chose "Never" for.
 - **Passkeys**: whether Vault Guard saves website passkeys in your vault.

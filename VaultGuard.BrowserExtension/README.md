@@ -51,7 +51,20 @@ you're on.
 - **Authenticator QR detection.** When a site shows a 2FA setup QR code, the extension offers to
   save it to the matching login.
 - **Passkeys bridge** (see PASSKEYS_SETUP.md).
-- **Popup.** Shows connection status, search, copy, generator and settings.
+- **Sign in after filling.** After you pick a login, the extension presses the site's sign-in button for you,
+  including username-then-password sign-ins. It holds back when the form has a captcha or another required field.
+  Turn it off in Settings → **Sign in after filling**.
+- **Open & fill.** In the popup, a login for another site opens that site and signs you in.
+- **Toolbar badge.** The Vault Guard button shows how many logins you have for the site you're on.
+- **Keyboard shortcuts.** **Ctrl + Shift + L** fills this site's login and signs in (or shows the menu when you
+  have several). **Ctrl + Shift + G** fills a strong new password in the selected field. **Ctrl + Shift + Y**
+  opens the popup. On a Mac use ⌘ instead of Ctrl. Change them at `chrome://extensions/shortcuts` (Edge:
+  `edge://extensions/shortcuts`, Brave: `brave://extensions/shortcuts`), or in Firefox under Add-ons → ⚙ →
+  **Manage Extension Shortcuts**.
+- **Right-click menu.** On any text field: **Vault Guard → Fill login / Fill a strong new password / Fill card**,
+  handy on forms the padlock doesn't recognise.
+- **Popup.** Connection status, search across your whole vault, quick copy buttons (username, password, and
+  one-time code for the site you're on), generator and settings.
 
 ### Safe-by-default filling
 
@@ -106,7 +119,7 @@ you're on.
 | Browser | Support |
 |---|---|
 | Chrome, Edge, Brave, Chromium, Vivaldi | Recent versions (Manifest V3) |
-| Firefox | 115+ |
+| Firefox | 128+ (the extension uses Firefox's background scripts; Chrome and Brave use the service worker from the same manifest) |
 | Safari | Not supported (it uses a different extension system) |
 
 ## Contributing

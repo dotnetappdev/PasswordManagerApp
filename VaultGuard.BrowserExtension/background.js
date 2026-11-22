@@ -1,3 +1,5 @@
+// Firefox provides the promise-based `browser` API; Chrome, Edge and Brave provide `chrome`.
+const ext = globalThis.browser ?? globalThis.chrome;
 // Background script for Vault Guard browser extension
 class VaultGuardBackground {
   constructor() {
@@ -13,23 +15,90 @@ class VaultGuardBackground {
 
   init() {
     // Listen for messages from content script and popup
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    ext.runtime.onMessage.addListener((request, sender, sendResponse) => {
       this.handleMessage(request, sender, sendResponse);
       return true; // Keep message channel open for async responses
     });
 
     // Load settings on startup
     this.loadSettings();
+
+    this.setUpMenus();
+    this.setUpCommands();
+    this.setUpBadge();
   }
+
+  // ---------- Right-click menu ----------
+  // On any text field: "Fill login", "Fill a strong password", "Fill card". The page's own script does the work.
+  setUpMenus() {
+    if (!ext.contextMenus) return;
+    const create = async () => {
+      try {
+        await ext.contextMenus.removeAll();
+        const ctx = ['editable'];
+        ext.contextMenus.create({ id: 'vg', title: 'Vault Guard', contexts: ctx });
+        ext.contextMenus.create({ id: 'vg-login', parentId: 'vg', title: 'Fill login', contexts: ctx });
+        ext.contextMenus.create({ id: 'vg-password', parentId: 'vg', title: 'Fill a strong new password', contexts: ctx });
+        ext.contextMenus.create({ id: 'vg-card', parentId: 'vg', title: 'Fill card', contexts: ctx });
+      } catch (e) { console.warn('Vault Guard: menus', e); }
+    };
+    ext.runtime.onInstalled?.addListener(create);
+    ext.runtime.onStartup?.addListener(create);
+    ext.contextMenus.onClicked.addListener((info, tab) => {
+      const kind = { 'vg-login': 'login', 'vg-password': 'password', 'vg-card': 'card' }[info.menuItemId];
+      if (kind && tab?.id != null) ext.tabs.sendMessage(tab.id, { action: 'vaultGuardContext', kind }, { frameId: 0 }).catch(() => {});
+    });
+  }
+
+  // ---------- Keyboard shortcuts ----------
+  // Ctrl+Shift+L: fill this site's login and sign in. Ctrl+Shift+G: strong password in the selected field.
+  // (Change them at chrome://extensions/shortcuts, or Firefox: Add-ons → ⚙ → Manage Extension Shortcuts.)
+  setUpCommands() {
+    ext.commands?.onCommand.addListener(async (command, tab) => {
+      if (command !== 'fill-login' && command !== 'generate-password') return;
+      const target = tab ?? (await ext.tabs.query({ active: true, currentWindow: true }))[0];
+      if (target?.id != null) ext.tabs.sendMessage(target.id, { action: 'vaultGuardCommand', command }, { frameId: 0 }).catch(() => {});
+    });
+  }
+
+  // ---------- Toolbar badge ----------
+  // The number of logins saved for the site in the current tab, like other password managers. Counts are
+  // cached per site for a minute so switching tabs doesn't keep waking the app.
+  setUpBadge() {
+    if (!ext.action?.setBadgeText) return;
+    this._badgeCache = new Map();
+    ext.action.setBadgeBackgroundColor?.({ color: '#2252DA' }).catch?.(() => {});
+    const update = (tabId) => this.updateBadge(tabId).catch(() => {});
+    ext.tabs.onActivated.addListener(({ tabId }) => update(tabId));
+    ext.tabs.onUpdated.addListener((tabId, change, tab) => { if (change.status === 'complete' && tab.active) update(tabId); });
+  }
+
+  async updateBadge(tabId) {
+    const tab = await ext.tabs.get(tabId).catch(() => null);
+    const site = tab && this.hostOfUrl(tab.url || '');
+    const set = (text) => ext.action.setBadgeText({ tabId, text }).catch(() => {});
+    if (!site || !/^https?:/.test(tab.url)) return set('');
+    const link = await this.refreshLink();
+    if (!link?.linked || !link.paired || !link.unlocked) { this._badgeCache.clear(); return set(''); } // locked: show nothing
+    const cached = this._badgeCache.get(site.host);
+    if (cached && Date.now() - cached.at < 60000) return set(cached.count ? String(cached.count) : '');
+    const r = await this.sendNativeMessage({ action: 'getCredentials', domain: site.host }).catch(() => null);
+    const count = (r?.credentials || []).length;
+    this._badgeCache.set(site.host, { count, at: Date.now() });
+    return set(count ? String(count) : '');
+  }
+
+  /** A login was saved or updated: recount for that site. */
+  forgetBadge(host) { this._badgeCache?.delete(host); }
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['authToken']);
+      const result = await ext.storage.sync.get(['authToken']);
       if (result.authToken) {
         this.authToken = result.authToken;
       }
       // The pairing secret stays on this device (storage.local, never synced to other browsers).
-      const local = await chrome.storage.local.get(['linkSecret']);
+      const local = await ext.storage.local.get(['linkSecret']);
       this.linkSecret = local.linkSecret || null;
     } catch (error) {
       console.error('Vault Guard: Error loading settings:', error);
@@ -67,9 +136,9 @@ class VaultGuardBackground {
         case 'trustSiteForReuse': {
           const site = this.senderSite(sender);
           if (site) {
-            const r = await chrome.storage.local.get('reuseTrustedSites');
+            const r = await ext.storage.local.get('reuseTrustedSites');
             const list = r.reuseTrustedSites || [];
-            if (!list.includes(site.host)) await chrome.storage.local.set({ reuseTrustedSites: [...list, site.host] });
+            if (!list.includes(site.host)) await ext.storage.local.set({ reuseTrustedSites: [...list, site.host] });
           }
           sendResponse({ success: true });
           break;
@@ -99,8 +168,8 @@ class VaultGuardBackground {
           sendResponse(await this.dismissPendingSave(request, sender));
           break;
         case 'openPopup':
-          // Lets the in-page menu send the user to "Connect" (chrome.action.openPopup needs Chrome 127+).
-          try { await chrome.action.openPopup(); sendResponse({ success: true }); }
+          // Lets the in-page menu send the user to "Connect" (ext.action.openPopup needs Chrome 127+).
+          try { await ext.action.openPopup(); sendResponse({ success: true }); }
           catch (e) { sendResponse({ success: false, error: 'Click the Vault Guard button in the toolbar.' }); }
           break;
         case 'getLinkStatus':
@@ -111,7 +180,7 @@ class VaultGuardBackground {
           break;
         case 'disconnectApp':
           this.linkSecret = null;
-          await chrome.storage.local.remove('linkSecret');
+          await ext.storage.local.remove('linkSecret');
           sendResponse({ success: true, link: await this.refreshLink(true) });
           break;
         case 'testConnection':
@@ -137,7 +206,7 @@ class VaultGuardBackground {
     return new Promise(async (resolve, reject) => {
       try {
         // Get database path from settings if available
-        const settings = await chrome.storage.sync.get(['databasePath']);
+        const settings = await ext.storage.sync.get(['databasePath']);
         if (settings.databasePath) {
           message.databasePath = settings.databasePath;
         }
@@ -147,13 +216,7 @@ class VaultGuardBackground {
         }
         message.browser = this.browserName();
 
-        chrome.runtime.sendNativeMessage(this.nativeHostName, message, (response) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            resolve(response);
-          }
-        });
+        ext.runtime.sendNativeMessage(this.nativeHostName, message).then(resolve, (e) => reject(new Error(e?.message || String(e))));
       } catch (error) {
         reject(error);
       }
@@ -218,13 +281,13 @@ class VaultGuardBackground {
 
   async getApiUrl() {
     // Get API URL from storage or use default
-    const result = await chrome.storage.sync.get(['apiUrl']);
+    const result = await ext.storage.sync.get(['apiUrl']);
     return result.apiUrl || 'http://localhost:5000';
   }
 
   async sendMessageWithFallback(action, data) {
     // Check connection preference
-    const settings = await chrome.storage.sync.get(['connectionMode']);
+    const settings = await ext.storage.sync.get(['connectionMode']);
     const connectionMode = settings.connectionMode || 'auto'; // auto, native, api, localStorage
 
     // Try localStorage first if preferred or if it's the only option
@@ -282,7 +345,7 @@ class VaultGuardBackground {
   }
 
   async sendLocalStorageMessage(action, data) {
-    // Handle actions using chrome.storage.local for offline support
+    // Handle actions using ext.storage.local for offline support
     try {
       switch (action) {
         case 'getCredentials':
@@ -298,7 +361,7 @@ class VaultGuardBackground {
   }
 
   async getCredentialsFromLocalStorage(domain) {
-    const result = await chrome.storage.local.get(['cachedCredentials']);
+    const result = await ext.storage.local.get(['cachedCredentials']);
     const allCredentials = result.cachedCredentials || [];
     
     // Filter by domain if specified
@@ -352,7 +415,7 @@ class VaultGuardBackground {
     const site = this.senderSite(sender);
     const password = typeof request.password === 'string' ? request.password : '';
     if (!site || password.length < 6 || password.length > 4096) return { matches: [] };
-    const prefs = await chrome.storage.local.get(['phishingGuard', 'reuseTrustedSites']);
+    const prefs = await ext.storage.local.get(['phishingGuard', 'reuseTrustedSites']);
     if (prefs.phishingGuard === false || (prefs.reuseTrustedSites || []).includes(site.host)) return { matches: [] };
     // At most one check every 1.5 s per tab, so typing can't flood the app.
     const now = Date.now(), last = (this._reuseChecked ??= {})[sender.tab?.id] || 0;
@@ -397,12 +460,12 @@ class VaultGuardBackground {
   async openAndFill(request) {
     const target = this.hostOfUrl(request.url || '');
     if (!target || !Number.isInteger(request.itemId)) return { success: false, error: 'This login has no website to open.' };
-    const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [active] = await ext.tabs.query({ active: true, currentWindow: true });
     const blank = active && /^(chrome|edge|brave|about):\/\/(newtab|blank)|^about:blank|^chrome:\/\/new-tab-page/i.test(active.url || active.pendingUrl || '');
     // Record the fill before the site starts loading, so the page can't ask before it's there.
-    const tab = blank ? active : await chrome.tabs.create({ url: 'about:blank', active: true });
+    const tab = blank ? active : await ext.tabs.create({ url: 'about:blank', active: true });
     await this.setPendingFill(tab.id, request.itemId, target.host);
-    await chrome.tabs.update(tab.id, { url: target.href });
+    await ext.tabs.update(tab.id, { url: target.href });
     return { success: true };
   }
 
@@ -410,7 +473,7 @@ class VaultGuardBackground {
   async fillInTab(request) {
     if (!Number.isInteger(request.itemId) || !Number.isInteger(request.tabId)) return { success: false };
     await this.setPendingFill(request.tabId, request.itemId, null);
-    const sent = await chrome.tabs.sendMessage(request.tabId, { action: 'vaultGuardRunPendingFill' }).then(() => true).catch(() => false);
+    const sent = await ext.tabs.sendMessage(request.tabId, { action: 'vaultGuardRunPendingFill' }).then(() => true).catch(() => false);
     if (!sent) {
       await (await this.sessionStore()).remove(this.fillKey(request.tabId));
       return { success: false, error: "Vault Guard can't fill on this page. Reload the page and try again." };
@@ -455,7 +518,7 @@ class VaultGuardBackground {
 
   // ---------- "Save this login?" ----------
   // A submitted login is held for up to 2 minutes so the prompt can appear on the page the form leads to.
-  // It lives in chrome.storage.session (memory only, never written to disk, not visible to content scripts),
+  // It lives in ext.storage.session (memory only, never written to disk, not visible to content scripts),
   // keyed by tab, and is dropped as soon as the user answers.
 
   static PENDING_TTL_MS = 120000;
@@ -463,7 +526,7 @@ class VaultGuardBackground {
   pendingKey(tabId) { return `pendingSave:${tabId}`; }
 
   async sessionStore() {
-    return chrome.storage.session ?? { // older browsers: keep it in this worker's memory
+    return ext.storage.session ?? { // older browsers: keep it in this worker's memory
       _m: (this._pendingMem ??= {}),
       async get(k) { return { [k]: this._m[k] }; },
       async set(o) { Object.assign(this._m, o); },
@@ -481,7 +544,7 @@ class VaultGuardBackground {
   }
 
   async neverSaveSites() {
-    const r = await chrome.storage.local.get(['neverSaveSites', 'offerToSaveLogins']);
+    const r = await ext.storage.local.get(['neverSaveSites', 'offerToSaveLogins']);
     return { list: r.neverSaveSites || [], enabled: r.offerToSaveLogins !== false };
   }
 
@@ -539,7 +602,11 @@ class VaultGuardBackground {
                       title: String(request.title || p.host).slice(0, 200) };
     if (Number.isInteger(request.itemId)) message.itemId = request.itemId;
     const r = await this.sendNativeMessage(message);
-    if (r?.success) await (await this.sessionStore()).remove(this.pendingKey(sender.tab.id));
+    if (r?.success) {
+      await (await this.sessionStore()).remove(this.pendingKey(sender.tab.id));
+      this.forgetBadge(p.host);
+      this.updateBadge(sender.tab.id).catch(() => {});
+    }
     return r || { success: false, error: 'Vault Guard did not answer.' };
   }
 
@@ -548,7 +615,7 @@ class VaultGuardBackground {
     if (sender?.tab?.id) await (await this.sessionStore()).remove(this.pendingKey(sender.tab.id));
     if (request.never && p) {
       const prefs = await this.neverSaveSites();
-      if (!prefs.list.includes(p.host)) await chrome.storage.local.set({ neverSaveSites: [...prefs.list, p.host] });
+      if (!prefs.list.includes(p.host)) await ext.storage.local.set({ neverSaveSites: [...prefs.list, p.host] });
     }
     return { success: true };
   }
@@ -564,7 +631,7 @@ class VaultGuardBackground {
   async refreshLink(force = false) {
     if (!force && this.link && Date.now() - this.linkCheckedAt < 5000) return this.link;
     try {
-      const response = await this.sendNativeMessage({ action: 'hello', extensionVersion: chrome.runtime.getManifest().version, protocol: 2 });
+      const response = await this.sendNativeMessage({ action: 'hello', extensionVersion: ext.runtime.getManifest().version, protocol: 2 });
       this.link = {
         linked: !!response?.linked,
         paired: !!response?.paired,
@@ -588,7 +655,7 @@ class VaultGuardBackground {
       const response = await this.sendNativeMessage({ action: 'pair' });
       if (response?.success && response.secret) {
         this.linkSecret = response.secret;
-        await chrome.storage.local.set({ linkSecret: response.secret });
+        await ext.storage.local.set({ linkSecret: response.secret });
       }
       const link = await this.refreshLink(true);
       sendResponse({ success: !!response?.success, error: response?.error, link });
@@ -740,7 +807,7 @@ class VaultGuardBackground {
         this.authToken = token || this.authToken;
 
         // Save token to storage
-        await chrome.storage.sync.set({ authToken: this.authToken });
+        await ext.storage.sync.set({ authToken: this.authToken });
 
         sendResponse({
           success: true,
@@ -764,7 +831,7 @@ class VaultGuardBackground {
   async logout(sendResponse) {
     try {
       this.authToken = null;
-      await chrome.storage.sync.remove(['authToken']);
+      await ext.storage.sync.remove(['authToken']);
       
       sendResponse({ 
         success: true, 
@@ -781,7 +848,7 @@ class VaultGuardBackground {
 
   async getSettings(sendResponse) {
     try {
-      const result = await chrome.storage.sync.get(['authToken']);
+      const result = await ext.storage.sync.get(['authToken']);
       const link = await this.refreshLink();
 
       sendResponse({ 
@@ -827,7 +894,7 @@ class VaultGuardBackground {
 
   async testConnection(sendResponse) {
     try {
-      const settings = await chrome.storage.sync.get(['connectionMode', 'apiUrl']);
+      const settings = await ext.storage.sync.get(['connectionMode', 'apiUrl']);
       const mode = settings.connectionMode || 'auto';
       const response = await this.sendMessageWithFallback('testConnection', {});
 

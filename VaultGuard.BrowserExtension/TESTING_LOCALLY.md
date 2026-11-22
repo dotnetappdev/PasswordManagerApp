@@ -14,7 +14,7 @@ The steps take about five minutes the first time.
 |---|---|
 | **OS** | Windows 10 or 11. The browser link runs in the Windows builds of the WPF and MAUI apps. |
 | **.NET SDK** | .NET 10 (`dotnet --version` shows 10.x). |
-| **Browser** | Chrome, Edge, Brave, Chromium or Vivaldi (any recent version), or Firefox 115+. |
+| **Browser** | Chrome, Edge, Brave, Chromium or Vivaldi (any recent version), or Firefox 128+. |
 | **Repository** | A clone of this repo. The extension folder is `VaultGuard.BrowserExtension\`. |
 
 There are no certificates to install and no admin rights or registry edits to make by hand.
@@ -117,6 +117,9 @@ Check the registration after the first start, if you want to:
 
 Firefox removes temporary add-ons when it closes, so repeat this after each restart.
 
+If the popup says Vault Guard needs permission to fill on websites, click **Allow on all websites** (Firefox asks
+before extensions run on sites), then reload the test page.
+
 ---
 
 ## Step 3: Connect the browser to the app
@@ -158,6 +161,11 @@ You need at least one **Login** item saved in the app with a website URL.
 | Choose **Never for this site** | That site isn't asked again (reset it in the popup's Settings → Saving logins) |
 | Lock the app, then click a field | "Vault Guard is locked…" with **I've unlocked it** |
 | Quit the app, then click a field | "Open Vault Guard on this computer…" |
+| Press **Ctrl + Shift + L** on a sign-in page | One saved login: filled and signed in. Several: the menu opens |
+| Click into a password field and press **Ctrl + Shift + G** | A strong password is filled (both boxes on a sign-up form) and copied |
+| Right-click a text field → **Vault Guard** | Fill login / Fill a strong new password / Fill card |
+| Look at the toolbar button on a site you have logins for | A number badge with how many |
+| In the popup, type in the search box | Searches your whole vault; 👤 🔑 ⏱ copy the username, password and code (the last two only for the site you're on) |
 | Switch the browser between light and dark (Chrome/Edge: Settings → Appearance → Mode; Firefox: Settings → Website appearance) | The popup, the field menu, "Save login?" and the other prompts follow it |
 
 Things to know:
