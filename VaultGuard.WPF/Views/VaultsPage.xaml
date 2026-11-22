@@ -126,7 +126,7 @@
                                        Foreground="#4ADE80" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="TotalItemsText" Text="—" FontSize="24"
+                            <TextBlock x:Name="TotalItemsText" Text="…" FontSize="24"
                                        FontWeight="Bold" Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                             <TextBlock Text="Stored Items" FontSize="12" Foreground="{DynamicResource ModernTextTertiaryBrush}"/>
                         </StackPanel>

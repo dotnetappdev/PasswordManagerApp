@@ -291,13 +291,100 @@
     const users = sameScope(field, ['username']);
     const pws = sameScope(field, ['password', 'new-password']);
     const user = fields.get(field).kind === 'username' ? field : users[0];
-    if (user && c.username) setValue(user, c.username);
-    if (pws[0] && c.password) setValue(pws[0], c.password);
-    else if (!pws.length && c.password) {
-      // username-first sign-in (password step comes next): remember nothing, the user picks again on the next step
-    }
+    const filledUser = !!(user && c.username && setValue(user, c.username));
+    const filledPw = !!(pws[0] && c.password && setValue(pws[0], c.password));
     toast(`Filled ${c.title || 'login'}`);
     copyTotpAfterFill(c);
+    if (filledPw) submitAfterFill(pws[0]);
+    else if (filledUser && !pws.length) {
+      // Username first, password on the next step: carry this login on to it, then press "Next".
+      send({ action: 'startPendingFill', itemId: c.id });
+      submitAfterFill(user);
+    }
+  }
+
+  // ---------- sign in after filling ----------
+  // After a login is filled (picked from the menu or the popup), press the form's sign-in button for the user.
+  // On by default; popup Settings → "Sign in after filling" turns it off. It's skipped when the form wants more
+  // than we filled: a captcha, or another visible required field that's still empty.
+  const SUBMIT_TEXT = /^(sign|log)\s*(in|on)\b|^continue\b|^next\b|^submit\b|^go\b|^enter\b|^login\b|^signin\b|^weiter|^anmelden|^connexion|^se connecter|^iniciar/i;
+
+  function findSubmit(scope) {
+    const all = [...scope.querySelectorAll('button, input[type="submit"], input[type="image"], [role="button"]')]
+      .filter(b => !b.disabled && b.getAttribute('aria-disabled') !== 'true' && isVisible(b));
+    const label = (b) => (b.textContent || b.value || b.getAttribute('aria-label') || '').trim();
+    return all.find(b => b.matches('button[type="submit"], input[type="submit"], input[type="image"]'))
+        || all.find(b => SUBMIT_TEXT.test(label(b)))
+        || (scope instanceof HTMLFormElement ? all.find(b => b.matches('button:not([type])')) : null);
+  }
+
+  function needsMore(scope) {
+    if (scope.querySelector('iframe[src*="recaptcha"], iframe[src*="hcaptcha"], iframe[src*="turnstile"], .g-recaptcha, .h-captcha, .cf-turnstile')) return true;
+    return [...scope.querySelectorAll('input[required], select[required], textarea[required]')]
+      .some(i => isVisible(i) && !i.value && i.type !== 'checkbox' && i.type !== 'radio' && !fields.has(i));
+  }
+
+  async function submitAfterFill(field) {
+    const pref = await chrome.storage.local.get('autoSubmitAfterFill').catch(() => ({}));
+    if (pref.autoSubmitAfterFill === false) return;
+    await new Promise(r => setTimeout(r, 350)); // let the page's own scripts see the new values (and enable the button)
+    if (!field.isConnected) return;
+    const scope = scopeOf(field);
+    if (needsMore(scope)) { toast('Filled. Finish the form, then sign in'); return; }
+    const button = findSubmit(scope === document ? document : scope) || (field.form ? null : findSubmit(document));
+    const form = field.form;
+    if (button) {
+      if (form && form.contains(button) && button.matches('button[type="submit"], input[type="submit"], input[type="image"], button:not([type])') && form.requestSubmit) {
+        try { form.requestSubmit(button); return; } catch { /* button not a submitter of this form */ }
+      }
+      button.click();
+    } else if (form?.requestSubmit) {
+      form.requestSubmit();
+    } else {
+      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+      field.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    }
+  }
+
+  // ---------- open & fill ----------
+  // The popup opened this tab for a login (or asked to fill it here). Fill it as soon as the sign-in fields
+  // appear, then sign in; for a username-then-password sign-in, the password step is filled on the next page.
+  let pendingBusy = false, pendingChecks = 0, pendingTimer = 0;
+
+  async function runPendingFill() {
+    if (pendingBusy) return;
+    pendingBusy = true;
+    try {
+      const r = await send({ action: 'takePendingFill', step: 'peek' });
+      if (!r?.pending) { pendingChecks = 99; return; }
+      if (r.error) { toast(r.error); await send({ action: 'takePendingFill', step: 'done' }); pendingChecks = 99; return; }
+      const c = r.credential;
+      const visible = (kind) => [...fields.entries()].filter(([f, st]) => kinds(kind).includes(st.kind) && isVisible(f)).map(([f]) => f);
+      const pw = visible('password')[0];
+      const user = (pw ? sameScope(pw, ['username'])[0] : null) || visible('username')[0];
+      if (pw) {
+        if (user && c.username && !user.value) setValue(user, c.username);
+        else if (user && c.username && user.value !== c.username && !r.usernameDone) setValue(user, c.username);
+        if (c.password) setValue(pw, c.password);
+        await send({ action: 'takePendingFill', step: 'done' });
+        toast(`Filled ${c.title || 'login'}`); // the popup already copied any one-time code
+        if (c.password) submitAfterFill(pw);
+        pendingChecks = 99;
+      } else if (user && !r.usernameDone) {
+        if (c.username) setValue(user, c.username);
+        await send({ action: 'takePendingFill', step: 'username' });
+        toast(`Filled ${c.title || 'login'}`);
+        submitAfterFill(user);
+      }
+    } finally { pendingBusy = false; }
+  }
+  const kinds = (k) => k === 'password' ? ['password'] : ['username'];
+
+  /** Keep looking for the sign-in fields for a while: many sign-in pages draw them after loading. */
+  function schedulePendingFill() {
+    if (pendingChecks >= 40) return;
+    clearTimeout(pendingTimer);
+    pendingTimer = setTimeout(async () => { pendingChecks++; await runPendingFill(); if (pendingChecks < 40) schedulePendingFill(); }, pendingChecks === 0 ? 400 : 1500);
   }
 
   function fillNewPassword(field, pw) {
@@ -582,6 +669,10 @@
   document.addEventListener('mousedown', (e) => { if (menu && e.target !== menu.field && !e.composedPath().includes(host)) closeMenu(); }, true);
   document.addEventListener('focusin', (e) => { if (menu && e.target !== menu.field) closeMenu(); });
   setTimeout(checkPendingSave, 700); // a sign-in on the previous page may be waiting to be saved
+  schedulePendingFill();             // opened by "Open & fill" from the popup?
   // The popup fills through content.js and copies the one-time code itself; it asks us to say so.
-  chrome.runtime.onMessage.addListener((msg) => { if (msg?.action === 'vaultGuardToast' && typeof msg.text === 'string') toast(msg.text.slice(0, 120)); });
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.action === 'vaultGuardToast' && typeof msg.text === 'string') toast(msg.text.slice(0, 120));
+    if (msg?.action === 'vaultGuardRunPendingFill') { pendingChecks = 0; schedulePendingFill(); sendResponse({ success: true }); }
+  });
 })();

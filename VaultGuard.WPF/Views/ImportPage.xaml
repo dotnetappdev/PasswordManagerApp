@@ -278,7 +278,7 @@
                                                   FontWeight="Bold"
                                                   FontSize="28"
                                                   HorizontalAlignment="Center"/>
-                                        <TextBlock Text="Skipped"
+                                        <TextBlock Text="Missing fields"
                                                   Foreground="White"
                                                   FontSize="12"
                                                   Opacity="0.85"
@@ -317,12 +317,25 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
-                                          Text="Import Details"
+                                          Text="Import report"
                                           VerticalAlignment="Center"
                                           Style="{StaticResource ModernHeading3Style}"/>
                                 <Button Grid.Column="1"
+                                       x:Name="SaveReportButton"
+                                       Style="{StaticResource ModernSecondaryButtonStyle}"
+                                       Margin="0,0,8,0"
+                                       Click="SaveReportButton_Click"
+                                       Visibility="{Binding HasReport, Converter={StaticResource BoolToVisibilityConverter}}"
+                                       ToolTip="Save this report as a text file (titles and field names only, no passwords)">
+                                    <StackPanel Orientation="Horizontal" Margin="8,4">
+                                        <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="14" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Save report" FontSize="14" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="2"
                                        x:Name="ClearResultsButton"
                                        Style="{StaticResource ModernSecondaryButtonStyle}"
                                        Click="ClearResultsButton_Click"
@@ -334,7 +347,7 @@
                                 </Button>
                             </Grid>
                             
-                            <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer MaxHeight="480" VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding ImportResults}" Background="Transparent">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -369,7 +382,7 @@
                                                     <TextBlock Text="{Binding Message}"
                                                               Style="{StaticResource ModernCaptionStyle}"
                                                               Foreground="{DynamicResource ModernTextSecondaryBrush}"
-                                                              TextTrimming="CharacterEllipsis"
+                                                              TextWrapping="Wrap"
                                                               Visibility="{Binding Message, Converter={StaticResource StringToVisibilityConverter}}"/>
                                                 </StackPanel>
 

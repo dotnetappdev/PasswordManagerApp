@@ -144,3 +144,24 @@
 .pm-creditcard-icon:hover {
   background-color: #1e7e34 !important;
 }
+/* Light/dark: the pickers and the authenticator banner take their colours from these variables, which follow
+   the browser's colour scheme (Chrome/Edge: Settings → Appearance → Mode; Firefox: Website appearance). */
+.pm-credential-popup, .pm-password-popup, .pm-creditcard-popup, .pm-contextual-popup, .pm-inline-dropdown {
+  --vg-bg: #ffffff; --vg-fg: #1f2937; --vg-muted: #667085; --vg-head: #f8f9fa; --vg-line: #e5e7eb; --vg-hover: #f1f4fb;
+  color: var(--vg-fg) !important;
+  background-color: var(--vg-bg) !important;
+  color-scheme: light dark;
+}
+#pm-totp-banner {
+  --vg-totp-bg: #ffffff; --vg-totp-fg: #172033; --vg-totp-muted: #667085; --vg-totp-inset: #eef3ff;
+  --vg-totp-accent: #2252DA; --vg-totp-ghost: #eef0f4; --vg-totp-shadow: 0 12px 36px rgba(16,24,40,0.25);
+}
+@media (prefers-color-scheme: dark) {
+  .pm-credential-popup, .pm-password-popup, .pm-creditcard-popup, .pm-contextual-popup, .pm-inline-dropdown {
+    --vg-bg: #1c2130; --vg-fg: #e6e9f0; --vg-muted: #98a2b3; --vg-head: #232838; --vg-line: #313849; --vg-hover: #263252;
+  }
+  #pm-totp-banner {
+    --vg-totp-bg: #1a1a2e; --vg-totp-fg: #e5e5e5; --vg-totp-muted: #9d9d9d; --vg-totp-inset: #0d1b2a;
+    --vg-totp-accent: #60A5FA; --vg-totp-ghost: #2a2a3e; --vg-totp-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+}

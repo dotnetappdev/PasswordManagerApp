@@ -13,11 +13,23 @@
     <BrowserSupportRid Condition="'$(BrowserSupportRid)' == ''">win-x64</BrowserSupportRid>
   </PropertyGroup>
 
+  <!-- The helper is published to obj\ first (nothing ever runs from there), then copied next to the app. If a
+       browser is running an older copy of the helper from the app folder, its files are locked: the copy then
+       only warns, and the app still builds and runs. The app normally gives browsers their own copy
+       (BrowserHelperStaging), so this only matters for a copy registered by an older build. -->
   <Target Name="VgBuildBrowserSupport" AfterTargets="Build" Condition="'$(VgSkipBrowserSupport)' != 'true'">
+    <PropertyGroup>
+      <VgBrowserSupportStage>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)BrowserSupport\'))</VgBrowserSupportStage>
+    </PropertyGroup>
     <MSBuild Projects="$(BrowserSupportProject)" Targets="Restore"
              Properties="RuntimeIdentifier=$(BrowserSupportRid);SelfContained=false;VgBrowserSupportRestore=build" />
     <MSBuild Projects="$(BrowserSupportProject)" Targets="Publish"
-             Properties="Configuration=$(Configuration);RuntimeIdentifier=$(BrowserSupportRid);SelfContained=false;PublishSingleFile=false;PublishTrimmed=false;PublishDir=$(TargetDir)BrowserSupport\" />
+             Properties="Configuration=$(Configuration);RuntimeIdentifier=$(BrowserSupportRid);SelfContained=false;PublishSingleFile=false;PublishTrimmed=false;PublishDir=$(VgBrowserSupportStage)" />
+    <ItemGroup>
+      <VgBrowserSupportFiles Include="$(VgBrowserSupportStage)**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(VgBrowserSupportFiles)" DestinationFiles="@(VgBrowserSupportFiles->'$(TargetDir)BrowserSupport\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="true" />
   </Target>
 
   <Target Name="VgPublishBrowserSupport" AfterTargets="Publish" Condition="'$(VgSkipBrowserSupport)' != 'true'">

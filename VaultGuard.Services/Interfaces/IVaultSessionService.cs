@@ -62,4 +62,16 @@ public interface IVaultSessionService
     /// Useful for services that need to encrypt/decrypt without knowing the session ID ahead of time.
     /// </summary>
     string? GetActiveSessionId();
+
+    /// <summary>
+    /// The unlocked session belonging to <paramref name="userId"/>, or null. Use this rather than
+    /// <see cref="GetActiveSessionId"/> whenever the data belongs to someone: on a machine with several
+    /// profiles, "any unlocked session" can be another person's, and their key can't read (or must not write)
+    /// this user's items.
+    /// </summary>
+    string? GetActiveSessionIdForUser(string userId)
+    {
+        var sid = GetActiveSessionId();
+        return sid != null && GetSessionUserId(sid) == userId ? sid : null;
+    }
 }

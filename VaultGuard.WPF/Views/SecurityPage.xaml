@@ -52,7 +52,7 @@
                         <Border x:Name="ScoreCircle" Width="150" Height="150" CornerRadius="75"
                                 BorderThickness="6" BorderBrush="#333333" Background="#1A1A1A">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock x:Name="ScoreText" Text="—" FontSize="44" FontWeight="Bold"
+                                <TextBlock x:Name="ScoreText" Text="…" FontSize="44" FontWeight="Bold"
                                            HorizontalAlignment="Center"
                                            Foreground="{DynamicResource ModernTextPrimaryBrush}"/>
                                 <TextBlock x:Name="RatingText" Text="" FontSize="14" FontWeight="SemiBold"

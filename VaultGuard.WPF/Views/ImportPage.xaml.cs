@@ -92,6 +92,30 @@ public sealed partial class ImportPage : Page
             _viewModel.SelectedFilePath = string.Empty;
     }
 
+    private void SaveReportButton_Click(object sender, RoutedEventArgs e)
+    {
+        var text = _viewModel?.BuildReportText();
+        if (string.IsNullOrEmpty(text)) return;
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Save import report",
+            FileName = $"Vault Guard import report {DateTime.Now:yyyy-MM-dd HHmm}.txt",
+            Filter = "Text file (*.txt)|*.txt",
+            DefaultExt = ".txt"
+        };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            System.IO.File.WriteAllText(dialog.FileName, text);
+            VaultGuard.WPF.Services.ToastService.Instance.Success("Import report saved.");
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("Couldn't save the import report", ex);
+            VaultGuard.WPF.Services.ToastService.Instance.Show($"Couldn't save the report: {ex.Message}", VaultGuard.WPF.Services.ToastType.Error);
+        }
+    }
+
     private void ClearResultsButton_Click(object sender, RoutedEventArgs e)
     {
         if (_viewModel != null)

@@ -156,7 +156,7 @@ public class ImportViewModel : BaseViewModel
         {
             var parts = new List<string>();
             if (ImportedItemsCount > 0) parts.Add($"{ImportedItemsCount} imported");
-            if (SkippedItemsCount > 0)  parts.Add($"{SkippedItemsCount} skipped");
+            if (SkippedItemsCount > 0)  parts.Add($"{SkippedItemsCount} missing some fields");
             if (ErrorItemsCount > 0)    parts.Add($"{ErrorItemsCount} failed");
             return string.Join(" · ", parts);
         }
@@ -239,58 +239,50 @@ public class ImportViewModel : BaseViewModel
 
             var result = await _importService.ImportPasswordsAsync(providerName, fileStream, fileName, userId, progress, sessionId);
 
-            // Process results
+            // Process results: one row per item from the import report (what carried over, what the file
+            // didn't have, and what failed and why).
+            LastResult = result;
+            LastFileName = fileName;
             if (result.Success)
             {
-                // Show successfully saved items
-                var successCount = result.SuccessfulImports;
-                var itemIndex = 0;
-                foreach (var item in result.ImportedItems)
-                {
-                    if (itemIndex < successCount)
-                    {
-                        ImportResults.Add(new ImportResultItem
-                        {
-                            Title = item.Title ?? "Unknown",
-                            Status = "Success",
-                            Message = "Imported successfully",
-                            ItemType = item.Type.ToString()
-                        });
-                    }
-                    itemIndex++;
-                }
-
-                // Show per-item failures from warnings
-                foreach (var warning in result.Warnings)
+                foreach (var entry in result.Report.OrderBy(r => r.Outcome == VaultGuard.Imports.Interfaces.ImportItemOutcome.Failed ? 0
+                                                              : r.Outcome == VaultGuard.Imports.Interfaces.ImportItemOutcome.ImportedWithGaps ? 1 : 2)
+                                                   .ThenBy(r => r.Title, StringComparer.CurrentCultureIgnoreCase))
                 {
                     ImportResults.Add(new ImportResultItem
                     {
-                        Title = ExtractTitleFromWarning(warning),
-                        Status = "Error",
-                        Message = warning,
-                        ItemType = "N/A"
+                        Title = entry.Title,
+                        ItemType = entry.ItemType,
+                        Status = entry.Outcome switch
+                        {
+                            VaultGuard.Imports.Interfaces.ImportItemOutcome.Imported => "Success",
+                            VaultGuard.Imports.Interfaces.ImportItemOutcome.ImportedWithGaps => "Warning",
+                            _ => "Error"
+                        },
+                        Message = entry.Summary
                     });
                 }
 
                 ImportedItemsCount = result.SuccessfulImports;
                 ErrorItemsCount = result.FailedImports;
-                SkippedItemsCount = Math.Max(0, result.TotalItemsProcessed - result.SuccessfulImports - result.FailedImports);
+                // "Missing fields": imported, but the file had nothing for some usual fields.
+                SkippedItemsCount = result.Report.Count(r => r.Outcome == VaultGuard.Imports.Interfaces.ImportItemOutcome.ImportedWithGaps);
             }
             else
             {
-                var resultItem = new ImportResultItem
+                ImportResults.Add(new ImportResultItem
                 {
-                    Title = "Import Failed",
+                    Title = "The file couldn't be imported",
                     Status = "Error",
-                    Message = result.ErrorMessage ?? "Unknown error occurred",
-                    ItemType = "N/A"
-                };
-                ImportResults.Add(resultItem);
+                    Message = result.ErrorMessage ?? "No reason was given.",
+                    ItemType = "File"
+                });
                 ErrorItemsCount = 1;
             }
 
             ImportProgress = 100;
-            ImportStatus = $"Done — {ImportedItemsCount} imported, {SkippedItemsCount} skipped, {ErrorItemsCount} errors.";
+            ImportStatus = $"Done: {ImportedItemsCount} imported ({SkippedItemsCount} with missing fields), {ErrorItemsCount} not imported.";
+            OnPropertyChanged(nameof(HasReport));
 
             OnPropertyChanged(nameof(HasResults));
             OnPropertyChanged(nameof(HasImportCompleted));
@@ -313,8 +305,19 @@ public class ImportViewModel : BaseViewModel
         }
     }
 
+    /// <summary>The last import's full result, for "Save report".</summary>
+    public VaultGuard.Imports.Interfaces.ImportResult? LastResult { get; private set; }
+    public string? LastFileName { get; private set; }
+    public bool HasReport => LastResult != null;
+
+    /// <summary>The last import as plain text (no secrets: titles, types and field names only).</summary>
+    public string? BuildReportText() => LastResult == null ? null
+        : VaultGuard.Imports.Services.ImportReport.ToText(LastResult, LastFileName, SelectedImportType);
+
     public void ClearResults()
     {
+        LastResult = null;
+        OnPropertyChanged(nameof(HasReport));
         ImportResults.Clear();
         ImportedItemsCount = 0;
         SkippedItemsCount = 0;
@@ -325,16 +328,6 @@ public class ImportViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(HasImportCompleted));
         OnPropertyChanged(nameof(HasNoImport));
-    }
-
-    private static string ExtractTitleFromWarning(string warning)
-    {
-        // Warnings look like "Failed to import 'Title': reason"
-        var start = warning.IndexOf('\'');
-        var end = warning.IndexOf('\'', start + 1);
-        if (start >= 0 && end > start)
-            return warning[(start + 1)..end];
-        return "Item";
     }
 }
 

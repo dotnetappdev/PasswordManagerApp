@@ -25,15 +25,33 @@ public class PasswordRevealService : IPasswordRevealService
 
     public bool CanRevealPasswords(string sessionId) => _vaultSessionService.IsVaultUnlocked(sessionId);
 
-    private string ResolveSessionId(string sessionId)
+    /// <summary>
+    /// The session to use for an item owned by <paramref name="ownerUserId"/>: the caller's session if it's
+    /// unlocked and (when the owner is known) belongs to that owner, otherwise the owner's own unlocked session.
+    /// It never falls back to another user's session: their key can't decrypt this user's items, and using it
+    /// is what produced "Couldn't decrypt this password" on PCs with more than one profile.
+    /// </summary>
+    private string ResolveSessionId(string sessionId, string? ownerUserId = null)
     {
-        if (_vaultSessionService.IsVaultUnlocked(sessionId)) return sessionId;
+        if (_vaultSessionService.IsVaultUnlocked(sessionId) &&
+            (string.IsNullOrEmpty(ownerUserId) || _vaultSessionService.GetSessionUserId(sessionId) == ownerUserId))
+            return sessionId;
+        if (!string.IsNullOrEmpty(ownerUserId))
+            return _vaultSessionService.GetActiveSessionIdForUser(ownerUserId) ?? string.Empty; // owner's vault is locked
         return _vaultSessionService.GetActiveSessionId() ?? sessionId;
+    }
+
+    /// <summary>Why a reveal produced nothing — for messages the user can act on.</summary>
+    public RevealProblem Diagnose(string? ownerUserId, string sessionId)
+    {
+        var sid = ResolveSessionId(sessionId, ownerUserId);
+        if (!CanRevealPasswords(sid)) return RevealProblem.Locked;
+        return RevealProblem.WrongKey;
     }
 
     public async Task<string?> RevealPasswordAsync(LoginItem loginItem, string sessionId)
     {
-        var sid = ResolveSessionId(sessionId);
+        var sid = ResolveSessionId(sessionId, loginItem.UserId);
         try
         {
             if (!CanRevealPasswords(sid))
@@ -120,7 +138,7 @@ public class PasswordRevealService : IPasswordRevealService
 
     public bool OpenItem(PasswordItem item, string sessionId)
     {
-        var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, ResolveSessionId(sessionId));
+        var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, ResolveSessionId(sessionId, item.UserId));
         if (cipher == null) return false;
         var failed = cipher.Open(item);
         if (failed.Count > 0)
@@ -130,7 +148,7 @@ public class PasswordRevealService : IPasswordRevealService
 
     public async Task<string?> RevealTotpSecretAsync(LoginItem loginItem, string sessionId)
     {
-        var sid = ResolveSessionId(sessionId);
+        var sid = ResolveSessionId(sessionId, loginItem.UserId);
         try
         {
             if (!CanRevealPasswords(sid))

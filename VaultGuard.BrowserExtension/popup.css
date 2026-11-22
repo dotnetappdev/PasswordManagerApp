@@ -9,6 +9,9 @@
 /* Colors aligned with UIConstants for consistency across platforms */
 
 :root {
+  /* Follow the browser's light/dark mode (Chrome/Edge: Settings → Appearance → Mode; Firefox: Website appearance). */
+  color-scheme: light dark;
+
   /* Primary Colors */
   --primary-blue: #005BFF;
   --primary-blue-light: #3B82F6;
@@ -45,6 +48,40 @@
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+
+  /* Surfaces that used to be hard-coded */
+  --hover-bg: #e9ecef;
+  --item-hover-bg: #f8f9ff;
+  --info-bg: #f0f9ff;
+  --error-bg: #f8d7da;   --error-border: #f5c6cb;   --error-text: #721c24;
+  --success-bg: #d4edda; --success-border: #c3e6cb; --success-text: #155724;
+  --scroll-track: #f1f1f1; --scroll-thumb: #c1c1c1; --scroll-thumb-hover: #a8a8a8;
+  --muted-line: #dee2e6;
+  --btn-secondary-bg: #6C757D; --btn-secondary-hover: #545b62;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-blue: #4C8DFF;
+    --primary-blue-dark: #2F6FE8;
+    --background-light: #16181D;
+    --surface-light: #1F2229;
+    --border-light: #343844;
+    --text-primary: #E8EAED;
+    --text-secondary: #A4ABB8;
+    --text-tertiary: #7C8494;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+    --hover-bg: #2A2E37;
+    --item-hover-bg: #232B3D;
+    --info-bg: #1A2638;
+    --error-bg: #3A1D21;   --error-border: #5C2A30;   --error-text: #F5B4BB;
+    --success-bg: #17301F; --success-border: #24502F; --success-text: #9EE2B0;
+    --scroll-track: #1F2229; --scroll-thumb: #3D4250; --scroll-thumb-hover: #4B5162;
+    --muted-line: #3D4250;
+    --btn-secondary-bg: #3A3F4B; --btn-secondary-hover: #4A5060;
+  }
+  input, select, textarea { background: var(--surface-light); color: var(--text-primary); border-color: var(--border-light); }
 }
 
 * {
@@ -122,12 +159,12 @@ body {
 }
 
 .btn-secondary {
-  background: var(--text-secondary);
+  background: var(--btn-secondary-bg);
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #545b62;
+  background: var(--btn-secondary-hover);
 }
 
 .btn-small {
@@ -144,7 +181,7 @@ body {
 }
 
 .btn-icon:hover {
-  background: #e9ecef;
+  background: var(--hover-bg);
 }
 }
 
@@ -186,10 +223,10 @@ body {
 
 .error {
   padding: 10px var(--spacing-md);
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
   border-radius: var(--radius-sm);
-  color: #721c24;
+  color: var(--error-text);
   font-size: 13px;
 }
 
@@ -200,15 +237,15 @@ body {
 }
 
 .message.success {
-  background: #d4edda;
-  border: 1px solid #c3e6cb;
-  color: #155724;
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success-text);
 }
 
 .message.error {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-text);
 }
 
 .footer-links {
@@ -288,7 +325,7 @@ body {
 
 .credential-item:hover {
   border-color: var(--primary-blue);
-  background: #f8f9ff;
+  background: var(--item-hover-bg);
 }
 
 .credential-title {
@@ -395,19 +432,19 @@ body {
 
 .credentials-list::-webkit-scrollbar-track,
 .tab-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--scroll-track);
   border-radius: 3px;
 }
 
 .credentials-list::-webkit-scrollbar-thumb,
 .tab-content::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--scroll-thumb);
   border-radius: 3px;
 }
 
 .credentials-list::-webkit-scrollbar-thumb:hover,
 .tab-content::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--scroll-thumb-hover);
 }
 
 /* Settings Info */
@@ -507,7 +544,7 @@ body {
   color: var(--text-secondary);
   margin-top: var(--spacing-sm);
   padding: var(--spacing-sm);
-  background: #f0f9ff;
+  background: var(--info-bg);
   border-left: 3px solid var(--primary-blue);
   border-radius: var(--radius-sm);
 }
@@ -668,7 +705,7 @@ body {
 }
 
 .footer-links span {
-  color: #dee2e6;
+  color: var(--muted-line);
   margin: 0 4px;
 }
 
@@ -678,3 +715,5 @@ body {
 .app-link-divider { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 11px; color: #888; }
 .app-link-divider::before, .app-link-divider::after { content: ""; flex: 1; border-top: 1px solid #ddd; }
 @media (prefers-color-scheme: dark) { .app-link-status { color: #bbb; } .app-link-divider::before, .app-link-divider::after { border-color: #444; } }
+
+.credential-action { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--primary-blue); }

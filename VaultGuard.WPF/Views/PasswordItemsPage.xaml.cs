@@ -89,7 +89,12 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     private void SetText(string elementName, string value)
     {
         var tb = GetElement<TextBlock>(elementName);
-        if (tb != null) tb.Text = value;
+        if (tb == null) return;
+        // Empty values read "Not added" (muted, italic) rather than a bare dash.
+        var empty = Controls.ReadOnlyField.IsEmptyValue(value);
+        tb.Text = empty ? Controls.ReadOnlyField.EmptyText : value;
+        tb.FontStyle = empty ? FontStyles.Italic : FontStyles.Normal;
+        tb.Opacity = empty ? 0.5 : 1.0;
     }
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -561,6 +566,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         var detailPassword = GetElement<Controls.ReadOnlyField>("DetailPassword");
         if (detailPassword == null) return;
+        // On a card this row is the cardholder name: plain text, nothing to reveal.
+        if (_selectedItem?.Type == ItemType.CreditCard) return;
+        // Nothing saved: there's nothing to show or hide.
+        if (Controls.ReadOnlyField.IsEmptyValue(detailPassword.Text)) return;
 
         // Mask → reveal: decrypt on demand
         if (detailPassword.Text.StartsWith("•"))
@@ -590,13 +599,26 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             // login to decrypt or the decrypt failed. Never ciphertext — see ShowItemDetails.
             var raw = detailPassword.CopyText ?? string.Empty;
             if (!string.IsNullOrEmpty(raw)) detailPassword.Text = raw;
-            else ToastService.Instance.Show("Couldn't decrypt this password — the vault may be locked.", ToastType.Warning);
+            else ToastService.Instance.Show(await DescribeRevealFailureAsync(_selectedItem), ToastType.Warning);
         }
         else
         {
             // Reveal → mask
             detailPassword.Text = "••••••••";
         }
+    }
+
+    /// <summary>A message that says what actually went wrong, instead of always blaming a locked vault.</summary>
+    private async Task<string> DescribeRevealFailureAsync(PasswordItem? item)
+    {
+        var login = item?.LoginItem;
+        if (item?.PasskeyItem == null && login != null && string.IsNullOrEmpty(login.EncryptedPassword))
+            return "This login has no saved password.";
+        var svc = _serviceProvider?.GetService<IPasswordRevealService>();
+        if (svc == null) return "Couldn't decrypt this password.";
+        return svc.Diagnose(item?.UserId, await GetSessionIdAsync() ?? string.Empty) == RevealProblem.Locked
+            ? "Vault Guard is locked. Unlock it and try again."
+            : "This password was encrypted with a different key, so it can't be opened with this vault's master password. Import the item again or restore it from a backup.";
     }
 
     /// <summary>
@@ -632,6 +654,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_selectedItem?.Type == ItemType.CreditCard)
+        {
+            var holder = _selectedItem.CreditCardItem?.CardholderName?.Trim();
+            if (string.IsNullOrEmpty(holder)) { ToastService.Instance.Show("This card has no cardholder name.", ToastType.Info); return; }
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(holder);
+            ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Cardholder name"));
+            return;
+        }
         if (_selectedItem?.LoginItem == null) return;
         try
         {
@@ -642,7 +672,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Password"));
                 return;
             }
-            await ShowTemporaryMessageAsync("No password available — vault may be locked");
+            await ShowTemporaryMessageAsync(await DescribeRevealFailureAsync(_selectedItem));
         }
         catch (Exception ex)
         {
@@ -915,6 +945,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (creditCardSection != null) creditCardSection.Visibility = Visibility.Collapsed;
         var revealCardNumberBtn = GetElement<Button>("RevealCardNumberButton");
         if (revealCardNumberBtn != null) revealCardNumberBtn.Visibility = Visibility.Collapsed;
+        // The password row's eye button; hidden for cards, where that row shows the (not secret) cardholder name.
+        var revealPasswordBtn = GetElement<Button>("RevealPasswordButton");
+        if (revealPasswordBtn != null)
+            revealPasswordBtn.Visibility = item.Type == ItemType.CreditCard ? Visibility.Collapsed : Visibility.Visible;
         var shareWifiBtn = GetElement<Button>("ShareWifiQrButton");
         if (shareWifiBtn != null) shareWifiBtn.Visibility = item.WiFiItem != null ? Visibility.Visible : Visibility.Collapsed;
 
@@ -942,8 +976,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             // Reuse the "password" field row to show cardholder name in plain text
             if (detailPassword != null)
             {
-                detailPassword.Text     = cc?.CardholderName ?? "—";
-                detailPassword.CopyText = cc?.CardholderName ?? string.Empty;
+                var holder = cc?.CardholderName?.Trim();
+                detailPassword.Text     = string.IsNullOrEmpty(holder) ? "—" : holder;
+                detailPassword.CopyText = holder ?? string.Empty;
             }
 
             // Extra CC fields

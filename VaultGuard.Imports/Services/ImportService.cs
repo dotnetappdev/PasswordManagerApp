@@ -177,8 +177,10 @@ public class ImportService : IImportService
                 var totalToImport = result.ImportedItems.Count;
                 var processed = 0;
                 progress?.Report(0);
+                result.Report.Clear();
                 foreach (var item in result.ImportedItems)
                 {
+                    List<string>? missing = null;
                     try
                     {
                         // Map the item to the actual created collection and category IDs
@@ -218,6 +220,9 @@ public class ImportService : IImportService
                                 item.PasskeyItem.UserId = userId;
                         }
 
+                        // For the report: what the file had no value for (checked while the secrets are still plaintext).
+                        missing = ImportReport.MissingFields(item);
+
                         // Encrypt every plaintext secret with this user's vault key (refuses the item if that isn't possible)
                         if (_vaultSessionService != null)
                         {
@@ -239,12 +244,14 @@ public class ImportService : IImportService
 
                         await _passwordItemService.CreateAsync(item);
                         result.SuccessfulImports++;
+                        result.Report.Add(ImportReport.Imported(item, missing));
                     }
                     catch (Exception ex)
                     {
                         result.FailedImports++;
                         var detail = ex.InnerException != null ? $"{ex.Message} → {ex.InnerException.Message}" : ex.Message;
                         result.Warnings.Add($"Failed to import '{item.Title}': {detail}");
+                        result.Report.Add(ImportReport.Failed(item, detail));
                     }
 
                     processed++;
@@ -389,12 +396,13 @@ public class ImportService : IImportService
     {
         if (_vaultSessionService == null || !VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(item)) return;
 
+        // The import's own session only if it belongs to the item's owner (a stale or other profile's session
+        // would seal the secrets with a key the owner doesn't have); otherwise the owner's unlocked session.
         var sid = sessionId;
-        if (string.IsNullOrEmpty(sid) || !_vaultSessionService.IsVaultUnlocked(sid))
+        if (string.IsNullOrEmpty(sid) || !_vaultSessionService.IsVaultUnlocked(sid) ||
+            (!string.IsNullOrEmpty(item.UserId) && _vaultSessionService.GetSessionUserId(sid) != item.UserId))
         {
-            var active = _vaultSessionService.GetActiveSessionId();
-            sid = active != null && !string.IsNullOrEmpty(item.UserId) && _vaultSessionService.GetSessionUserId(active) == item.UserId
-                ? active : null;
+            sid = string.IsNullOrEmpty(item.UserId) ? null : _vaultSessionService.GetActiveSessionIdForUser(item.UserId);
         }
 
         var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, sid);

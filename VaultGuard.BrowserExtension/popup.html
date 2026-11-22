@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="color-scheme" content="light dark">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vault Guard</title>
@@ -220,6 +221,17 @@
         </div>
         <div class="form-group">
           <label class="checkbox-label">
+            <input type="checkbox" id="autoSubmitAfterFill" checked>
+            <span class="checkmark"></span>
+            Sign in after filling
+          </label>
+          <small>
+            After you pick a login, Vault Guard fills it and presses the site's sign-in button for you. It won't if
+            the page needs anything else first, like a captcha.
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
             <input type="checkbox" id="copyTotpAfterFill" checked>
             <span class="checkmark"></span>
             Copy one-time code after filling
@@ -291,8 +303,8 @@
           <h3>Support</h3>
           <p>For help, click the Help button or visit our documentation.</p>
           
-          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e6ed; text-align: center;">
-            <p style="color: #6c757d; font-size: 12px;">
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-light); text-align: center;">
+            <p style="color: var(--text-secondary); font-size: 12px;">
               © 2024 Vault Guard. All rights reserved.
             </p>
           </div>
@@ -365,7 +377,7 @@
                • Try manually copying the password</p>
           </div>
           
-          <p style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+          <p style="margin-top: 20px; padding: 15px; background: var(--background-light); border-radius: 8px;">
             <strong>Need more help?</strong> Check the <a href="#" id="openFullHelp">full documentation</a> for detailed instructions.
           </p>
         </div>

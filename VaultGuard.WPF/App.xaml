@@ -26,8 +26,10 @@
             <sys:Double x:Key="QuickActionFontSize">14</sys:Double>
             <sys:Double x:Key="QuickActionIconSize">16</sys:Double>
             <sys:Double x:Key="DetailTitleFontSize">15</sys:Double>
-            <sys:Double x:Key="DetailValueFontSize">14</sys:Double>
-            <sys:Double x:Key="DetailLabelFontSize">11</sys:Double>
+            <sys:Double x:Key="DetailValueFontSize">15</sys:Double>
+            <sys:Double x:Key="DetailLabelFontSize">12</sys:Double>
+            <!-- Height of a field in the item details pane; scales with the "Details" text size. -->
+            <sys:Double x:Key="DetailFieldMinHeight">46</sys:Double>
             <sys:Double x:Key="DialogLabelFontSize">12</sys:Double>
             <sys:Double x:Key="DialogFontSize">14</sys:Double>
             <sys:Double x:Key="DialogTitleFontSize">16</sys:Double>

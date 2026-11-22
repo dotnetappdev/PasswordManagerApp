@@ -77,6 +77,18 @@ class VaultGuardBackground {
         case 'captureLogin':
           sendResponse(await this.captureLogin(request, sender));
           break;
+        case 'openAndFill':
+          sendResponse(await this.openAndFill(request));
+          break;
+        case 'fillInTab':
+          sendResponse(await this.fillInTab(request));
+          break;
+        case 'startPendingFill':
+          sendResponse(await this.startPendingFill(request, sender));
+          break;
+        case 'takePendingFill':
+          sendResponse(await this.takePendingFill(request, sender));
+          break;
         case 'getPendingSave':
           sendResponse(await this.getPendingSave(sender));
           break;
@@ -349,6 +361,96 @@ class VaultGuardBackground {
     if (!(await this.hasAccess())) return { matches: [] };
     const r = await this.sendNativeMessage({ action: 'checkPasswordReuse', domain: site.host, loginPassword: password });
     return { matches: Array.isArray(r?.matches) ? r.matches.slice(0, 3) : [], site: site.host };
+  }
+
+  // ---------- Open & fill / fill and sign in ----------
+  // The popup (or the in-page menu) records which login to fill in which tab; the page's own script then asks for
+  // it. The password is fetched for the tab's real site, so the app's site check still applies: a login is never
+  // filled on a site that doesn't match its saved website. Kept in session memory for 2 minutes, so a sign-in that
+  // asks for the username on one page and the password on the next is filled on both.
+
+  static FILL_TTL_MS = 120000;
+
+  fillKey(tabId) { return `pendingFill:${tabId}`; }
+
+  /** "example.co.uk" for login.example.co.uk: good enough to let a sign-in move between a site's own subdomains. */
+  siteKey(host) {
+    const parts = String(host || '').toLowerCase().replace(/^www\./, '').split('.');
+    if (parts.length <= 2) return parts.join('.');
+    const sld = parts[parts.length - 2];
+    const twoPart = parts[parts.length - 1].length === 2 && ['co', 'com', 'org', 'net', 'gov', 'ac', 'edu'].includes(sld);
+    return parts.slice(twoPart ? -3 : -2).join('.');
+  }
+
+  hostOfUrl(url) {
+    try {
+      const u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`);
+      return (u.protocol === 'https:' || u.protocol === 'http:') ? { href: u.href, host: u.hostname.replace(/^www\./, '') } : null;
+    } catch { return null; }
+  }
+
+  async setPendingFill(tabId, itemId, host) {
+    await (await this.sessionStore()).set({ [this.fillKey(tabId)]: { itemId, host, at: Date.now(), usernameDone: false } });
+  }
+
+  /** Popup: open the login's website and sign in there. */
+  async openAndFill(request) {
+    const target = this.hostOfUrl(request.url || '');
+    if (!target || !Number.isInteger(request.itemId)) return { success: false, error: 'This login has no website to open.' };
+    const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const blank = active && /^(chrome|edge|brave|about):\/\/(newtab|blank)|^about:blank|^chrome:\/\/new-tab-page/i.test(active.url || active.pendingUrl || '');
+    // Record the fill before the site starts loading, so the page can't ask before it's there.
+    const tab = blank ? active : await chrome.tabs.create({ url: 'about:blank', active: true });
+    await this.setPendingFill(tab.id, request.itemId, target.host);
+    await chrome.tabs.update(tab.id, { url: target.href });
+    return { success: true };
+  }
+
+  /** Popup: fill this login on the page that's open now (and sign in). The page's own script reports its site. */
+  async fillInTab(request) {
+    if (!Number.isInteger(request.itemId) || !Number.isInteger(request.tabId)) return { success: false };
+    await this.setPendingFill(request.tabId, request.itemId, null);
+    const sent = await chrome.tabs.sendMessage(request.tabId, { action: 'vaultGuardRunPendingFill' }).then(() => true).catch(() => false);
+    if (!sent) {
+      await (await this.sessionStore()).remove(this.fillKey(request.tabId));
+      return { success: false, error: "Vault Guard can't fill on this page. Reload the page and try again." };
+    }
+    return { success: true };
+  }
+
+  /** In-page menu: a username-only step was filled; carry the login on to the password step. */
+  async startPendingFill(request, sender) {
+    const site = this.senderSite(sender);
+    if (!site || !sender?.tab?.id || !Number.isInteger(request.itemId)) return { success: false };
+    await (await this.sessionStore()).set({ [this.fillKey(sender.tab.id)]: { itemId: request.itemId, host: site.host, at: Date.now(), usernameDone: true } });
+    return { success: true };
+  }
+
+  /**
+   * The page asks for its pending fill. request.step: 'peek' (is there one?), 'username' (filled the username
+   * only: keep it for the password step), 'done' (filled the password: forget it).
+   */
+  async takePendingFill(request, sender) {
+    if (!sender?.tab?.id) return { pending: false };
+    const store = await this.sessionStore();
+    const key = this.fillKey(sender.tab.id);
+    const p = (await store.get(key))[key];
+    if (!p) return { pending: false };
+    const site = this.senderSite(sender);
+    if (site && !p.host) p.host = site.host; // "fill here": the tab's site, as its page reports it
+    if (!site || Date.now() - p.at > VaultGuardBackground.FILL_TTL_MS || this.siteKey(site.host) !== this.siteKey(p.host)) {
+      // Expired, or the tab went somewhere else entirely: drop it.
+      if (!site || Date.now() - p.at > VaultGuardBackground.FILL_TTL_MS) await store.remove(key);
+      return { pending: false };
+    }
+    if (request.step === 'done') { await store.remove(key); return { pending: false }; }
+    if (request.step === 'username') { await store.set({ [key]: { ...p, usernameDone: true, at: Date.now() } }); return { pending: true }; }
+    if (!(await this.hasAccess())) return { pending: true, error: 'Connect this browser to Vault Guard first.' };
+    const r = await this.sendNativeMessage({ action: 'getCredentials', domain: site.host });
+    const c = (r?.credentials || []).find(x => x.id === p.itemId);
+    if (!c) return { pending: true, error: r?.error || `Vault Guard won't fill this login on ${site.host}: it doesn't match the login's saved website.` };
+    return { pending: true, usernameDone: !!p.usernameDone,
+             credential: { id: c.id, title: c.title, username: c.username || '', password: c.password || '', hasTotp: !!c.hasTotp } };
   }
 
   // ---------- "Save this login?" ----------
