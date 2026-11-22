@@ -154,6 +154,7 @@ You need at least one **Login** item saved in the app with a website URL.
 | Choose **Never for this site** | That site isn't asked again (reset it in the popup's Settings → Saving logins) |
 | Lock the app, then click a field | "Vault Guard is locked…" with **I've unlocked it** |
 | Quit the app, then click a field | "Open Vault Guard on this computer…" |
+| Switch the browser between light and dark (Chrome/Edge: Settings → Appearance → Mode; Firefox: Settings → Website appearance) | The popup, the field menu, "Save login?" and the other prompts follow it |
 
 Things to know:
 

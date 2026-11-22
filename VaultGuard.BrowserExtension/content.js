@@ -587,8 +587,8 @@ class VaultGuardContentScript {
     // Style the popup
     Object.assign(popup.style, {
       position: 'absolute',
-      backgroundColor: 'white',
-      border: '1px solid #ccc',
+      backgroundColor: 'var(--vg-bg)',
+      border: '1px solid var(--vg-line)',
       borderRadius: '4px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
       zIndex: '10001',
@@ -602,9 +602,9 @@ class VaultGuardContentScript {
       const item = document.createElement('div');
       item.className = 'pm-credential-item';
       item.innerHTML = `
-        <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+        <div style="padding: 12px; cursor: pointer; border-bottom: 1px solid var(--vg-line);">
           <div style="font-weight: bold; margin-bottom: 4px;">${this.escapeHtml(cred.title)}</div>
-          <div style="color: #666; font-size: 14px;">${this.escapeHtml(cred.username)}</div>
+          <div style="color: var(--vg-muted); font-size: 14px;">${this.escapeHtml(cred.username)}</div>
         </div>
       `;
       
@@ -614,11 +614,11 @@ class VaultGuardContentScript {
       });
       
       item.addEventListener('mouseenter', () => {
-        item.style.backgroundColor = '#f0f0f0';
+        item.style.backgroundColor = 'var(--vg-hover)';
       });
       
       item.addEventListener('mouseleave', () => {
-        item.style.backgroundColor = 'white';
+        item.style.backgroundColor = 'var(--vg-bg)';
       });
       
       popup.appendChild(item);
@@ -645,8 +645,8 @@ class VaultGuardContentScript {
     
     Object.assign(popup.style, {
       position: 'absolute',
-      backgroundColor: 'white',
-      border: '1px solid #ccc',
+      backgroundColor: 'var(--vg-bg)',
+      border: '1px solid var(--vg-line)',
       borderRadius: '4px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
       zIndex: '10001',
@@ -667,7 +667,7 @@ class VaultGuardContentScript {
     // Add hover effects
     popup.querySelectorAll('.pm-option').forEach(option => {
       option.addEventListener('mouseenter', () => {
-        option.style.backgroundColor = '#f0f0f0';
+        option.style.backgroundColor = 'var(--vg-hover)';
       });
       option.addEventListener('mouseleave', () => {
         option.style.backgroundColor = 'transparent';
@@ -822,8 +822,8 @@ class VaultGuardContentScript {
     
     Object.assign(popup.style, {
       position: 'absolute',
-      backgroundColor: 'white',
-      border: '1px solid #ccc',
+      backgroundColor: 'var(--vg-bg)',
+      border: '1px solid var(--vg-line)',
       borderRadius: '4px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
       zIndex: '10001',
@@ -836,7 +836,7 @@ class VaultGuardContentScript {
       // Add section header
       if (items.length > 1) {
         const header = document.createElement('div');
-        header.style.cssText = 'padding: 8px 12px; background: #f8f9fa; font-weight: bold; font-size: 12px; color: #666; border-bottom: 1px solid #eee;';
+        header.style.cssText = 'padding: 8px 12px; background: var(--vg-head); font-weight: bold; font-size: 12px; color: var(--vg-muted); border-bottom: 1px solid var(--vg-line);';
         header.textContent = itemGroup.label;
         popup.appendChild(header);
       }
@@ -844,16 +844,16 @@ class VaultGuardContentScript {
       // Add items
       itemGroup.data.forEach(item => {
         const itemElement = document.createElement('div');
-        itemElement.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;';
+        itemElement.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid var(--vg-line); transition: background-color 0.2s;';
         
         if (itemGroup.type === 'creditCards') {
           // Credit card display
           const maskedNumber = item.cardNumber ? `****-****-****-${item.cardNumber.slice(-4)}` : '****-****-****-****';
           itemElement.innerHTML = `
-            <div style="font-weight: 500; color: #333;">💳 ${this.escapeHtml(item.title)}</div>
-            <div style="font-size: 12px; color: #666; margin-top: 2px;">${this.escapeHtml(item.cardholderName || 'No cardholder name')}</div>
-            <div style="font-size: 12px; color: #666;">${maskedNumber}</div>
-            <div style="font-size: 12px; color: #666;">Expires: ${this.escapeHtml(item.expiryDate || 'N/A')}</div>
+            <div style="font-weight: 500; color: var(--vg-fg);">💳 ${this.escapeHtml(item.title)}</div>
+            <div style="font-size: 12px; color: var(--vg-muted); margin-top: 2px;">${this.escapeHtml(item.cardholderName || 'No cardholder name')}</div>
+            <div style="font-size: 12px; color: var(--vg-muted);">${maskedNumber}</div>
+            <div style="font-size: 12px; color: var(--vg-muted);">${item.expiryDate ? 'Expires: ' + this.escapeHtml(item.expiryDate) : 'No expiry date'}</div>
           `;
           
           itemElement.addEventListener('click', () => {
@@ -863,9 +863,9 @@ class VaultGuardContentScript {
         } else if (itemGroup.type === 'credentials') {
           // Credential display
           itemElement.innerHTML = `
-            <div style="font-weight: 500; color: #333;">🔑 ${this.escapeHtml(item.title)}</div>
-            <div style="font-size: 12px; color: #666; margin-top: 2px;">${this.escapeHtml(item.username)}</div>
-            <div style="font-size: 12px; color: #666;">${this.escapeHtml(item.website || window.location.hostname)}</div>
+            <div style="font-weight: 500; color: var(--vg-fg);">🔑 ${this.escapeHtml(item.title)}</div>
+            <div style="font-size: 12px; color: var(--vg-muted); margin-top: 2px;">${this.escapeHtml(item.username)}</div>
+            <div style="font-size: 12px; color: var(--vg-muted);">${this.escapeHtml(item.website || window.location.hostname)}</div>
           `;
           
           itemElement.addEventListener('click', () => {
@@ -875,11 +875,11 @@ class VaultGuardContentScript {
         }
         
         itemElement.addEventListener('mouseenter', () => {
-          itemElement.style.backgroundColor = '#f0f0f0';
+          itemElement.style.backgroundColor = 'var(--vg-hover)';
         });
         
         itemElement.addEventListener('mouseleave', () => {
-          itemElement.style.backgroundColor = 'white';
+          itemElement.style.backgroundColor = 'var(--vg-bg)';
         });
         
         popup.appendChild(itemElement);
@@ -928,8 +928,8 @@ class VaultGuardContentScript {
       // Style the dropdown with consistent design
       Object.assign(dropdown.style, {
         position: 'absolute',
-        backgroundColor: '#ffffff',
-        border: '1px solid #e0e6ed',
+        backgroundColor: 'var(--vg-bg)',
+        border: '1px solid var(--vg-line)',
         borderRadius: '6px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         zIndex: '10001',
@@ -943,7 +943,7 @@ class VaultGuardContentScript {
       
       // Add header
       const header = document.createElement('div');
-      header.style.cssText = 'padding: 12px; background: #f8f9fa; border-bottom: 1px solid #e0e6ed; font-weight: 600; font-size: 13px; color: #333;';
+      header.style.cssText = 'padding: 12px; background: var(--vg-head); border-bottom: 1px solid var(--vg-line); font-weight: 600; font-size: 13px; color: var(--vg-fg);';
       header.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <span>🔑 ${response.credentials.length} saved for ${domain}</span>
@@ -955,11 +955,11 @@ class VaultGuardContentScript {
       response.credentials.forEach((cred, index) => {
         const item = document.createElement('div');
         item.className = 'pm-dropdown-item';
-        item.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;';
+        item.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid var(--vg-line); transition: background-color 0.2s;';
         
         item.innerHTML = `
-          <div style="font-weight: 500; color: #1a1a1a; margin-bottom: 4px;">${this.escapeHtml(cred.title)}</div>
-          <div style="font-size: 12px; color: #6c757d;">${this.escapeHtml(cred.username)}</div>
+          <div style="font-weight: 500; color: var(--vg-fg); margin-bottom: 4px;">${this.escapeHtml(cred.title)}</div>
+          <div style="font-size: 12px; color: var(--vg-muted);">${this.escapeHtml(cred.username)}</div>
         `;
         
         // Add click handler to fill credentials
@@ -970,7 +970,7 @@ class VaultGuardContentScript {
         
         // Add hover effect
         item.addEventListener('mouseenter', () => {
-          item.style.backgroundColor = '#f8f9ff';
+          item.style.backgroundColor = 'var(--vg-hover)';
           item.style.borderLeftColor = '#007acc';
           item.style.borderLeftWidth = '3px';
           item.style.borderLeftStyle = 'solid';
@@ -978,7 +978,7 @@ class VaultGuardContentScript {
         });
         
         item.addEventListener('mouseleave', () => {
-          item.style.backgroundColor = 'white';
+          item.style.backgroundColor = 'var(--vg-bg)';
           item.style.borderLeft = 'none';
           item.style.paddingLeft = '12px';
         });
@@ -1021,8 +1021,8 @@ class VaultGuardContentScript {
     
     Object.assign(popup.style, {
       position: 'absolute',
-      backgroundColor: 'white',
-      border: '1px solid #ccc',
+      backgroundColor: 'var(--vg-bg)',
+      border: '1px solid var(--vg-line)',
       borderRadius: '4px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
       zIndex: '10001',
@@ -1032,22 +1032,22 @@ class VaultGuardContentScript {
     });
     
     const header = document.createElement('div');
-    header.style.cssText = 'padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; background: #f8f9fa;';
+    header.style.cssText = 'padding: 12px; border-bottom: 1px solid var(--vg-line); font-weight: bold; background: var(--vg-head);';
     header.textContent = 'Select Credit Card';
     popup.appendChild(header);
     
     creditCards.forEach(card => {
       const item = document.createElement('div');
-      item.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;';
+      item.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid var(--vg-line);';
       
       // Mask card number for display (show only last 4 digits)
       const maskedNumber = card.cardNumber ? `****-****-****-${card.cardNumber.slice(-4)}` : '****-****-****-****';
       
       item.innerHTML = `
-        <div style="font-weight: 500; color: #333;">${this.escapeHtml(card.title)}</div>
-        <div style="font-size: 12px; color: #666; margin-top: 2px;">${this.escapeHtml(card.cardholderName || 'No cardholder name')}</div>
-        <div style="font-size: 12px; color: #666;">${maskedNumber}</div>
-        <div style="font-size: 12px; color: #666;">Expires: ${this.escapeHtml(card.expiryDate || 'N/A')}</div>
+        <div style="font-weight: 500; color: var(--vg-fg);">${this.escapeHtml(card.title)}</div>
+        <div style="font-size: 12px; color: var(--vg-muted); margin-top: 2px;">${this.escapeHtml(card.cardholderName || 'No cardholder name')}</div>
+        <div style="font-size: 12px; color: var(--vg-muted);">${maskedNumber}</div>
+        <div style="font-size: 12px; color: var(--vg-muted);">${card.expiryDate ? 'Expires: ' + this.escapeHtml(card.expiryDate) : 'No expiry date'}</div>
       `;
       
       item.addEventListener('click', () => {
@@ -1056,11 +1056,11 @@ class VaultGuardContentScript {
       });
       
       item.addEventListener('mouseenter', () => {
-        item.style.backgroundColor = '#f0f0f0';
+        item.style.backgroundColor = 'var(--vg-hover)';
       });
       
       item.addEventListener('mouseleave', () => {
-        item.style.backgroundColor = 'white';
+        item.style.backgroundColor = 'var(--vg-bg)';
       });
       
       popup.appendChild(item);
@@ -1567,16 +1567,16 @@ class TotpSetupDetector {
     const parsed = this._parseOtpauth(uri);
     if (!parsed) return;
 
-    // Build the save banner (matches our extension's dark theme)
+    // Build the save banner (colours follow the browser's light/dark mode; see content.css)
     const banner = document.createElement('div');
     banner.id = 'pm-totp-banner';
     Object.assign(banner.style, {
       position: 'fixed', top: '16px', right: '16px', zIndex: '2147483647',
-      background: '#1a1a2e', border: '1px solid #2563EB',
+      background: 'var(--vg-totp-bg)', border: '1px solid #2563EB',
       borderRadius: '12px', padding: '14px 16px', width: '320px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      boxShadow: 'var(--vg-totp-shadow)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      color: '#e5e5e5', fontSize: '14px',
+      color: 'var(--vg-totp-fg)', fontSize: '14px',
     });
 
     banner.innerHTML = `
@@ -1584,20 +1584,20 @@ class TotpSetupDetector {
         <div style="width:32px;height:32px;border-radius:8px;background:#2563EB;display:flex;align-items:center;justify-content:center;font-size:16px;">🔐</div>
         <div>
           <div style="font-weight:600;font-size:14px;">Save One-Time Password?</div>
-          <div style="font-size:11px;color:#9d9d9d;">${parsed.issuer || location.hostname}</div>
+          <div style="font-size:11px;color:var(--vg-totp-muted);">${parsed.issuer || location.hostname}</div>
         </div>
-        <button id="pm-totp-close" style="margin-left:auto;background:none;border:none;color:#9d9d9d;cursor:pointer;font-size:18px;padding:0;">✕</button>
+        <button id="pm-totp-close" style="margin-left:auto;background:none;border:none;color:var(--vg-totp-muted);cursor:pointer;font-size:18px;padding:0;">✕</button>
       </div>
-      <div style="background:#0d1b2a;border-radius:8px;padding:10px;margin-bottom:12px;">
-        <div style="font-size:11px;color:#60A5FA;margin-bottom:4px;">ACCOUNT</div>
+      <div style="background:var(--vg-totp-inset);border-radius:8px;padding:10px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--vg-totp-accent);margin-bottom:4px;">ACCOUNT</div>
         <div style="font-weight:500;">${parsed.account || 'Unknown account'}</div>
-        <div style="font-size:11px;color:#9d9d9d;margin-top:4px;">Secret key detected · ${parsed.digits || 6} digits · ${parsed.period || 30}s</div>
+        <div style="font-size:11px;color:var(--vg-totp-muted);margin-top:4px;">Secret key detected · ${parsed.digits || 6} digits · ${parsed.period || 30}s</div>
       </div>
       <div style="display:flex;gap:8px;">
         <button id="pm-totp-save" style="flex:1;background:#2563EB;color:white;border:none;border-radius:8px;padding:9px;cursor:pointer;font-weight:600;font-size:13px;">
           Save to Vault
         </button>
-        <button id="pm-totp-dismiss" style="flex:1;background:#2a2a3e;color:#9d9d9d;border:none;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;">
+        <button id="pm-totp-dismiss" style="flex:1;background:var(--vg-totp-ghost);color:var(--vg-totp-muted);border:none;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;">
           Ignore
         </button>
       </div>

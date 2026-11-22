@@ -23,7 +23,6 @@
 
             <!-- Displayed value — crisp white text on dark background -->
             <TextBlock x:Name="ValueTextBlock"
-                       Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}}"
                        TextTrimming="CharacterEllipsis"
                        VerticalAlignment="Center"
                        Foreground="#E5E5E5"

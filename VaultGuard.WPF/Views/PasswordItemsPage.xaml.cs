@@ -89,7 +89,12 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     private void SetText(string elementName, string value)
     {
         var tb = GetElement<TextBlock>(elementName);
-        if (tb != null) tb.Text = value;
+        if (tb == null) return;
+        // Empty values read "Not added" (muted, italic) rather than a bare dash.
+        var empty = Controls.ReadOnlyField.IsEmptyValue(value);
+        tb.Text = empty ? Controls.ReadOnlyField.EmptyText : value;
+        tb.FontStyle = empty ? FontStyles.Italic : FontStyles.Normal;
+        tb.Opacity = empty ? 0.5 : 1.0;
     }
 
     public async void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -563,6 +568,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (detailPassword == null) return;
         // On a card this row is the cardholder name: plain text, nothing to reveal.
         if (_selectedItem?.Type == ItemType.CreditCard) return;
+        // Nothing saved: there's nothing to show or hide.
+        if (Controls.ReadOnlyField.IsEmptyValue(detailPassword.Text)) return;
 
         // Mask → reveal: decrypt on demand
         if (detailPassword.Text.StartsWith("•"))
