@@ -1788,7 +1788,7 @@
                                          Style="{StaticResource ModernTextBoxStyle}"
                                          TextWrapping="Wrap"
                                          IsReadOnly="True"
-                                         MaxHeight="160"
+                                         MaxHeight="360"
                                          VerticalScrollBarVisibility="Auto"
                                          Background="Transparent"
                                          BorderThickness="0"

@@ -92,6 +92,14 @@
             </MudAlert>
         }
 
+        @if (lastResult?.Success == true)
+        {
+            <div class="mt-3">
+                <VaultGuard.Components.Shared.Components.ImportReportView Result="@lastResult" FileName="@lastFileName"
+                                                                           Source="@passwordManagers[selectedManager].Name" AllowDownload="true" />
+            </div>
+        }
+
         <MudStack Row="true" Spacing="2" Class="mt-4">
             <MudButton StartIcon="@Icons.Material.Filled.Download" Variant="Variant.Filled"
                        Color="Color.Primary" OnClick="@RunImport"
@@ -191,6 +199,8 @@
     IBrowserFile? selectedFile;
     bool isImporting = false;
     (bool Success, string Message)? importResult;
+    VaultGuard.Imports.Interfaces.ImportResult? lastResult;
+    string? lastFileName;
 
     record VaultGuardInfo(string Name, string Icon, string Format, string Instructions, string FileTypes);
 
@@ -248,18 +258,21 @@
         selectedManager = key;
         selectedFile = null;
         importResult = null;
+        lastResult = null;
     }
 
     void OnFileSelected(IBrowserFile file)
     {
         selectedFile = file;
         importResult = null;
+        lastResult = null;
     }
 
     void ClearSelection()
     {
         selectedFile = null;
         importResult = null;
+        lastResult = null;
     }
 
     // Provider names (IPasswordImportProvider.ProviderName) that are now registered and usable.
@@ -347,6 +360,7 @@
         if (selectedFile == null || selectedManager == null) return;
         isImporting = true;
         importResult = null;
+        lastResult = null;
         try
         {
             // Validate file size (max 10 MB)
@@ -375,6 +389,8 @@
 
             var userId = AuthService.CurrentUser?.Id;
             var result = await ImportService.ImportPasswordsAsync(providerName, ms, selectedFile.Name, userId);
+            lastResult = result;
+            lastFileName = selectedFile.Name;
 
             if (result.Success)
             {
@@ -382,6 +398,7 @@
                           "They're now in All Items.";
                 if (result.FailedImports > 0)
                     msg += $" {result.FailedImports} item(s) could not be imported.";
+                msg += " See the report below for what carried over.";
                 importResult = (true, msg);
             }
             else

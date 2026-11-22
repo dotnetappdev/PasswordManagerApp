@@ -157,6 +157,35 @@ public class OnePasswordImportEndToEndTests
     }
 
     [Test]
+    [AllureName("Import report lists every item: complete, missing fields, and nothing secret")]
+    public async Task ImportReport_ListsEveryItem_WithMissingFields_AndNoSecrets()
+    {
+        var csv = "Title,URL,Username,Password,Notes,Type\n" +
+                  "Complete,https://complete.example,me@example.com,Report-Pw-1,,Login\n" +
+                  "Activision,https://activision.com,,,,Login\n";
+
+        var result = await ImportAsync(Encoding.UTF8.GetBytes(csv), "export.csv");
+
+        Assert.That(result.Success, Is.True, result.ErrorMessage);
+        Assert.That(result.Report, Has.Count.EqualTo(2));
+        var complete = result.Report.Single(r => r.Title == "Complete");
+        var gaps = result.Report.Single(r => r.Title == "Activision");
+        Assert.Multiple(() =>
+        {
+            Assert.That(complete.Outcome, Is.EqualTo(ImportItemOutcome.Imported));
+            Assert.That(complete.ItemType, Is.EqualTo("Login"));
+            Assert.That(gaps.Outcome, Is.EqualTo(ImportItemOutcome.ImportedWithGaps));
+            Assert.That(gaps.MissingFields, Is.EquivalentTo(new[] { "username", "password" }));
+            Assert.That(gaps.Summary, Is.EqualTo("Imported. Not in the file: username, password"));
+        });
+
+        var text = ImportReport.ToText(result, "export.csv", "1Password");
+        Assert.That(text, Does.Contain("Imported: 2 of 2 item(s)"));
+        Assert.That(text, Does.Contain("Activision (Login): no username, password in the file"));
+        Assert.That(text, Does.Not.Contain("Report-Pw-1"), "the report must never contain secrets");
+    }
+
+    [Test]
     [AllureName("1Password CSV (Title,URL,Username,Password,Notes,Type) stores every value")]
     public async Task Csv_NewLayout_StoresEveryValueEncrypted()
     {

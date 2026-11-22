@@ -69,3 +69,18 @@ export async function clearNow() {
   cancelPending();
   try { if (document.hasFocus()) await navigator.clipboard.writeText(''); } catch { /* ignore */ }
 }
+
+/** Copies non-secret text (e.g. an import report) without scheduling a wipe. */
+export async function copyText(text) {
+  await navigator.clipboard.writeText(text ?? '');
+  return true;
+}
+
+/** Saves text as a file download (Web). */
+export function downloadText(fileName, text) {
+  const url = URL.createObjectURL(new Blob([text ?? ''], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

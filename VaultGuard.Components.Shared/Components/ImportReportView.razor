@@ -1,0 +1,113 @@
+@* End-of-import report (Web and MAUI): for every item in the file, whether it was imported completely, imported
+   with fields the file had no value for, or not imported and why. Copy/save it as text (titles and field names
+   only, never secrets). *@
+@using MudBlazor
+@using VaultGuard.Imports.Interfaces
+@using VaultGuard.Imports.Services
+@using VaultGuard.Components.Shared.Services
+@inject SecureClipboard Clipboard
+@inject ISnackbar Snackbar
+
+@if (Result != null)
+{
+    var complete = Result.Report.Count(r => r.Outcome == ImportItemOutcome.Imported);
+    var gaps = Result.Report.Count(r => r.Outcome == ImportItemOutcome.ImportedWithGaps);
+    var failed = Result.Report.Count(r => r.Outcome == ImportItemOutcome.Failed);
+
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <div class="d-flex align-center flex-wrap gap-2 mb-3">
+            <MudText Typo="Typo.h6">Import report</MudText>
+            <MudSpacer />
+            <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyAsync">Copy report</MudButton>
+            @if (AllowDownload)
+            {
+                <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Download" OnClick="DownloadAsync">Save report</MudButton>
+            }
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.CheckCircle">@complete complete</MudChip>
+            <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Info">@gaps missing some fields</MudChip>
+            <MudChip T="string" Color="Color.Error" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Error">@failed not imported</MudChip>
+        </div>
+
+        @if (gaps > 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                "Missing some fields" means the item was imported, but the file had no value for those fields, so there was nothing to carry over.
+                You can add them to the item yourself.
+            </MudText>
+        }
+
+        <MudTable Items="@Ordered" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm"
+                  FixedHeader="true" Height="@(Result.Report.Count > 12 ? "420px" : null)">
+            <HeaderContent>
+                <MudTh>Status</MudTh>
+                <MudTh>Item</MudTh>
+                <MudTh>Type</MudTh>
+                <MudTh>Details</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Status">
+                    @switch (context.Outcome)
+                    {
+                        case ImportItemOutcome.Imported:
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Imported</MudChip>
+                            break;
+                        case ImportItemOutcome.ImportedWithGaps:
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">Missing fields</MudChip>
+                            break;
+                        default:
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Not imported</MudChip>
+                            break;
+                    }
+                </MudTd>
+                <MudTd DataLabel="Item">@context.Title</MudTd>
+                <MudTd DataLabel="Type">@context.ItemType</MudTd>
+                <MudTd DataLabel="Details">
+                    @(context.Outcome switch
+                    {
+                        ImportItemOutcome.Imported => "Everything in the file was carried over",
+                        ImportItemOutcome.ImportedWithGaps => "Not in the file: " + string.Join(", ", context.MissingFields),
+                        _ => context.Error ?? "No reason was given"
+                    })
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public ImportResult? Result { get; set; }
+    [Parameter] public string? FileName { get; set; }
+    [Parameter] public string? Source { get; set; }
+    /// <summary>Offer "Save report" as a download (Web). MAUI's web view can't save downloads, so it only copies.</summary>
+    [Parameter] public bool AllowDownload { get; set; }
+
+    private IEnumerable<ImportReportEntry> Ordered => (Result?.Report ?? new())
+        .OrderBy(r => r.Outcome == ImportItemOutcome.Failed ? 0 : r.Outcome == ImportItemOutcome.ImportedWithGaps ? 1 : 2)
+        .ThenBy(r => r.Title, StringComparer.CurrentCultureIgnoreCase);
+
+    private string Text => ImportReport.ToText(Result!, FileName, Source);
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            var m = await Clipboard.ModuleAsync();
+            await m.InvokeAsync<bool>("copyText", Text);
+            Snackbar.Add("Import report copied.", Severity.Success);
+        }
+        catch (Exception ex) { Snackbar.Add($"Couldn't copy the report: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task DownloadAsync()
+    {
+        try
+        {
+            var m = await Clipboard.ModuleAsync();
+            await m.InvokeVoidAsync("downloadText", $"Vault Guard import report {DateTime.Now:yyyy-MM-dd HHmm}.txt", Text);
+        }
+        catch (Exception ex) { Snackbar.Add($"Couldn't save the report: {ex.Message}", Severity.Error); }
+    }
+}

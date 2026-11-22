@@ -244,7 +244,7 @@
                 {
                     @DetailField("Username", selectedItem.Username, copyable: true)
                     @DetailPasswordField("Password", selectedItem.Password, "pw")
-                    @if (!string.IsNullOrEmpty(selectedItem.WebsiteUrl))
+                    @if (selectedItem.Type != ItemType.Password || !string.IsNullOrEmpty(selectedItem.WebsiteUrl))
                     {
                         @DetailLinkField("Website", selectedItem.WebsiteUrl)
                     }
@@ -946,9 +946,13 @@
 
     // ── Detail field render fragments ────────────────────────────────────────
 
+    /// <summary>What an empty field says, in every app (WPF uses the same words).</summary>
+    private const string NotAdded = "Not added";
+
     private RenderFragment DetailField(string label, string? value, bool copyable = false) => b =>
     {
-        if (string.IsNullOrEmpty(value)) return;
+        // An empty field says so ("Not added", muted) instead of disappearing or showing a dash.
+        var empty = string.IsNullOrWhiteSpace(value);
         b.OpenElement(0, "div");
         b.AddAttribute(1, "style", "display: flex; align-items: flex-start; margin-bottom: 18px;");
 
@@ -974,10 +978,12 @@
         b.OpenElement(40, "div");
         b.AddAttribute(41, "style", "display: flex; align-items: center; gap: 8px;");
         b.OpenElement(42, "div");
-        b.AddAttribute(43, "style", "font-size: 14px; word-break: break-all;");
-        b.AddContent(44, value);
+        b.AddAttribute(43, "style", empty
+            ? "font-size: 14px; font-style: italic; color: var(--mud-palette-text-disabled);"
+            : "font-size: 14px; word-break: break-all;");
+        b.AddContent(44, empty ? NotAdded : value);
         b.CloseElement();
-        if (copyable)
+        if (copyable && !empty)
         {
             b.OpenComponent<MudIconButton>(50);
             b.AddAttribute(51, "Icon", Icons.Material.Filled.ContentCopy);
@@ -1027,7 +1033,7 @@
 
     private RenderFragment DetailLinkField(string label, string? url) => b =>
     {
-        if (string.IsNullOrEmpty(url)) return;
+        if (string.IsNullOrWhiteSpace(url)) { b.AddContent(0, DetailField(label, null)); return; } // "Not added"
         b.OpenElement(0, "div");
         b.AddAttribute(1, "style", "display: flex; align-items: flex-start; margin-bottom: 18px;");
 

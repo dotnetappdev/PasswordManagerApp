@@ -126,17 +126,7 @@
                         </tbody>
                     </MudSimpleTable>
 
-                    @if (importResult.Warnings?.Any() == true)
-                    {
-                        <MudExpansionPanels Class="mt-3">
-                            <MudExpansionPanel Text="View Warnings">
-                                @foreach (var warning in importResult.Warnings)
-                                {
-                                    <MudText Typo="Typo.body2">• @warning</MudText>
-                                }
-                            </MudExpansionPanel>
-                        </MudExpansionPanels>
-                    }
+                    <ImportReportView Result="@lastResult" FileName="@lastFileName" Source="@selectedPlugin?.Name" />
                 }
             }
 
@@ -222,6 +212,8 @@
             using var ms = new MemoryStream(selectedFileBytes, writable: false); // seekable: .1pux files are zip archives
 
             var result = await ImportService.ImportPasswordsAsync(selectedPlugin.Name, ms, selectedFile.Name, AuthService.CurrentUser?.Id);
+            lastResult = result;
+            lastFileName = selectedFile.Name;
             {
                 importResult = new ImportResultInfo
                 {
@@ -278,6 +270,9 @@
         public bool Success { get; set; }
         public List<PluginInfo> Plugins { get; set; } = new();
     }
+
+    private VaultGuard.Imports.Interfaces.ImportResult? lastResult;
+    private string? lastFileName;
 
     private class ImportResponse
     {

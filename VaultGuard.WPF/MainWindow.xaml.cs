@@ -999,7 +999,7 @@ public sealed partial class MainWindow : Window
             }
         }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
-        return "N/A";
+        return "Not available";
     }
 
     private async void Logout_Click(object sender, RoutedEventArgs e)

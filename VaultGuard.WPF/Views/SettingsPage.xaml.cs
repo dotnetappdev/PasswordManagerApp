@@ -1190,6 +1190,7 @@ public sealed partial class SettingsPage : Page
             int totalProcessed = 0;
             var collectedErrors = new List<string>();
             var collectedWarnings = new List<string>();
+            var reports = new List<string>();
 
             for (int i = 0; i < targetUserIds.Count; i++)
             {
@@ -1216,6 +1217,9 @@ public sealed partial class SettingsPage : Page
                     totalProcessed += result.TotalItemsProcessed;
                     // Capture per-item failures for display
                     collectedWarnings.AddRange(result.Warnings);
+                    // Full report: what carried over, what the file didn't have, what failed (no secrets in it).
+                    reports.Add((targetUserIds.Count > 1 ? $"--- User {i + 1} of {targetUserIds.Count} ---\n" : "") +
+                                VaultGuard.Imports.Services.ImportReport.ToText(result, fileName));
                 }
                 else
                 {
@@ -1239,11 +1243,8 @@ public sealed partial class SettingsPage : Page
                 var summary = targetUserIds.Count > 1
                     ? $"Imported for {targetUserIds.Count} user(s): {totalSuccessful} items, {totalFailed} failed, {totalProcessed} processed."
                     : $"Imported: {totalSuccessful} items, Failed: {totalFailed}, Processed: {totalProcessed}.";
-                if (collectedWarnings.Count > 0)
-                    summary += $"\n\nPer-item errors ({collectedWarnings.Count}):\n" + string.Join("\n", collectedWarnings.Take(10));
-                if (collectedWarnings.Count > 10)
-                    summary += $"\n…and {collectedWarnings.Count - 10} more (see log for details)";
-                ImportResultText.Text = summary;
+                // The full report (scrollable, selectable so it can be copied).
+                ImportResultText.Text = summary + "\n\n" + string.Join("\n\n", reports);
             }
             else
             {
