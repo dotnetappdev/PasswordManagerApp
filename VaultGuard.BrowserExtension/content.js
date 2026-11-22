@@ -1404,14 +1404,6 @@ function showNotification(message) {
   }, 3000);
 }
 
-// Initialize the content script
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    new VaultGuardContentScript();
-  });
-} else {
-  new VaultGuardContentScript();
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Passkey (WebAuthn) interception bridge.
@@ -1652,4 +1644,15 @@ class TotpSetupDetector {
       };
     } catch (_) { return null; }
   }
+}
+
+// Initialize the content script. This must stay at the end of the file: the script is injected at document_end,
+// when the page is already parsed, so it runs straight away, and classes declared further down (TotpSetupDetector)
+// can't be used before their declaration has run ("Cannot access 'TotpSetupDetector' before initialization").
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    new VaultGuardContentScript();
+  });
+} else {
+  new VaultGuardContentScript();
 }
