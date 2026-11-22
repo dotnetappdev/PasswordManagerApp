@@ -2,6 +2,15 @@ using VaultGuard.Models;
 
 namespace VaultGuard.Services.Interfaces;
 
+/// <summary>Why a secret couldn't be revealed.</summary>
+public enum RevealProblem
+{
+    /// <summary>No unlocked vault session for the item's owner.</summary>
+    Locked,
+    /// <summary>The vault is unlocked, but the item was encrypted with a different key.</summary>
+    WrongKey
+}
+
 /// <summary>
 /// Service for revealing encrypted passwords stored in password items
 /// </summary>
@@ -93,4 +102,7 @@ public interface IPasswordRevealService
     /// <param name="sessionId">The session ID to check</param>
     /// <returns>True if passwords can be revealed</returns>
     bool CanRevealPasswords(string sessionId);
+
+    /// <summary>Why a reveal for an item owned by <paramref name="ownerUserId"/> produced nothing.</summary>
+    RevealProblem Diagnose(string? ownerUserId, string sessionId);
 }

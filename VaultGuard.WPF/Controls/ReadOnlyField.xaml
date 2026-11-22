@@ -12,7 +12,8 @@
     GotFocus="Root_GotFocus"
     LostFocus="Root_LostFocus">
 
-    <Border Background="#1A1A1A" CornerRadius="6" Padding="10,8" Margin="0,4,0,0"
+    <Border Background="#1A1A1A" CornerRadius="8" Padding="14,10" Margin="0,2,0,0"
+            MinHeight="{DynamicResource DetailFieldMinHeight}"
             BorderBrush="#2A2A2A" BorderThickness="1">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -46,7 +47,7 @@
                         <Border x:Name="CopyBd" CornerRadius="4" Padding="6,2"
                                 Background="#2A2A2A">
                             <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets"
-                                       FontSize="12" Foreground="#6A6A6A"/>
+                                       FontSize="14" Foreground="#6A6A6A"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">

@@ -590,13 +590,26 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             // login to decrypt or the decrypt failed. Never ciphertext — see ShowItemDetails.
             var raw = detailPassword.CopyText ?? string.Empty;
             if (!string.IsNullOrEmpty(raw)) detailPassword.Text = raw;
-            else ToastService.Instance.Show("Couldn't decrypt this password — the vault may be locked.", ToastType.Warning);
+            else ToastService.Instance.Show(await DescribeRevealFailureAsync(_selectedItem), ToastType.Warning);
         }
         else
         {
             // Reveal → mask
             detailPassword.Text = "••••••••";
         }
+    }
+
+    /// <summary>A message that says what actually went wrong, instead of always blaming a locked vault.</summary>
+    private async Task<string> DescribeRevealFailureAsync(PasswordItem? item)
+    {
+        var login = item?.LoginItem;
+        if (item?.PasskeyItem == null && login != null && string.IsNullOrEmpty(login.EncryptedPassword))
+            return "This login has no saved password.";
+        var svc = _serviceProvider?.GetService<IPasswordRevealService>();
+        if (svc == null) return "Couldn't decrypt this password.";
+        return svc.Diagnose(item?.UserId, await GetSessionIdAsync() ?? string.Empty) == RevealProblem.Locked
+            ? "Vault Guard is locked. Unlock it and try again."
+            : "This password was encrypted with a different key, so it can't be opened with this vault's master password. Import the item again or restore it from a backup.";
     }
 
     /// <summary>
@@ -642,7 +655,7 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
                 ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Password"));
                 return;
             }
-            await ShowTemporaryMessageAsync("No password available — vault may be locked");
+            await ShowTemporaryMessageAsync(await DescribeRevealFailureAsync(_selectedItem));
         }
         catch (Exception ex)
         {

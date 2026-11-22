@@ -389,12 +389,13 @@ public class ImportService : IImportService
     {
         if (_vaultSessionService == null || !VaultGuard.Services.Security.VaultItemSecrets.HasPlaintext(item)) return;
 
+        // The import's own session only if it belongs to the item's owner (a stale or other profile's session
+        // would seal the secrets with a key the owner doesn't have); otherwise the owner's unlocked session.
         var sid = sessionId;
-        if (string.IsNullOrEmpty(sid) || !_vaultSessionService.IsVaultUnlocked(sid))
+        if (string.IsNullOrEmpty(sid) || !_vaultSessionService.IsVaultUnlocked(sid) ||
+            (!string.IsNullOrEmpty(item.UserId) && _vaultSessionService.GetSessionUserId(sid) != item.UserId))
         {
-            var active = _vaultSessionService.GetActiveSessionId();
-            sid = active != null && !string.IsNullOrEmpty(item.UserId) && _vaultSessionService.GetSessionUserId(active) == item.UserId
-                ? active : null;
+            sid = string.IsNullOrEmpty(item.UserId) ? null : _vaultSessionService.GetActiveSessionIdForUser(item.UserId);
         }
 
         var cipher = VaultGuard.Services.Security.VaultCipher.ForSession(_vaultSessionService, sid);

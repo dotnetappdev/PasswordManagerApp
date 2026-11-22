@@ -185,6 +185,18 @@ public class VaultSessionService : IVaultSessionService
         return null;
     }
 
+    public string? GetActiveSessionIdForUser(string userId)
+    {
+        if (string.IsNullOrEmpty(userId)) return null;
+        PurgeExpired();
+        foreach (var kvp in _sessions)
+        {
+            if (kvp.Value.unlocked && kvp.Value.masterKey != null && kvp.Value.userId == userId)
+                return kvp.Key;
+        }
+        return null;
+    }
+
     public string? GetActiveSessionId()
     {
         PurgeExpired();

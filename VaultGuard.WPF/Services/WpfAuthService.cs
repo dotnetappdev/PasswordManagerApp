@@ -240,32 +240,6 @@ public class WpfAuthService : IAuthService
                         continue;
                     }
 
-                    // Retrieve user salt from secure storage, with fallback to database
-                    var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-                    if (userSalt == null && !string.IsNullOrEmpty(user.UserSalt))
-                    {
-                        // Fallback: if salt not in secure storage, get it from database and store it securely
-                        _logger.LogDebug("User salt not found in secure storage, using salt from database for user {UserId}", user.Id);
-                        try
-                        {
-                            userSalt = Convert.FromBase64String(user.UserSalt);
-                            // Store it in secure storage for future use
-                            await StoreUserSaltSecurelyAsync(user.Id.ToString(), userSalt);
-                            _logger.LogDebug("User salt stored securely for user {UserId}", user.Id);
-                        }
-                        catch (Exception saltEx)
-                        {
-                            _logger.LogError(saltEx, "Failed to convert user salt from database for user {UserId}", user.Id);
-                            continue; // Try next user
-                        }
-                    }
-                    
-                    if (userSalt == null)
-                    {
-                        _logger.LogWarning("Failed to retrieve user salt for user {UserId}, skipping", user.Id);
-                        continue; // Try next user
-                    }
-
                     // Verify master password against this user
                     var isValid = _passwordCryptoService.VerifyMasterPassword(
                         masterPassword,
@@ -275,8 +249,8 @@ public class WpfAuthService : IAuthService
 
                     if (isValid)
                     {
-                        // Derive master key for session
-                        var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
+                        // Derive the vault key from the account's salt (and repair items sealed with a stale cached salt)
+                        var masterKey = await DeriveVaultKeyAsync(user, masterPassword);
 
                         // Initialize session with master key
                         var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
@@ -436,13 +410,13 @@ public class WpfAuthService : IAuthService
                 return false;
             }
 
-            // Retrieve current user salt from secure storage
-            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-            if (userSalt == null)
+            // The account's salt in the database is the one the vault key is derived from.
+            if (string.IsNullOrEmpty(user.UserSalt))
             {
-                _logger.LogError("Failed to retrieve user salt from secure storage for password change");
+                _logger.LogError("User {UserId} has no salt; can't change the password", user.Id);
                 return false;
             }
+            var userSalt = Convert.FromBase64String(user.UserSalt);
 
             // Verify current password
             var isCurrentPasswordValid = _passwordCryptoService.VerifyMasterPassword(
@@ -608,6 +582,38 @@ public class WpfAuthService : IAuthService
     /// <summary>
     /// Stores user salt securely using Windows DPAPI through WpfSecureStorageService
     /// </summary>
+    /// <summary>
+    /// Derives the vault key from the account's salt in the database — the same salt the password was just verified
+    /// against. Older builds derived it from a copy of the salt cached in secure storage; when that copy was stale
+    /// (a reset, re-created or swapped database) items were sealed under a key no other build could reproduce and
+    /// showed "Couldn't decrypt this password". Those items are re-encrypted under the right key here, once.
+    /// </summary>
+    private async Task<byte[]> DeriveVaultKeyAsync(ApplicationUser user, string masterPassword)
+    {
+        var dbSalt = Convert.FromBase64String(user.UserSalt!);
+        var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, dbSalt);
+        try
+        {
+            var cachedSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
+            if (cachedSalt != null && !cachedSalt.AsSpan().SequenceEqual(dbSalt))
+            {
+                var oldKey = _passwordCryptoService.DeriveMasterKey(masterPassword, cachedSalt);
+                using var current = VaultGuard.Services.Security.VaultCipher.ForKey(_passwordCryptoService, (byte[])masterKey.Clone(), ownsKey: true);
+                using var previous = VaultGuard.Services.Security.VaultCipher.ForKey(_passwordCryptoService, oldKey, ownsKey: true);
+                var repair = await VaultGuard.Services.Security.VaultKeyRepair.ReKeyAsync(_dbContext, user.Id, current, previous);
+                _logger.LogWarning("Cached salt for {UserId} differed from the account's; {Repaired} item(s) re-encrypted, {Unreadable} unreadable with either key",
+                    user.Id, repair.Repaired, repair.StillUnreadable);
+            }
+            if (cachedSalt == null || !cachedSalt.AsSpan().SequenceEqual(dbSalt))
+                await StoreUserSaltSecurelyAsync(user.Id.ToString(), dbSalt);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Vault key repair failed for {UserId}", user.Id);
+        }
+        return masterKey;
+    }
+
     private async Task StoreUserSaltSecurelyAsync(string userId, byte[] userSalt)
     {
         try
@@ -715,14 +721,6 @@ public class WpfAuthService : IAuthService
                 return false;
             }
 
-            // Retrieve user salt from secure storage
-            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-            if (userSalt == null)
-            {
-                _logger.LogError("Failed to retrieve user salt from secure storage for user {Email}", email);
-                return false;
-            }
-
             // Verify master password
             var isValid = _passwordCryptoService.VerifyMasterPassword(
                 masterPassword,
@@ -732,8 +730,8 @@ public class WpfAuthService : IAuthService
 
             if (isValid)
             {
-                // Derive master key for session
-                var masterKey = _passwordCryptoService.DeriveMasterKey(masterPassword, userSalt);
+                // Derive the vault key from the account's salt (and repair items sealed with a stale cached salt)
+                var masterKey = await DeriveVaultKeyAsync(user, masterPassword);
 
                 // Initialize session with master key
                 var sessionId = _vaultSessionService.InitializeSession(user.Id, masterKey);
@@ -779,12 +777,8 @@ public class WpfAuthService : IAuthService
             }
 
             // Verify password before deletion
-            var userSalt = await GetUserSaltSecurelyAsync(user.Id.ToString());
-            if (userSalt == null)
-            {
-                _logger.LogError("Failed to retrieve user salt from secure storage for account deletion");
+            if (string.IsNullOrEmpty(user.UserSalt) || string.IsNullOrEmpty(user.MasterPasswordHash))
                 return (false, "Failed to verify user credentials");
-            }
 
             var isPasswordValid = _passwordCryptoService.VerifyMasterPassword(
                 password,
