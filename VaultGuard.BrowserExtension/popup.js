@@ -114,6 +114,9 @@ class VaultGuardPopup {
 
   async checkAuthStatus() {
     try {
+      const flags = await ext.storage.local.get(['reconnectNotice', 'linkSecret', 'linkKey']).catch(() => ({}));
+      // Connected before the link was encrypted (an old secret, no key yet): explain why it asks to connect again.
+      this.reconnectNotice = !flags.linkKey && !!(flags.reconnectNotice || flags.linkSecret);
       const response = await ext.runtime.sendMessage({ action: 'getSettings' });
       
       if (response.success) {
@@ -148,9 +151,11 @@ class VaultGuardPopup {
       status.textContent = (link && link.error) || 'Open the Vault Guard app on this computer to use it here.';
       recheck.style.display = 'block';
     } else if (link.needsUpdate) {
-      status.textContent = `Vault Guard ${link.appVersion || ''} is too old for this extension — update the app.`;
+      status.textContent = `Vault Guard ${link.appVersion || ''} is too old for this extension: update the app (and restart it) so the connection can be encrypted.`;
     } else if (!link.paired) {
-      status.textContent = `Found ${link.app || 'Vault Guard'} ${link.appVersion || ''}. Connect this browser, then approve it in the app.`;
+      status.textContent = this.reconnectNotice
+        ? 'Vault Guard now encrypts the connection between this browser and the app. Connect once more to see your logins (approve it in the app).'
+        : `Found ${link.app || 'Vault Guard'} ${link.appVersion || ''}. Connect this browser, then approve it in the app.`;
       connect.style.display = 'block';
     } else if (!link.unlocked) {
       status.textContent = `Connected to ${link.app || 'Vault Guard'}. Unlock the app to fill passwords.`;

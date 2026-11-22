@@ -105,7 +105,10 @@ class VaultGuardBackground {
       // The link key stays on this device too (storage.local, never synced).
       this.linkKey = local.linkKey?.keyId && local.linkKey?.key ? local.linkKey : null;
       // Before the link was encrypted the app issued a bearer secret; it's no longer accepted. Connect again.
-      if (local.linkSecret) await ext.storage.local.remove('linkSecret');
+      if (local.linkSecret) {
+        await ext.storage.local.remove('linkSecret');
+        await ext.storage.local.set({ reconnectNotice: true }); // the popup explains why it asks to connect again
+      }
     } catch (error) {
       console.error('Vault Guard: Error loading settings:', error);
     }
@@ -275,6 +278,7 @@ class VaultGuardBackground {
     this.linkKey = { keyId: r.keyId, key: this.b64u(key) };
     this._aesKey = null;
     await ext.storage.local.set({ linkKey: this.linkKey });
+    await ext.storage.local.remove('reconnectNotice');
     return { success: true, paired: true };
   }
 
