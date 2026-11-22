@@ -33,10 +33,6 @@ namespace VaultGuard.API.Middleware
             // (email + master password instead), so it's [AllowAnonymous] on the controller action — but
             // this middleware runs before MVC resolves that attribute and only knows path prefixes, so it
             // has to be listed explicitly too (other /api/apikeys/* actions still require normal auth).
-            // /api/license/activate and /api/license/validate are the same story again: a device
-            // activating/re-validating a CD key has no API key or bearer token of its own yet — that's
-            // the entire point of the CD-key flow (see docs/LICENSING.md) — so they're [AllowAnonymous]
-            // on the controller and, for the same reason as above, need to be listed here too.
             if (context.Request.Path.StartsWithSegments("/health") ||
                 context.Request.Path.StartsWithSegments("/scalar") ||
                 context.Request.Path.StartsWithSegments("/openapi") ||
@@ -50,9 +46,7 @@ namespace VaultGuard.API.Middleware
                 context.Request.Path.StartsWithSegments("/forgotPassword") ||
                 context.Request.Path.StartsWithSegments("/resetPassword") ||
                 context.Request.Path.StartsWithSegments("/api/apikeys/issue") ||
-                context.Request.Path.StartsWithSegments("/api/license/activate") ||
-                context.Request.Path.StartsWithSegments("/api/license/validate") ||
-                // Same story again, spotted along the way (unrelated to licensing): QR login is scanned
+                // Same story again: QR login is scanned
                 // by a device that, by definition, has no API key/session yet either.
                 context.Request.Path.StartsWithSegments("/api/auth/qr/generate-anonymous") ||
                 context.Request.Path.StartsWithSegments("/api/auth/qr/submit-handoff") ||

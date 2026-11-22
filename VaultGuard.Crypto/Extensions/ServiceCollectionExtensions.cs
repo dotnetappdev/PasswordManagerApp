@@ -18,7 +18,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<ICryptographyService, CryptographyService>();
         services.AddSingleton<IPasswordCryptoService, PasswordCryptoService>();
-        services.AddSingleton<ILicenseCryptoService, LicenseCryptoService>();
 
         return services;
     }

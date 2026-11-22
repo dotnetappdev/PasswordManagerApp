@@ -18,7 +18,6 @@
 @inject VaultGuard.Web.Services.AppNotificationService Notify
 @inject IApiKeyService ApiKeyService
 @inject IServiceProvider Services
-@inject ILicenseClientService LicenseClient
 @using Microsoft.Extensions.DependencyInjection
 @using System.Linq
 @using System.Collections.Generic
@@ -784,7 +783,6 @@
         </MudGrid>
     </MudTabPanel>
 
-    @* No License tab: Vault Guard is free and every feature is included. *@
     <MudTabPanel Text="About" Icon="@Icons.Material.Filled.Info">
         <MudGrid>
             <MudItem xs="12" md="7">
@@ -1933,59 +1931,6 @@
         try { _issueEmail = AuthService.CurrentUser?.Email ?? _issueEmail; }
         catch (System.Exception logEx) { VaultGuard.Services.Logging.AppLogger.Warning("Suppressed exception", logEx); }
 
-    }
-
-    // ── License ──────────────────────────────────────────────────────────────────
-
-    string _licenseKeyInput = "";
-    bool _activatingLicense;
-    string? _licenseStatusMessage;
-    Severity _licenseStatusSeverity = Severity.Info;
-
-    string FeatureSummary()
-    {
-        var features = LicenseClient.CurrentFeatures;
-        if (features == VaultGuard.Models.Licensing.LicenseFeature.None) return "none";
-        return string.Join(", ", Enum.GetValues<VaultGuard.Models.Licensing.LicenseFeature>()
-            .Where(f => f != VaultGuard.Models.Licensing.LicenseFeature.None && f != VaultGuard.Models.Licensing.LicenseFeature.All)
-            .Where(f => (features & f) == f)
-            .Select(f => f.ToString()));
-    }
-
-    async Task ActivateLicense()
-    {
-        _activatingLicense = true;
-        _licenseStatusMessage = null;
-        try
-        {
-            await LicenseClient.ActivateAsync(_licenseKeyInput);
-            _licenseKeyInput = "";
-            _licenseStatusSeverity = Severity.Success;
-            _licenseStatusMessage = $"License activated — {LicenseClient.CurrentPlan} plan unlocked.";
-            Snackbar.Add("License activated", Severity.Success);
-        }
-        catch (VaultGuard.Services.Interfaces.LicenseActivationException ex)
-        {
-            _licenseStatusSeverity = Severity.Error;
-            _licenseStatusMessage = ex.Message;
-        }
-        catch (System.Exception ex)
-        {
-            VaultGuard.Services.Logging.AppLogger.Warning("License activation failed", ex);
-            _licenseStatusSeverity = Severity.Error;
-            _licenseStatusMessage = "Activation failed unexpectedly. Please try again.";
-        }
-        finally
-        {
-            _activatingLicense = false;
-        }
-    }
-
-    void DeactivateLicense()
-    {
-        LicenseClient.ClearCached();
-        _licenseStatusMessage = "License removed from this device.";
-        _licenseStatusSeverity = Severity.Info;
     }
 
     // ── Generator ────────────────────────────────────────────────────────────────

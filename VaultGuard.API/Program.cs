@@ -266,10 +266,7 @@ builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceSe
 builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditLogService>();
 builder.Services.AddHostedService<VaultGuard.Services.Services.AutoSyncService>();
 
-// Licensing (CD keys / Pro feature unlock) + multi-tenancy — see docs/LICENSING.md and
-// docs/ADMIN_MULTITENANCY.md.
-builder.Services.Configure<VaultGuard.Models.Configuration.LicensingConfiguration>(
-    builder.Configuration.GetSection(VaultGuard.Models.Configuration.LicensingConfiguration.SectionName));
+// Multi-tenancy — see docs/ADMIN_MULTITENANCY.md.
 builder.Services.AddScoped<ICurrentTenantService, VaultGuard.Services.Services.CurrentTenantService>();
 
 // Identity data seeder — creates the default accounts + "Personal" vault (same across all providers)
@@ -489,8 +486,7 @@ using (var scope = app.Services.CreateScope())
             Log.Warning(exEnsure, "Failed to ensure PasswordItemTags table via migration service");
         }
 
-        // Reconcile an existing SQLite database with the current model (Tenants, LicenseKeys,
-        // Subscriptions, etc.) — EnsureCreated is a no-op once the file already exists, so an install
+        // Reconcile an existing SQLite database with the current model (Tenants etc.) — EnsureCreated is a no-op once the file already exists, so an install
         // predating multi-tenancy would otherwise be missing these tables entirely. No-op on other
         // providers. Same guard the Blazor Web/WPF/MAUI apps apply — see SqliteSchemaGuard.
         try
@@ -499,7 +495,7 @@ using (var scope = app.Services.CreateScope())
         }
         catch (Exception exEnsure)
         {
-            Log.Warning(exEnsure, "Failed to reconcile SQLite tenancy/licensing schema");
+            Log.Warning(exEnsure, "Failed to reconcile SQLite tenancy schema");
         }
 
         // Seed the same default accounts + "Personal" vault as every other client, so a fresh SQL Server
@@ -518,13 +514,12 @@ using (var scope = app.Services.CreateScope())
             Log.Warning(seedEx, "Identity seeding warning");
         }
 
-        // Seed demo tenants + their licensed clients/subscriptions so VaultGuard.Admin's Tenants/License
-        // Keys/Subscriptions pages aren't empty on a fresh install. Idempotent — no-op once any Tenant
-        // row exists.
+        // Seed demo tenants so VaultGuard.Admin's Tenants page isn't empty on a fresh install.
+        // Idempotent — no-op once any Tenant row exists.
         try
         {
             await VaultGuard.DAL.Seed.TenancyDataSeeder.SeedAsync(context);
-            Log.Information("Demo tenants/clients seeded");
+            Log.Information("Demo tenants seeded");
         }
         catch (Exception seedEx)
         {

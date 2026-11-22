@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using VaultGuard.Models.Licensing;
 
 namespace VaultGuard.Models.Tenancy;
 
@@ -47,13 +46,8 @@ public class Tenant
 
     public TenantStatus Status { get; set; } = TenantStatus.PendingSetup;
 
-    public Guid? SubscriptionId { get; set; }
-    [ForeignKey(nameof(SubscriptionId))]
-    public virtual Subscription? Subscription { get; set; }
-
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
-    public virtual ICollection<LicenseKey> LicenseKeys { get; set; } = new List<LicenseKey>();
 }

@@ -225,7 +225,7 @@ public static class SqliteSchemaGuard
             }
         });
 
-        // ── 9. Licensing / multi-tenancy tables (added after the initial SQLite schema, so any vault
+        // ── 9. Multi-tenancy tables (added after the initial SQLite schema, so any vault
         // created before this pass is missing them entirely — see docs/ADMIN_MULTITENANCY.md). These
         // only ship as EF migrations for SQL Server (VaultGuard.DAL.SqlServer); SQLite relies on
         // EnsureCreated, which is a no-op once the database file already exists, so existing installs
@@ -243,7 +243,6 @@ public static class SqliteSchemaGuard
                     CustomDomainVerified    INTEGER NOT NULL DEFAULT 0,
                     DomainVerificationToken TEXT,
                     Status                  INTEGER NOT NULL DEFAULT 0,
-                    SubscriptionId          TEXT,
                     CreatedAt               TEXT    NOT NULL DEFAULT '',
                     UpdatedAt               TEXT)");
                 await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_Tenants_Slug ON Tenants (Slug)");
@@ -251,91 +250,58 @@ public static class SqliteSchemaGuard
             }
         });
 
-        await Step("create Subscriptions table", async () =>
+        // Vault Guard is free forever: the old licensing/subscription tables are no longer used. Remove them from
+        // vaults created while they existed (SQL Server does the same via the RemoveLicensingAndSubscriptions
+        // migration). Tenants had a SubscriptionId foreign key into Subscriptions, so dropping that table alone
+        // fails (and a key pointing at a missing table would make SQLite refuse later changes to Tenants).
+        // SQLite's documented way out: with foreign keys off, rebuild Tenants without the column (keeping every
+        // row), then drop the retired tables — all in one transaction on this one connection.
+        await Step("drop retired licensing tables", async () =>
         {
-            if (!await TableExists("Subscriptions"))
-            {
-                logger?.LogInformation("Schema fix: creating Subscriptions table");
-                await Exec(@"CREATE TABLE IF NOT EXISTS Subscriptions (
-                    Id                  TEXT    NOT NULL PRIMARY KEY,
-                    UserId              TEXT,
-                    TenantId            TEXT,
-                    Plan                INTEGER NOT NULL DEFAULT 0,
-                    Status              INTEGER NOT NULL DEFAULT 1,
-                    SeatCount           INTEGER NOT NULL DEFAULT 1,
-                    StartedAt           TEXT    NOT NULL DEFAULT '',
-                    CurrentPeriodEnd    TEXT,
-                    CancelledAt         TEXT,
-                    ExternalProviderRef TEXT,
-                    LicenseKeyId        TEXT)");
-                await Exec("CREATE INDEX IF NOT EXISTS IX_Subscriptions_UserId ON Subscriptions (UserId)");
-                await Exec("CREATE INDEX IF NOT EXISTS IX_Subscriptions_TenantId ON Subscriptions (TenantId)");
-            }
-        });
+            var retired = new[] { "LicenseActivations", "LicensingSettings", "Subscriptions", "LicenseKeys" };
+            var present = new List<string>();
+            foreach (var t in retired) if (await TableExists(t)) present.Add(t);
+            var tenantsHasSubscription = await TableExists("Tenants") && await ColumnExists("Tenants", "SubscriptionId");
+            if (present.Count == 0 && !tenantsHasSubscription) return;
 
-        await Step("create LicenseKeys table", async () =>
-        {
-            if (!await TableExists("LicenseKeys"))
+            logger?.LogInformation("Schema fix: removing retired licensing tables ({Tables})", string.Join(", ", present));
+            await Exec("PRAGMA foreign_keys = OFF");
+            try
             {
-                logger?.LogInformation("Schema fix: creating LicenseKeys table");
-                await Exec(@"CREATE TABLE IF NOT EXISTS LicenseKeys (
-                    Id                  TEXT    NOT NULL PRIMARY KEY,
-                    KeyCode             TEXT    NOT NULL,
-                    CustomerEmail       TEXT    NOT NULL,
-                    CustomerName        TEXT,
-                    UserId              TEXT,
-                    TenantId            TEXT,
-                    Plan                INTEGER NOT NULL DEFAULT 1,
-                    Features            INTEGER NOT NULL DEFAULT 0,
-                    MaxActivations      INTEGER NOT NULL DEFAULT 1,
-                    IssuedAt            TEXT    NOT NULL DEFAULT '',
-                    ExpiresAt           TEXT,
-                    IsRevoked           INTEGER NOT NULL DEFAULT 0,
-                    RevokedAt           TEXT,
-                    RevokedReason       TEXT,
-                    IssuedByAdminUserId TEXT,
-                    Notes               TEXT)");
-                await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_LicenseKeys_KeyCode ON LicenseKeys (KeyCode)");
-                await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_CustomerEmail ON LicenseKeys (CustomerEmail)");
-                await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_TenantId ON LicenseKeys (TenantId)");
-                await Exec("CREATE INDEX IF NOT EXISTS IX_LicenseKeys_UserId ON LicenseKeys (UserId)");
+                await Exec("BEGIN");
+                try
+                {
+                    if (tenantsHasSubscription)
+                    {
+                        await Exec(@"CREATE TABLE Tenants__rebuild (
+                            Id                      TEXT    NOT NULL PRIMARY KEY,
+                            Name                    TEXT    NOT NULL,
+                            Slug                    TEXT    NOT NULL,
+                            CustomDomain            TEXT,
+                            CustomDomainVerified    INTEGER NOT NULL DEFAULT 0,
+                            DomainVerificationToken TEXT,
+                            Status                  INTEGER NOT NULL DEFAULT 0,
+                            CreatedAt               TEXT    NOT NULL DEFAULT '',
+                            UpdatedAt               TEXT)");
+                        await Exec(@"INSERT INTO Tenants__rebuild (Id, Name, Slug, CustomDomain, CustomDomainVerified, DomainVerificationToken, Status, CreatedAt, UpdatedAt)
+                                     SELECT Id, Name, Slug, CustomDomain, CustomDomainVerified, DomainVerificationToken, Status, CreatedAt, UpdatedAt FROM Tenants");
+                        await Exec("DROP TABLE Tenants");
+                        await Exec("ALTER TABLE Tenants__rebuild RENAME TO Tenants");
+                        await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_Tenants_Slug ON Tenants (Slug)");
+                        await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_Tenants_CustomDomain ON Tenants (CustomDomain) WHERE CustomDomain IS NOT NULL");
+                    }
+                    foreach (var t in present) await Exec($"DROP TABLE IF EXISTS {t}");
+                    await Exec("COMMIT");
+                }
+                catch
+                {
+                    await Exec("ROLLBACK");
+                    throw;
+                }
             }
-        });
-
-        await Step("create LicenseActivations table", async () =>
-        {
-            if (!await TableExists("LicenseActivations"))
+            finally
             {
-                logger?.LogInformation("Schema fix: creating LicenseActivations table");
-                await Exec(@"CREATE TABLE IF NOT EXISTS LicenseActivations (
-                    Id              TEXT    NOT NULL PRIMARY KEY,
-                    LicenseKeyId    TEXT    NOT NULL,
-                    DeviceId        TEXT    NOT NULL,
-                    DeviceName      TEXT,
-                    AppVersion      TEXT,
-                    Platform        TEXT,
-                    ActivatedAt     TEXT    NOT NULL DEFAULT '',
-                    LastValidatedAt TEXT,
-                    IsActive        INTEGER NOT NULL DEFAULT 1,
-                    DeactivatedAt   TEXT)");
-                await Exec("CREATE UNIQUE INDEX IF NOT EXISTS IX_LicenseActivations_LicenseKeyId_DeviceId ON LicenseActivations (LicenseKeyId, DeviceId)");
-            }
-        });
-
-        await Step("create LicensingSettings table", async () =>
-        {
-            if (!await TableExists("LicensingSettings"))
-            {
-                logger?.LogInformation("Schema fix: creating LicensingSettings table");
-                await Exec(@"CREATE TABLE IF NOT EXISTS LicensingSettings (
-                    Id                    INTEGER NOT NULL PRIMARY KEY,
-                    SigningPrivateKeyPem  TEXT,
-                    SigningPublicKeyPem   TEXT,
-                    AesKeyBase64          TEXT,
-                    DefaultMaxActivations INTEGER NOT NULL DEFAULT 1,
-                    DefaultPlan           INTEGER NOT NULL DEFAULT 1,
-                    GeneratedAt           TEXT,
-                    UpdatedAt             TEXT)");
+                await Exec("PRAGMA foreign_keys = ON");
             }
         });
 

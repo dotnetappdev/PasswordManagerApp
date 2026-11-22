@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using VaultGuard.DAL;
 using VaultGuard.Models;
 using VaultGuard.Models.Authorization;
-using VaultGuard.Models.Licensing;
 
 namespace VaultGuard.API.Controllers;
 
@@ -154,18 +153,12 @@ public class AdminController : ControllerBase
     [HttpGet("dashboard-stats")]
     public async Task<ActionResult<AdminDashboardStats>> GetDashboardStats()
     {
-        var now = DateTime.UtcNow;
         var stats = new AdminDashboardStats
         {
             TotalUsers = await _dbContext.Users.CountAsync(),
             ActiveUsers = await _dbContext.Users.CountAsync(u => u.IsActive),
             TotalTenants = await _dbContext.Tenants.CountAsync(),
             ActiveTenants = await _dbContext.Tenants.CountAsync(t => t.Status == Models.Tenancy.TenantStatus.Active),
-            TotalLicenseKeys = await _dbContext.LicenseKeys.CountAsync(),
-            ActiveLicenseKeys = await _dbContext.LicenseKeys.CountAsync(k => !k.IsRevoked && (k.ExpiresAt == null || k.ExpiresAt > now)),
-            TotalActivations = await _dbContext.LicenseActivations.CountAsync(a => a.IsActive),
-            ActiveSubscriptions = await _dbContext.Subscriptions.CountAsync(s =>
-                s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trialing),
         };
         return Ok(stats);
     }
@@ -202,8 +195,4 @@ public class AdminDashboardStats
     public int ActiveUsers { get; set; }
     public int TotalTenants { get; set; }
     public int ActiveTenants { get; set; }
-    public int TotalLicenseKeys { get; set; }
-    public int ActiveLicenseKeys { get; set; }
-    public int TotalActivations { get; set; }
-    public int ActiveSubscriptions { get; set; }
 }

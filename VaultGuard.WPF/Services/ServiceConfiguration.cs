@@ -64,12 +64,6 @@ public static class ServiceConfiguration
         // Shared machine-local settings (%LocalAppData%\VaultGuard\settings.json) — same file the
         // Blazor Web app reads/writes (ApiBaseUrl, theme, and now the cached license certificate).
         services.AddSingleton<IAppSettingsService, AppSettingsService>();
-
-        // Licensing (CD keys / Pro feature unlock) — see docs/LICENSING.md. Only the public key + AES
-        // key belong in this app's appsettings.json "Licensing" section; never the private key.
-        services.Configure<VaultGuard.Models.Configuration.LicensingConfiguration>(
-            configuration.GetSection(VaultGuard.Models.Configuration.LicensingConfiguration.SectionName));
-        services.AddScoped<ILicenseClientService, LicenseClientService>();
 #endif
         return services;
     }

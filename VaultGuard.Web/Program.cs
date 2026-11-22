@@ -210,12 +210,8 @@ builder.Services.AddScoped<IAuditLogService, VaultGuard.Services.Services.AuditL
 builder.Services.AddScoped<ITwoFactorService, VaultGuard.Services.Services.TwoFactorService>();
 builder.Services.AddScoped<IDeviceService, VaultGuard.Services.Services.DeviceService>();
 
-// Licensing (CD keys / Pro feature unlock) + multi-tenancy — see docs/LICENSING.md and
-// docs/ADMIN_MULTITENANCY.md.
-builder.Services.Configure<VaultGuard.Models.Configuration.LicensingConfiguration>(
-    builder.Configuration.GetSection(VaultGuard.Models.Configuration.LicensingConfiguration.SectionName));
+// Multi-tenancy — see docs/ADMIN_MULTITENANCY.md.
 builder.Services.AddScoped<ICurrentTenantService, VaultGuard.Services.Services.CurrentTenantService>();
-builder.Services.AddScoped<ILicenseClientService, VaultGuard.Services.Services.LicenseClientService>();
 
 // "Remember this device" master-key cache (encrypted with server data-protection keys) so a
 // 2FA-enabled account can sign in code-only on a remembered browser.
@@ -438,9 +434,8 @@ using (var scope = app.Services.CreateScope())
             VaultGuard.Services.Logging.AppLogger.Error($"⚠️  Identity seeding warning", seedEx);
         }
 
-        // Seed demo tenants + their licensed clients/subscriptions so VaultGuard.Admin's Tenants/License
-        // Keys/Subscriptions pages aren't empty on a fresh install. Idempotent — no-op once any Tenant
-        // row exists.
+        // Seed demo tenants so VaultGuard.Admin's Tenants page isn't empty on a fresh install.
+        // Idempotent — no-op once any Tenant row exists.
         try
         {
             var tenancyDbContext = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();

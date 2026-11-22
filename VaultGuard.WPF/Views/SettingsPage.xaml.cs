@@ -281,7 +281,6 @@ public sealed partial class SettingsPage : Page
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
             StartOneDriveStatusTimer();
-            // No licence check: Vault Guard is free and every feature is included.
 
             // Theme loads asynchronously in the view model's constructor, so reflect the tile
             // selection both now (in case it's already loaded) and whenever it changes.
@@ -817,84 +816,6 @@ public sealed partial class SettingsPage : Page
         catch (Exception ex)
         {
             await ShowErrorDialog("Generate API Key", $"Could not reach the API: {ex.Message}");
-        }
-    }
-
-    // ── Licensing (CD keys / Pro feature unlock) — see docs/LICENSING.md ───────────────────────
-
-    private async void RefreshLicenseStatus()
-    {
-        if (_serviceProvider == null || LicenseStatusText == null) return;
-        try
-        {
-            var licenseClient = _serviceProvider.GetService<ILicenseClientService>();
-            licenseClient?.LoadCached();
-
-            // No license activated on this machine yet — check once whether a SuperAdmin assigned one
-            // to this account (or its tenant) and, if so, activate it automatically. See docs/LICENSING.md.
-            if (licenseClient != null && licenseClient.ActiveKeyCode is null)
-                await licenseClient.TryActivateAssignedAsync();
-
-            LicenseStatusText.Text = DescribeLicenseStatus(licenseClient);
-        }
-        catch (Exception ex)
-        {
-            VaultGuard.Services.Logging.AppLogger.Error("Failed to refresh license status", ex);
-        }
-    }
-
-    private static string DescribeLicenseStatus(ILicenseClientService? licenseClient)
-    {
-        if (licenseClient == null) return "Licensing is unavailable.";
-        if (!licenseClient.IsProUnlocked) return "Free plan — no license key activated.";
-        var expiry = licenseClient.ExpiresAt.HasValue
-            ? $" — expires {licenseClient.ExpiresAt:yyyy-MM-dd}"
-            : " (perpetual license)";
-        return $"{licenseClient.CurrentPlan} plan active{expiry}";
-    }
-
-    private async void ActivateLicenseButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_serviceProvider == null) return;
-
-        var key = LicenseKeyTextBox?.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            await ShowErrorDialog("Activate License", "Enter a license key first.");
-            return;
-        }
-
-        try
-        {
-            var licenseClient = _serviceProvider.GetRequiredService<ILicenseClientService>();
-            await licenseClient.ActivateAsync(key);
-            LicenseStatusText.Text = DescribeLicenseStatus(licenseClient);
-            LicenseKeyTextBox!.Text = "";
-            VaultGuard.WPF.Services.ToastService.Instance.Show("License activated.", VaultGuard.WPF.Services.ToastType.Success);
-        }
-        catch (VaultGuard.Services.Interfaces.LicenseActivationException ex)
-        {
-            await ShowErrorDialog("Activate License", ex.Message);
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorDialog("Activate License", $"Activation failed: {ex.Message}");
-        }
-    }
-
-    private async void DeactivateLicenseButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_serviceProvider == null) return;
-        try
-        {
-            var licenseClient = _serviceProvider.GetRequiredService<ILicenseClientService>();
-            licenseClient.ClearCached();
-            LicenseStatusText.Text = DescribeLicenseStatus(licenseClient);
-            VaultGuard.WPF.Services.ToastService.Instance.Show("License removed from this device.", VaultGuard.WPF.Services.ToastType.Info);
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorDialog("Deactivate License", $"Failed to remove license: {ex.Message}");
         }
     }
 

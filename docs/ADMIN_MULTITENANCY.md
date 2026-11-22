@@ -1,7 +1,8 @@
 # VaultGuard.Admin & Multi-Tenancy
 
-`VaultGuard.Admin` is a separate Blazor Server "control panel" for super admins: customers, subscriptions,
-license keys, and tenant/custom-domain management. It is a **thin client of VaultGuard.API** — it has no
+`VaultGuard.Admin` is a separate Blazor Server "control panel" for super admins: users, tenants and custom
+domains, and API-key oversight. (Vault Guard is free forever, so there are no licences, plans or
+subscriptions to manage.) It is a **thin client of VaultGuard.API** — it has no
 database connection or Identity store of its own, no `VaultGuard.DAL`/`VaultGuard.Crypto` references, and
 every action it takes is a normal authenticated HTTP call to the same API the WPF/Blazor/mobile apps use.
 This keeps a single source of truth (one database, one Identity system, one set of business rules) and
@@ -12,7 +13,7 @@ means securing/scaling VaultGuard.Admin is just securing/scaling another API cli
 VaultGuard already had an in-app `Admin` role (family/vault administration, gated by `RequireAdminAttribute`).
 This work adds a separate `SuperAdmin` role (`RequireSuperAdminAttribute`,
 `VaultGuard.Models.ApplicationRoles.SuperAdmin`) specifically for the control panel — a family "Admin"
-should **not** automatically get access to every customer's license keys and tenants, so the two are kept
+should **not** automatically get access to every customer's tenants and users, so the two are kept
 distinct. `UserProfileController` (user CRUD) now accepts either role, since both legitimately manage users.
 
 A bootstrap `superadmin@passwordmanager.local` account is seeded by `IdentityDataSeeder` alongside the
@@ -52,13 +53,10 @@ the SuperAdmin account with `CommonMasterKey` as its actual Identity password to
 
 | Page | What it does |
 |---|---|
-| Dashboard | Aggregate counts (users, tenants, license keys, subscriptions, activations) from `GET /api/admin/dashboard-stats`. |
-| Users | Lists all users (`UserProfileController`); a "Manage" dialog toggles roles, assigns a tenant, shows/assigns licenses, and can deactivate/reactivate/delete. |
-| License Keys | (Not used: Vault Guard is free; see the note in `docs/LICENSING.md`.) Full CRUD (issue/edit/delete/revoke) for CD keys, including assigning a key directly to an existing account — see `docs/LICENSING.md`. |
-| Subscriptions | Create/cancel billing-plan records (`SubscriptionsController`) for a user or a whole tenant. |
-| Tenants & Domains | Create tenants, set a custom domain and walk through DNS verification (below), and assign/manage org-wide license keys per tenant. |
+| Dashboard | Aggregate counts (users, tenants) from `GET /api/admin/dashboard-stats`. |
+| Users | Lists all users (`UserProfileController`); a "Manage" dialog toggles roles, assigns a tenant, and can deactivate/reactivate/delete. |
+| Tenants & Domains | Create tenants, set a custom domain and walk through DNS verification (below). |
 | API Keys | Cross-account oversight of every API key ever issued (`GET /api/admin/api-keys`) — the per-user `ApiKeysController` only ever sees the calling user's own keys. |
-| Settings | Licensing signing-key status, one-click key generation, and issuance defaults (default plan / max activations) — see `docs/LICENSING.md` "Settings". |
 
 ## Multi-tenancy
 
@@ -98,8 +96,6 @@ it blank to disable subdomain resolution (custom-domain resolution below still w
 - **Login/register CSRF**: `/admin-auth/login` and `/admin-auth/register` validate an antiforgery token
   (`Login.razor`/`Signup.razor` render `<AntiforgeryToken />`), consistent with the rest of ASP.NET Core's
   form-post protections.
-- **No payment provider** — subscriptions are created/cancelled manually by a SuperAdmin; there's no
-  Stripe/Paddle webhook wiring (see `docs/LICENSING.md`).
 - **Custom-domain verification is manual** (an operator clicks "Verify" after checking DNS themselves,
   rather than the API polling DNS automatically).
 - **Static web assets in local dev**: if you run VaultGuard.Admin (or VaultGuard.Web) from a raw built DLL

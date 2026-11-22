@@ -139,54 +139,6 @@ public class AdminApiClient
     public async Task<List<AdminApiKeyResponse>> GetAllApiKeysAsync() =>
         await CreateClient().GetFromJsonAsync<List<AdminApiKeyResponse>>("api/admin/api-keys") ?? new();
 
-    // ── Licensing ────────────────────────────────────────────────────────────────────────────────
-
-    public async Task<List<LicenseKeyResponse>> GetLicensesAsync(string? customerEmail = null) =>
-        await CreateClient().GetFromJsonAsync<List<LicenseKeyResponse>>(
-            string.IsNullOrWhiteSpace(customerEmail) ? "api/license" : $"api/license?customerEmail={Uri.EscapeDataString(customerEmail)}") ?? new();
-
-    public async Task<List<LicenseKeyResponse>> GetLicensesForUserAsync(string userId) =>
-        await CreateClient().GetFromJsonAsync<List<LicenseKeyResponse>>($"api/license?userId={Uri.EscapeDataString(userId)}") ?? new();
-
-    public async Task<List<LicenseKeyResponse>> GetLicensesForTenantAsync(Guid tenantId) =>
-        await CreateClient().GetFromJsonAsync<List<LicenseKeyResponse>>($"api/license?tenantId={tenantId}") ?? new();
-
-    public async Task<(bool Success, LicenseKeyResponse? License, string? Error)> IssueLicenseAsync(IssueLicenseRequest request)
-    {
-        var resp = await CreateClient().PostAsJsonAsync("api/license", request);
-        if (!resp.IsSuccessStatusCode) return (false, null, await resp.Content.ReadAsStringAsync());
-        return (true, await resp.Content.ReadFromJsonAsync<LicenseKeyResponse>(), null);
-    }
-
-    public async Task<(bool Success, LicenseKeyResponse? License, string? Error)> UpdateLicenseAsync(Guid id, UpdateLicenseRequest request)
-    {
-        var resp = await CreateClient().PutAsJsonAsync($"api/license/{id}", request);
-        if (!resp.IsSuccessStatusCode) return (false, null, await resp.Content.ReadAsStringAsync());
-        return (true, await resp.Content.ReadFromJsonAsync<LicenseKeyResponse>(), null);
-    }
-
-    public async Task<bool> DeleteLicenseAsync(Guid id) =>
-        (await CreateClient().DeleteAsync($"api/license/{id}")).IsSuccessStatusCode;
-
-    public async Task<bool> RevokeLicenseAsync(Guid id, string? reason) =>
-        (await CreateClient().PostAsJsonAsync($"api/license/{id}/revoke", new { reason })).IsSuccessStatusCode;
-
-    public async Task<LicensingSettingsResponse?> GetLicensingSettingsAsync() =>
-        await CreateClient().GetFromJsonAsync<LicensingSettingsResponse>("api/license/settings");
-
-    public async Task<LicensingSettingsResponse?> UpdateLicensingDefaultsAsync(UpdateLicensingDefaultsRequest request)
-    {
-        var resp = await CreateClient().PutAsJsonAsync("api/license/settings", request);
-        return resp.IsSuccessStatusCode ? await resp.Content.ReadFromJsonAsync<LicensingSettingsResponse>() : null;
-    }
-
-    public async Task<(bool Success, LicensingSettingsResponse? Settings, string? Error)> GenerateSigningKeysAsync()
-    {
-        var resp = await CreateClient().PostAsync("api/license/settings/generate-keys", null);
-        if (!resp.IsSuccessStatusCode) return (false, null, await resp.Content.ReadAsStringAsync());
-        return (true, await resp.Content.ReadFromJsonAsync<LicensingSettingsResponse>(), null);
-    }
-
     // ── Tenants ──────────────────────────────────────────────────────────────────────────────────
 
     public async Task<List<TenantResponse>> GetTenantsAsync() =>
@@ -214,18 +166,4 @@ public class AdminApiClient
 
     public async Task<bool> VerifyCustomDomainAsync(Guid tenantId) =>
         (await CreateClient().PostAsync($"api/tenants/{tenantId}/custom-domain/verify", null)).IsSuccessStatusCode;
-
-    // ── Subscriptions ────────────────────────────────────────────────────────────────────────────
-
-    public async Task<List<SubscriptionResponse>> GetSubscriptionsAsync() =>
-        await CreateClient().GetFromJsonAsync<List<SubscriptionResponse>>("api/subscriptions") ?? new();
-
-    public async Task<(bool Success, string? Error)> CreateSubscriptionAsync(CreateSubscriptionRequest request)
-    {
-        var resp = await CreateClient().PostAsJsonAsync("api/subscriptions", request);
-        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync());
-    }
-
-    public async Task<bool> CancelSubscriptionAsync(Guid id) =>
-        (await CreateClient().PostAsync($"api/subscriptions/{id}/cancel", null)).IsSuccessStatusCode;
 }
