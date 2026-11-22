@@ -561,6 +561,8 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
     {
         var detailPassword = GetElement<Controls.ReadOnlyField>("DetailPassword");
         if (detailPassword == null) return;
+        // On a card this row is the cardholder name: plain text, nothing to reveal.
+        if (_selectedItem?.Type == ItemType.CreditCard) return;
 
         // Mask → reveal: decrypt on demand
         if (detailPassword.Text.StartsWith("•"))
@@ -645,6 +647,14 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
 
     private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_selectedItem?.Type == ItemType.CreditCard)
+        {
+            var holder = _selectedItem.CreditCardItem?.CardholderName?.Trim();
+            if (string.IsNullOrEmpty(holder)) { ToastService.Instance.Show("This card has no cardholder name.", ToastType.Info); return; }
+            VaultGuard.WPF.Helpers.SecureClipboard.Copy(holder);
+            ToastService.Instance.Success(VaultGuard.WPF.Helpers.SecureClipboard.CopiedMessage("Cardholder name"));
+            return;
+        }
         if (_selectedItem?.LoginItem == null) return;
         try
         {
@@ -928,6 +938,10 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         if (creditCardSection != null) creditCardSection.Visibility = Visibility.Collapsed;
         var revealCardNumberBtn = GetElement<Button>("RevealCardNumberButton");
         if (revealCardNumberBtn != null) revealCardNumberBtn.Visibility = Visibility.Collapsed;
+        // The password row's eye button; hidden for cards, where that row shows the (not secret) cardholder name.
+        var revealPasswordBtn = GetElement<Button>("RevealPasswordButton");
+        if (revealPasswordBtn != null)
+            revealPasswordBtn.Visibility = item.Type == ItemType.CreditCard ? Visibility.Collapsed : Visibility.Visible;
         var shareWifiBtn = GetElement<Button>("ShareWifiQrButton");
         if (shareWifiBtn != null) shareWifiBtn.Visibility = item.WiFiItem != null ? Visibility.Visible : Visibility.Collapsed;
 
@@ -955,8 +969,9 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
             // Reuse the "password" field row to show cardholder name in plain text
             if (detailPassword != null)
             {
-                detailPassword.Text     = cc?.CardholderName ?? "—";
-                detailPassword.CopyText = cc?.CardholderName ?? string.Empty;
+                var holder = cc?.CardholderName?.Trim();
+                detailPassword.Text     = string.IsNullOrEmpty(holder) ? "—" : holder;
+                detailPassword.CopyText = holder ?? string.Empty;
             }
 
             // Extra CC fields
