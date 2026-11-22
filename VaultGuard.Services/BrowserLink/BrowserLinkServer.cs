@@ -92,29 +92,32 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         }
     }
 
-    /// <summary>Handles one request (public so it can be tested without a pipe).</summary>
+    /// <summary>
+    /// Handles one request (public so it can be tested without a pipe). Apart from "pair" (a key exchange that
+    /// carries only public keys) and "hello" (status only), every request must be encrypted with the browser's
+    /// link key and every answer is encrypted with it (BrowserLinkCrypto), so nothing readable crosses the link.
+    /// </summary>
     public async Task<object> HandleAsync(JsonElement req, CancellationToken ct = default)
     {
         var action = req.Utf8("action");
-        var secret = req.Utf8("linkSecret");
+        if (action == "pair") return await PairAsync(req, ct);
+
+        var keyId = req.Utf8("keyId");
+        var iv = req.Utf8("iv");
+        var key = _pairings.KeyFor(keyId);
+        using var inner = key != null && iv.Length > 0 ? BrowserLinkCrypto.OpenRequest(key, action, keyId, iv, req.Utf8("ct")) : null;
+        var paired = inner != null;
+
         var sessions = _services.GetService<IVaultSessionService>();
         var sessionId = sessions?.GetActiveSessionId();
         var unlocked = sessionId != null;
-        var paired = _pairings.IsPaired(secret);
 
-        switch (action)
-        {
-            case "hello":
-                return new
-                {
-                    success = true, linked = true, app = _appName, appVersion = _appVersion,
-                    protocol = BrowserLinkProtocol.Version, unlocked, paired
-                };
-
-            case "pair":
-                if (paired) return new { success = true, paired = true };
-                return await PairAsync(req, ct);
-        }
+        if (action == "hello")
+            return new
+            {
+                success = true, linked = true, app = _appName, appVersion = _appVersion,
+                protocol = BrowserLinkProtocol.Version, unlocked, paired
+            };
 
         if (!paired)
             return new { success = false, code = "NOT_PAIRED", error = "This browser isn't connected to Vault Guard yet. Click Connect in the extension and approve it in the app." };
@@ -126,23 +129,33 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         if (userId == null || cipher == null)
             return new { success = false, code = "LOCKED", error = "Unlock Vault Guard to use it in the browser." };
 
+        var fields = inner!.RootElement;
         using var scope = _services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
-        return action switch
+        object result = action switch
         {
-            "getCredentials" => await GetCredentialsAsync(db, userId, cipher, req.Utf8("domain"), ct),
+            "getCredentials" => await GetCredentialsAsync(db, userId, cipher, fields.Utf8("domain"), ct),
             "getCreditCards" => await GetCreditCardsAsync(db, userId, cipher, ct),
-            "saveTotpSecret" => await SaveTotpAsync(db, userId, cipher, req, ct),
-            "getTotpCode" => await GetTotpCodeAsync(db, userId, cipher, req, ct),
-            "saveLogin" => await SaveLoginAsync(db, userId, cipher, req, ct),
-            "checkPasswordReuse" => await CheckPasswordReuseAsync(db, userId, cipher, req, ct),
+            "saveTotpSecret" => await SaveTotpAsync(db, userId, cipher, fields, ct),
+            "getTotpCode" => await GetTotpCodeAsync(db, userId, cipher, fields, ct),
+            "saveLogin" => await SaveLoginAsync(db, userId, cipher, fields, ct),
+            "checkPasswordReuse" => await CheckPasswordReuseAsync(db, userId, cipher, fields, ct),
             _ => new { success = false, code = "UNSUPPORTED", error = $"Unknown action '{action}'." }
         };
+        return BrowserLinkCrypto.SealResponse(key!, action, keyId, iv, result);
     }
 
     private async Task<object> PairAsync(JsonElement req, CancellationToken ct)
     {
         if (_approver == null) return new { success = false, error = "This app can't approve browsers." };
+        var clientPublicKey = req.Utf8("clientPublicKey");
+        if (clientPublicKey.Length == 0)
+            return new { success = false, code = "UPDATE_EXTENSION", error = "Update the Vault Guard extension to connect it (this version of the app encrypts the browser link)." };
+        BrowserLinkCrypto.Exchange exchange;
+        try { exchange = BrowserLinkCrypto.Agree(clientPublicKey); }
+        catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or FormatException)
+        { return new { success = false, error = "The browser sent an invalid key." }; }
+
         var browser = req.Utf8("browser");
         var origin = req.Utf8("origin");
         var label = string.IsNullOrWhiteSpace(browser) ? "A browser" : browser;
@@ -159,9 +172,15 @@ public sealed class BrowserLinkServer : IAsyncDisposable
             try { approved = await _approver.ApproveAsync(label, timeout.Token); }
             catch (OperationCanceledException) { approved = false; }
             if (!approved) return new { success = false, code = "DECLINED", error = "The connection wasn't approved in Vault Guard." };
-            return new { success = true, paired = true, secret = _pairings.Create(label) };
+            // Only public keys cross the link; each side derives the same key on its own.
+            var keyId = _pairings.Create(label, exchange.Key);
+            return new { success = true, paired = true, keyId, appPublicKey = exchange.AppPublicKey };
         }
-        finally { _approvalGate.Release(); }
+        finally
+        {
+            System.Security.Cryptography.CryptographicOperations.ZeroMemory(exchange.Key);
+            _approvalGate.Release();
+        }
     }
 
     private static async Task<object> GetCredentialsAsync(VaultGuardDbContext db, string userId, VaultCipher cipher, string domain, CancellationToken ct)

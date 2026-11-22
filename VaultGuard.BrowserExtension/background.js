@@ -7,7 +7,7 @@ class VaultGuardBackground {
     this.authToken = null;
     // Browser link (like 1Password's app integration): when the Vault Guard desktop app is running and this
     // browser has been approved in it, the app answers from its unlocked vault — no sign-in in the extension.
-    this.linkSecret = null;   // issued by the app when the user approves this browser
+    this.linkKey = null;      // { keyId, key }: agreed with the app when the user approves this browser
     this.link = null;         // last { linked, paired, unlocked, app, appVersion, protocol }
     this.linkCheckedAt = 0;
     this.init();
@@ -21,7 +21,7 @@ class VaultGuardBackground {
     });
 
     // Load settings on startup
-    this.loadSettings();
+    this.ready = this.loadSettings();
 
     this.setUpMenus();
     this.setUpCommands();
@@ -93,13 +93,19 @@ class VaultGuardBackground {
 
   async loadSettings() {
     try {
-      const result = await ext.storage.sync.get(['authToken']);
-      if (result.authToken) {
-        this.authToken = result.authToken;
+      // The API sign-in token stays on this device: it used to be kept in synced storage, which copies it to
+      // every browser signed in to the same account.
+      const synced = await ext.storage.sync.get(['authToken']);
+      if (synced.authToken) {
+        await ext.storage.local.set({ authToken: synced.authToken });
+        await ext.storage.sync.remove('authToken');
       }
-      // The pairing secret stays on this device (storage.local, never synced to other browsers).
-      const local = await ext.storage.local.get(['linkSecret']);
-      this.linkSecret = local.linkSecret || null;
+      const local = await ext.storage.local.get(['authToken', 'linkKey', 'linkSecret']);
+      this.authToken = local.authToken || null;
+      // The link key stays on this device too (storage.local, never synced).
+      this.linkKey = local.linkKey?.keyId && local.linkKey?.key ? local.linkKey : null;
+      // Before the link was encrypted the app issued a bearer secret; it's no longer accepted. Connect again.
+      if (local.linkSecret) await ext.storage.local.remove('linkSecret');
     } catch (error) {
       console.error('Vault Guard: Error loading settings:', error);
     }
@@ -179,8 +185,8 @@ class VaultGuardBackground {
           await this.connectApp(sendResponse);
           break;
         case 'disconnectApp':
-          this.linkSecret = null;
-          await ext.storage.local.remove('linkSecret');
+          this.linkKey = null;
+          await ext.storage.local.remove('linkKey');
           sendResponse({ success: true, link: await this.refreshLink(true) });
           break;
         case 'testConnection':
@@ -202,25 +208,74 @@ class VaultGuardBackground {
     }
   }
 
-  async sendNativeMessage(message) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Get database path from settings if available
-        const settings = await ext.storage.sync.get(['databasePath']);
-        if (settings.databasePath) {
-          message.databasePath = settings.databasePath;
-        }
-        
-        if (this.linkSecret) {
-          message.linkSecret = this.linkSecret;
-        }
-        message.browser = this.browserName();
+  // ---------- Encrypted link to the app (protocol 3) ----------
+  // When this browser is approved, the extension and the app agree on a key with an ECDH P-256 exchange (only
+  // public keys are sent). Every request to the app and every answer is then AES-256-GCM encrypted with it, so the
+  // browser helper and the named pipe only ever carry ciphertext. Must match BrowserLinkCrypto in the app.
+  static ENCRYPTED_ACTIONS = new Set(['hello', 'getCredentials', 'getCreditCards', 'saveTotpSecret', 'getTotpCode', 'saveLogin', 'checkPasswordReuse']);
+  static LINK_INFO = 'VaultGuard browser link v3';
 
-        ext.runtime.sendNativeMessage(this.nativeHostName, message).then(resolve, (e) => reject(new Error(e?.message || String(e))));
-      } catch (error) {
-        reject(error);
+  b64u(bytes) { return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  unb64u(s) {
+    const b = atob(String(s).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(s).length / 4) * 4, '='));
+    return Uint8Array.from(b, c => c.charCodeAt(0));
+  }
+
+  async aesKey() {
+    if (!this.linkKey) return null;
+    return this._aesKey?.id === this.linkKey.keyId ? this._aesKey.key
+      : (this._aesKey = { id: this.linkKey.keyId, key: await crypto.subtle.importKey('raw', this.unb64u(this.linkKey.key), 'AES-GCM', false, ['encrypt', 'decrypt']) }).key;
+  }
+
+  async sendNativeMessage(message) {
+    await this.ready;
+    const browser = this.browserName();
+    const action = message.action;
+    const key = VaultGuardBackground.ENCRYPTED_ACTIONS.has(action) ? await this.aesKey() : null;
+    let outgoing, requestIv = null;
+    if (key) {
+      const { action: _a, ...fields } = message;
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const aad = new TextEncoder().encode(`vg3|req|${action}|${this.linkKey.keyId}`);
+      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad }, key,
+        new TextEncoder().encode(JSON.stringify({ ...fields, ts: Date.now() })));
+      requestIv = this.b64u(iv);
+      outgoing = { action, keyId: this.linkKey.keyId, iv: requestIv, ct: this.b64u(ct), browser };
+    } else {
+      outgoing = { ...message, browser };
+    }
+    let response;
+    try { response = await ext.runtime.sendNativeMessage(this.nativeHostName, outgoing); }
+    catch (e) { throw new Error(e?.message || String(e)); }
+    if (response?.enc && key) {
+      try {
+        const aad = new TextEncoder().encode(`vg3|resp|${action}|${this.linkKey.keyId}|${requestIv}`);
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: this.unb64u(response.enc.iv), additionalData: aad }, key, this.unb64u(response.enc.ct));
+        return JSON.parse(new TextDecoder().decode(plain));
+      } catch {
+        return { success: false, error: "Vault Guard's answer couldn't be verified." };
       }
-    });
+    }
+    return response;
+  }
+
+  /** Approve this browser in the app and agree on the link key (only public keys cross the link). */
+  async pairWithApp() {
+    const pair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+    const clientPublic = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey));
+    const r = await this.sendNativeMessage({ action: 'pair', clientPublicKey: this.b64u(clientPublic) });
+    if (!r?.success || !r.keyId || !r.appPublicKey) return r;
+    const appPublic = this.unb64u(r.appPublicKey);
+    const appKey = await crypto.subtle.importKey('raw', appPublic, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+    const shared = await crypto.subtle.deriveBits({ name: 'ECDH', public: appKey }, pair.privateKey, 256);
+    const hkdf = await crypto.subtle.importKey('raw', shared, 'HKDF', false, ['deriveBits']);
+    const salt = new Uint8Array(clientPublic.length + appPublic.length);
+    salt.set(clientPublic); salt.set(appPublic, clientPublic.length);
+    const key = await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info: new TextEncoder().encode(VaultGuardBackground.LINK_INFO) }, hkdf, 256);
+    this.linkKey = { keyId: r.keyId, key: this.b64u(key) };
+    this._aesKey = null;
+    await ext.storage.local.set({ linkKey: this.linkKey });
+    return { success: true, paired: true };
   }
 
   async sendWebApiMessage(endpoint, data) {
@@ -280,103 +335,44 @@ class VaultGuardBackground {
   }
 
   async getApiUrl() {
-    // Get API URL from storage or use default
+    // Get API URL from storage or use default (a self-hosted server on this computer)
     const result = await ext.storage.sync.get(['apiUrl']);
-    return result.apiUrl || 'http://localhost:5000';
+    return VaultGuardBackground.checkApiUrl(result.apiUrl || 'http://localhost:5000');
+  }
+
+  /** The API server must use HTTPS; plain HTTP only to this computer (localhost), where nothing crosses the network. */
+  static checkApiUrl(url) {
+    let u;
+    try { u = new URL(url); } catch { throw new Error('The API server address is not valid.'); }
+    const local = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(u.hostname);
+    if (u.protocol === 'https:' || (u.protocol === 'http:' && local)) return url.replace(/\/+$/, '');
+    throw new Error('The API server must use https:// (plain http:// is only allowed for localhost), so passwords are never sent unencrypted.');
+  }
+
+  async connectionMode() {
+    const settings = await ext.storage.sync.get(['connectionMode']);
+    const mode = settings.connectionMode || 'auto';
+    return mode === 'api' || mode === 'auto' ? mode : 'native'; // the old "local SQLite" / "offline" modes → the app
   }
 
   async sendMessageWithFallback(action, data) {
-    // Check connection preference
-    const settings = await ext.storage.sync.get(['connectionMode']);
-    const connectionMode = settings.connectionMode || 'auto'; // auto, native, api, localStorage
+    // native: the Vault Guard app on this computer (encrypted link). api: your Vault Guard API server (HTTPS).
+    // auto: the app, or the API server when the app's helper isn't installed.
+    const connectionMode = await this.connectionMode();
 
-    // Try localStorage first if preferred or if it's the only option
-    if (connectionMode === 'localStorage') {
-      try {
-        return await this.sendLocalStorageMessage(action, data);
-      } catch (localError) {
-        console.log('Vault Guard: localStorage failed:', localError.message);
-        // Don't fallback if user explicitly chose localStorage
-        throw localError;
-      }
-    }
-
-    // Try native host if preferred or in auto mode
     if (connectionMode === 'native' || connectionMode === 'auto') {
       try {
-        return await this.sendNativeMessage({
-          action: action,
-          ...data
-        });
+        return await this.sendNativeMessage({ action, ...data });
       } catch (nativeError) {
         console.log('Vault Guard: Native host failed:', nativeError.message);
-        
-        // If native was explicitly chosen, don't fallback
-        if (connectionMode === 'native') {
-          throw nativeError;
-        }
+        if (connectionMode === 'native') throw nativeError;
       }
     }
 
-    // Try web API
-    if (connectionMode === 'api' || connectionMode === 'auto') {
-      try {
-        return await this.sendWebApiMessage(action, data);
-      } catch (apiError) {
-        console.log('Vault Guard: Web API failed:', apiError.message);
-        
-        // If API was explicitly chosen, don't fallback
-        if (connectionMode === 'api') {
-          throw apiError;
-        }
-      }
-    }
-
-    // Last resort: try localStorage in auto mode
-    if (connectionMode === 'auto') {
-      try {
-        return await this.sendLocalStorageMessage(action, data);
-      } catch (localError) {
-        throw new Error(`All connection methods failed. Check your settings and try again.`);
-      }
-    }
-
-    throw new Error(`Connection failed using ${connectionMode} mode`);
+    // API server (also the fallback in auto mode)
+    return await this.sendWebApiMessage(action, data);
   }
 
-  async sendLocalStorageMessage(action, data) {
-    // Handle actions using ext.storage.local for offline support
-    try {
-      switch (action) {
-        case 'getCredentials':
-          return await this.getCredentialsFromLocalStorage(data.domain);
-        case 'generatePassword':
-          return await this.generatePasswordLocally(data.options);
-        default:
-          throw new Error(`Action ${action} not supported in localStorage mode`);
-      }
-    } catch (error) {
-      throw new Error(`localStorage error: ${error.message}`);
-    }
-  }
-
-  async getCredentialsFromLocalStorage(domain) {
-    const result = await ext.storage.local.get(['cachedCredentials']);
-    const allCredentials = result.cachedCredentials || [];
-    
-    // Filter by domain if specified
-    let credentials = allCredentials;
-    if (domain) {
-      credentials = allCredentials.filter(cred => 
-        this.domainMatches(cred.websiteUrl || '', domain)
-      );
-    }
-
-    return {
-      success: true,
-      credentials: credentials
-    };
-  }
 
   async generatePasswordLocally(options) {
     const length = options?.length || 16;
@@ -639,7 +635,7 @@ class VaultGuardBackground {
         app: response?.app || null,
         appVersion: response?.appVersion || null,
         protocol: response?.protocol || null,
-        needsUpdate: !!response?.protocol && response.protocol < 2,
+        needsUpdate: !!response?.protocol && response.protocol < 3, // 3: encrypted link
         error: response?.error || null
       };
     } catch (error) {
@@ -652,11 +648,7 @@ class VaultGuardBackground {
   /** Pair with the running app: the user approves this browser in Vault Guard, which returns a secret. */
   async connectApp(sendResponse) {
     try {
-      const response = await this.sendNativeMessage({ action: 'pair' });
-      if (response?.success && response.secret) {
-        this.linkSecret = response.secret;
-        await ext.storage.local.set({ linkSecret: response.secret });
-      }
+      const response = await this.pairWithApp();
       const link = await this.refreshLink(true);
       sendResponse({ success: !!response?.success, error: response?.error, link });
     } catch (error) {
@@ -794,8 +786,13 @@ class VaultGuardBackground {
 
   async login(request, sendResponse) {
     try {
-      // Unlock against whichever backend is configured (Local SQLite app or API server).
-      const response = await this.sendMessageWithFallback('login', {
+      // Only an API server takes a sign-in here (over HTTPS). The Vault Guard app on this computer is unlocked in
+      // the app itself; the extension never sends it your master password.
+      if ((await this.connectionMode()) !== 'api') {
+        sendResponse({ success: false, error: 'Unlock the Vault Guard app on this computer, then click Connect. (Signing in here is only for an API server; choose it in Settings.)' });
+        return;
+      }
+      const response = await this.sendWebApiMessage('login', {
         email: request.username, // extension collects "username", backends expect email
         password: request.password
       });
@@ -807,7 +804,7 @@ class VaultGuardBackground {
         this.authToken = token || this.authToken;
 
         // Save token to storage
-        await ext.storage.sync.set({ authToken: this.authToken });
+        await ext.storage.local.set({ authToken: this.authToken }); // this device only, never synced
 
         sendResponse({
           success: true,
@@ -823,7 +820,7 @@ class VaultGuardBackground {
       console.error('Vault Guard: Login error:', error);
       sendResponse({
         success: false,
-        error: `Login failed: ${error.message}. Check your backend setting (Local app vs API) in Settings.`
+        error: `Couldn't sign in: ${String(error.message).replace(/^Web API error:\s*/, '').replace(/\.+$/, '')}.`
       });
     }
   }
@@ -831,6 +828,7 @@ class VaultGuardBackground {
   async logout(sendResponse) {
     try {
       this.authToken = null;
+      await ext.storage.local.remove(['authToken']);
       await ext.storage.sync.remove(['authToken']);
       
       sendResponse({ 
@@ -848,7 +846,7 @@ class VaultGuardBackground {
 
   async getSettings(sendResponse) {
     try {
-      const result = await ext.storage.sync.get(['authToken']);
+      const result = await ext.storage.local.get(['authToken']);
       const link = await this.refreshLink();
 
       sendResponse({ 
@@ -856,7 +854,8 @@ class VaultGuardBackground {
         settings: {
           isLoggedIn: !!result.authToken || !!(link.linked && link.paired && link.unlocked),
           link,
-          supportInfo: 'This extension uses native messaging to connect directly to your local SQLite database.'
+          mode: await this.connectionMode(),
+          supportInfo: 'The extension talks to the Vault Guard app on this computer over an encrypted link.'
         }
       });
     } catch (error) {

@@ -26,7 +26,7 @@ extension ──stdio (native messaging)──► VaultGuard.BrowserExtension.Na
 | Request | What the app does |
 |---|---|
 | `hello` | Reports whether the app is running, the browser is paired and the vault is unlocked |
-| `pair` | Shows **"Allow this browser to use Vault Guard?"**; on **Allow** returns a random 256-bit secret (the app stores only its hash) |
+| `pair` | Shows **"Allow this browser to use Vault Guard?"**; on **Allow** the browser and the app complete an ECDH key exchange (only public keys are sent) and agree on the link key |
 | `getCredentials` | Logins whose saved website matches the page's site. Passwords are decrypted only for a matching site; with no site, titles and usernames only |
 | `getCreditCards` | Saved cards for checkout forms |
 | `getTotpCode` | The current one-time code for one login, after checking it matches the site |
@@ -34,13 +34,14 @@ extension ──stdio (native messaging)──► VaultGuard.BrowserExtension.Na
 | `checkPasswordReuse` | Phishing guard: is the typed password (`loginPassword`) saved for a different site? Returns login titles and sites only, and nothing if it's also saved for this site |
 | `saveLogin` | "Save this login?": creates a login for the site, or updates a changed password (old one kept in history). The site password is sent as `loginPassword`; any `password` field is stripped before forwarding |
 
-Every request carries the pairing secret and the extension's origin. The app refuses anything from an
-unpaired browser, or while the vault is locked. Protocol: 4-byte little-endian length plus UTF-8 JSON, in both
-directions.
+Every request after pairing is encrypted end to end with the link key (AES-256-GCM, see
+[`../docs/BROWSER_LINK.md`](../docs/BROWSER_LINK.md)): this helper only forwards ciphertext and can't read
+passwords. The app refuses anything that doesn't decrypt with an approved browser's key, or arrives while the vault
+is locked. Framing: 4-byte little-endian length plus UTF-8 JSON, in both directions.
 
-When the app isn't running, `hello` says so and the extension shows "Open Vault Guard". The older
-stand-alone handlers in `Program.cs` (direct SQLite access with the master password) are kept only as a
-fallback for setups without the app.
+When the app isn't running, `hello` says so and the extension shows "Open Vault Guard"; every other request is
+refused. The old stand-alone mode (this helper reading the database after the extension sent it the master
+password) has been removed.
 
 ## Build
 

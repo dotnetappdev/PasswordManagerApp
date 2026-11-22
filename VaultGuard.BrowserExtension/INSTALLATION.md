@@ -169,8 +169,11 @@ Still stuck? The app's log is in `%LOCALAPPDATA%\VaultGuard\logs`. Please includ
 
 - **The extension holds no vault.** It asks the app for the login it needs, for the site you're on. Passwords are
   only decrypted for a site that matches the saved website.
-- **The link is local and private.** It works only on your PC, for your Windows user, and only after you
-  approve the browser in the app. The browser keeps a random pairing secret; the app stores only a hash of it.
+- **The link is local, private and encrypted.** It works only on your PC, for your Windows user, and only after you
+  approve the browser in the app. When you approve it, the browser and the app agree on a key (only public keys
+  are exchanged), and everything sent between them is encrypted with it (AES-256-GCM). Passwords never cross the
+  link in readable form, and the extension never asks for or sends your master password.
+- **If you used an API server,** its address must start with `https://` (or be `http://localhost`).
 - **When Vault Guard locks, the browser can't fill until you unlock.** The app locks after the idle time you set,
   and when Windows locks or sleeps.
 - **What the page can and can't see.** The in-page menu and prompts are isolated from the website, which can't

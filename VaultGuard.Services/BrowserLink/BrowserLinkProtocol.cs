@@ -9,12 +9,14 @@ namespace VaultGuard.Services.BrowserLink;
 /// (WPF or MAUI) — the same model as 1Password's browser integration: the app holds the unlocked vault and
 /// answers; the extension never sees the master password. One request per connection over a named pipe that
 /// only the current OS user can open; each message is a 4-byte little-endian length followed by UTF-8 JSON.
+/// Since protocol 3 the JSON is an encrypted envelope (BrowserLinkCrypto), so the pipe carries no secrets.
 /// The native host keeps its own copy of these constants (it doesn't reference this assembly) — keep in sync.
 /// </summary>
 public static class BrowserLinkProtocol
 {
     /// <summary>Bump when request/response shapes change incompatibly; the extension shows a "please update" hint.</summary>
-    public const int Version = 2;
+    /// <summary>3: requests and responses are end-to-end encrypted (BrowserLinkCrypto).</summary>
+    public const int Version = 3;
     public const int MaxMessageBytes = 1024 * 1024;
 
     /// <summary>Per-user pipe name (also access-controlled to the current user by the server).</summary>

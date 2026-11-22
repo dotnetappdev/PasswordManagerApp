@@ -10,7 +10,7 @@ using System.Text.Json;
 /// </summary>
 internal static class AppLinkClient
 {
-    public const int ProtocolVersion = 2;
+    public const int ProtocolVersion = 3;
 
     private static string PipeName => "VaultGuard.BrowserLink." + new string(Environment.UserName.Where(char.IsLetterOrDigit).ToArray());
 

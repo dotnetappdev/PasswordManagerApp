@@ -123,6 +123,10 @@ class VaultGuardPopup {
         } else {
           this.showScreen('login');
           this.renderAppLink(response.settings.link);
+          // Signing in here is only for an API server; the app is unlocked in the app itself.
+          const api = response.settings.mode === 'api';
+          document.getElementById('loginForm').style.display = api ? '' : 'none';
+          document.getElementById('apiSignInDivider').style.display = api ? '' : 'none';
         }
       } else {
         this.showScreen('login');
@@ -328,25 +332,10 @@ class VaultGuardPopup {
 
   handleConnectionModeChange(e) {
     const connectionMode = e.target.value;
-    const apiUrlGroup = document.getElementById('apiUrlGroup');
-    const databasePathGroup = document.getElementById('databasePathGroup');
-    
-    // Show appropriate fields based on connection mode
-    // Auto mode shows all options since it tries all methods
-    if (connectionMode === 'auto') {
-      apiUrlGroup.style.display = 'block';
-      databasePathGroup.style.display = 'block';
-    } else if (connectionMode === 'api') {
-      apiUrlGroup.style.display = 'block';
-      databasePathGroup.style.display = 'none';
-    } else if (connectionMode === 'native') {
-      apiUrlGroup.style.display = 'none';
-      databasePathGroup.style.display = 'block';
-    } else {
-      // localStorage mode
-      apiUrlGroup.style.display = 'none';
-      databasePathGroup.style.display = 'none';
-    }
+    // The API address only matters when the API server can be used. (The old "database path" setting is gone:
+    // the extension no longer reads the database itself.)
+    document.getElementById('apiUrlGroup').style.display = connectionMode === 'native' ? 'none' : 'block';
+    document.getElementById('databasePathGroup').style.display = 'none';
   }
 
   async saveSettings() {
@@ -358,6 +347,13 @@ class VaultGuardPopup {
     const messageDiv = document.getElementById('settingsMessage');
 
     try {
+      if (connectionMode !== 'native' && apiUrl) {
+        let u;
+        try { u = new URL(apiUrl); } catch { throw new Error('the API server address is not a valid URL.'); }
+        const local = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(u.hostname);
+        if (!(u.protocol === 'https:' || (u.protocol === 'http:' && local)))
+          throw new Error('the API server must use https:// (http:// is only allowed for localhost), so passwords are never sent unencrypted.');
+      }
       const offerEl = document.getElementById('offerToSaveLogins');
       if (offerEl) await ext.storage.local.set({ offerToSaveLogins: offerEl.checked });
       const totpEl = document.getElementById('copyTotpAfterFill');
@@ -369,7 +365,6 @@ class VaultGuardPopup {
       await ext.storage.sync.set({
         connectionMode: connectionMode,
         apiUrl: apiUrl,
-        databasePath: databasePath,
         interceptPasskeys: interceptPasskeys
       });
       

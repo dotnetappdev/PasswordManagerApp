@@ -38,9 +38,9 @@
         <button type="button" id="connectAppBtn" class="btn btn-primary" style="display: none;">Connect to Vault Guard app</button>
         <button type="button" id="recheckAppBtn" class="btn btn-secondary" style="display: none;">I've unlocked it — check again</button>
       </div>
-      <div class="app-link-divider"><span>or sign in here</span></div>
+      <div class="app-link-divider" id="apiSignInDivider" style="display: none;"><span>or sign in to your API server</span></div>
 
-      <form id="loginForm" class="form">
+      <form id="loginForm" class="form" style="display: none;">
         <div class="form-group">
           <label for="username">Username/Email:</label>
           <input type="text" id="username" name="username" required>
@@ -160,15 +160,15 @@
         <div class="form-group">
           <label for="connectionMode">Where should the extension read your vault from?</label>
           <select id="connectionMode" class="form-control">
-            <option value="native">Desktop app (local SQLite) — most private</option>
-            <option value="api">API server (self-hosted or live/cloud)</option>
-            <option value="auto">Auto (try local app, then API)</option>
-            <option value="localStorage">Offline (cached credentials only)</option>
+            <option value="native">Vault Guard app on this computer (recommended)</option>
+            <option value="api">Vault Guard API server (HTTPS)</option>
+            <option value="auto">Auto (the app, or the API server if the app isn't installed)</option>
           </select>
           <small>
-            <strong>Desktop app</strong>: reads the local <code>passwordmanager.db</code> via the native host.<br>
-            <strong>API server</strong>: connects to your own self-hosted server or the live/cloud service over HTTPS.<br>
-            <strong>Auto</strong>: tries the local app first, then falls back to the API.
+            <strong>Vault Guard app</strong>: the app answers over an encrypted link; your master password never
+            leaves the app.<br>
+            <strong>API server</strong>: your own self-hosted or hosted Vault Guard server. It must use
+            <code>https://</code> (plain <code>http://</code> only for <code>localhost</code>).
           </small>
         </div>
 
@@ -179,7 +179,7 @@
             <button type="button" id="presetSelfHostedBtn" class="btn btn-secondary btn-small">Self-hosted (localhost)</button>
             <button type="button" id="presetCloudBtn" class="btn btn-secondary btn-small">Live / Cloud</button>
           </div>
-          <small>For a self‑hosted server use its base URL (e.g. <code>http://localhost:5000</code>). For the hosted service use the cloud URL. Requires you to sign in with your email + master password.</small>
+          <small>Use the server's <code>https://</code> address. <code>http://localhost:5000</code> is allowed for a server on this computer only. Requires you to sign in with your email + master password.</small>
         </div>
 
         <div class="form-group" id="databasePathGroup" style="display: none;">

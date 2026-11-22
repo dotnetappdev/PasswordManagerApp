@@ -129,8 +129,10 @@ before extensions run on sites), then reload the test page.
 3. The app asks **"Allow this browser to use Vault Guard?"**. Click **Allow**.
 4. The popup now shows that it's connected.
 
-The browser keeps a random 256-bit pairing secret on this device only. The app stores only a
-hash of it. If the app is locked, the popup offers **"I've unlocked it — check again"**.
+The browser and the app agree on a link key (an ECDH key exchange; only public keys are sent), and
+everything between them is encrypted with it. The browser keeps its key on this device only; the app
+keeps its copy encrypted for your Windows account. If you connected before this change, click
+**Connect** once more. If the app is locked, the popup offers **"I've unlocked it — check again"**.
 
 You only connect once per browser profile. To disconnect, use the popup.
 

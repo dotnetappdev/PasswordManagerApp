@@ -3,7 +3,8 @@
 The browser extension uses the Vault Guard desktop app (WPF, or the MAUI app on Windows), the same way 1Password's extension uses the 1Password app:
 
 - **The app holds the keys.** Unlock Vault Guard and the extension can fill. Lock it and the extension is locked too. The extension never asks for, sends or stores the master password.
-- **Approve each browser once.** Click **Connect to Vault Guard app** in the extension popup, then choose **Allow** in the app. The browser gets a random 256-bit secret. The app stores only its SHA-256.
+- **Approve each browser once.** Click **Connect to Vault Guard app** in the extension popup, then choose **Allow** in the app. The browser and the app agree on a link key with an ECDH P-256 key exchange: only public keys cross the link.
+- **Everything on the link is encrypted.** Every request and answer after that is AES-256-GCM encrypted with the link key, so the browser helper and the named pipe only ever carry ciphertext. Passwords are readable only inside the app and the paired extension.
 - **Updates keep it working.** On every start, the app registers its browser helper with every installed browser, for the current user, with no admin rights needed. After an update, a move or a reinstall, the browsers follow the new location automatically.
 
 ## How it fits together
@@ -36,15 +37,37 @@ extension (background.js) ──native messaging──▶ BrowserSupport\VaultGu
     password is also saved for the current site. Compared in constant time; rate-limited by the extension.
   - `saveLogin`: "Save this login?" from the extension. It creates a login for the site, or (with `itemId`)
     updates the password of an existing login saved for the same site, keeping the old one in password history.
-    The site comes from the browser tab, not the page, and the password travels as `loginPassword` (the helper
-    strips any field named `password`, so a master password can never cross the link). It's encrypted before
-    it's stored.
-- **When the app isn't running:** `hello` reports it, and the helper falls back to its older local-database mode.
+    The site comes from the browser tab, not the page, and the password travels as `loginPassword`, inside the
+    encrypted envelope. It's encrypted again (with the vault key) before it's stored.
+- **When the app isn't running:** `hello` reports it and every other request is refused. The helper no longer
+  reads the database itself: that old mode had the extension send it the master password, unencrypted.
+
+## Encryption (protocol 3)
+
+`VaultGuard.Services/BrowserLink/BrowserLinkCrypto.cs` and `VaultGuard.BrowserExtension/background.js` must match.
+
+- **Pairing:** the extension sends `{ action: "pair", clientPublicKey }` (a raw P-256 public key). After the user
+  clicks **Allow**, the app answers `{ keyId, appPublicKey }`. Both sides compute
+  `HKDF-SHA256(ECDH shared secret, salt = clientPublicKey ‖ appPublicKey, info = "VaultGuard browser link v3")`.
+- **Requests:** `{ action, keyId, iv, ct }`. `ct` is AES-256-GCM over the JSON fields plus `ts`, with the
+  additional data `vg3|req|{action}|{keyId}`, so a request can't be replayed as another action. Requests more
+  than two minutes old are refused.
+- **Answers:** `{ enc: { iv, ct } }` with `vg3|resp|{action}|{keyId}|{request iv}`, tying each answer to its request.
+  Only status answers (`hello`, "not paired", "locked") are plain, and they contain no vault data.
+- **Keys at rest:** the extension keeps its key in `storage.local` (this device only, never synced). The app keeps
+  its copy in `%LocalAppData%\VaultGuard\BrowserLink\pairings.json`, encrypted with Windows DPAPI for your
+  Windows account. Browsers approved before protocol 3 are asked to connect again.
+
+## API server mode
+
+The extension can instead use a Vault Guard API server (Settings → Data source). The address must be `https://`;
+plain `http://` is accepted only for `localhost`, where nothing crosses the network. The API sign-in token is kept
+on this device only.
 
 ## Security
 
 - **Pipe:** only the current OS user can open it. There's one request per connection, and messages are capped at 1 MB.
-- **Every data request needs** a paired browser and an unlocked vault.
+- **Every data request needs** a paired browser (proven by the request decrypting with its link key) and an unlocked vault.
 - **Approval prompt:** it names the browser and the extension origin. Prompts are shown one at a time, and a prompt nobody answers within two minutes counts as declined.
 - **Forgetting browsers:** `WpfBrowserLink.DisconnectAllBrowsers()` removes all approved browsers.
 

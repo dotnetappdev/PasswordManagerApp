@@ -5,14 +5,16 @@ using System.Text.Json;
 namespace VaultGuard.Services.BrowserLink;
 
 /// <summary>
-/// Browsers the user has approved in the app. A browser gets a random 256-bit secret when it is approved and
-/// sends it with every request; only its SHA-256 is stored (a high-entropy secret needs no slow hash), so the
-/// file reveals nothing usable. Revoking removes the hash and the browser must be approved again.
+/// Browsers the user has approved in the app, each with the link key agreed when it was approved (see
+/// BrowserLinkCrypto). On Windows the keys are encrypted at rest with DPAPI for the current Windows user, so the
+/// file is useless to anyone else. Approvals from before the link was encrypted (protocol 2: a hashed bearer
+/// secret) are no longer accepted; those browsers are asked to connect again. Revoking removes every key.
 /// </summary>
 public sealed class BrowserLinkPairings
 {
-    public sealed record Pairing(string Hash, string Label, DateTime CreatedUtc);
+    public sealed record Pairing(string KeyId, string ProtectedKey, string Label, DateTime CreatedUtc);
 
+    private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("VaultGuard.BrowserLink.v3");
     private readonly string _path;
     private readonly object _gate = new();
 
@@ -24,34 +26,55 @@ public sealed class BrowserLinkPairings
 
     public IReadOnlyList<Pairing> List() { lock (_gate) return Load(); }
 
-    /// <summary>Approves a browser and returns the secret it must present from now on.</summary>
-    public string Create(string label)
+    /// <summary>Stores an approved browser's link key; returns the id the browser sends with each request.</summary>
+    public string Create(string label, byte[] key)
     {
-        var secret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        var keyId = BrowserLinkCrypto.ToB64(RandomNumberGenerator.GetBytes(16));
         lock (_gate)
         {
             var all = Load();
-            all.Add(new Pairing(Hash(secret), label, DateTime.UtcNow));
+            all.Add(new Pairing(keyId, Protect(key), label, DateTime.UtcNow));
             Save(all);
         }
-        return secret;
+        return keyId;
     }
 
-    public bool IsPaired(string? secret)
+    /// <summary>The link key for an approved browser, or null.</summary>
+    public byte[]? KeyFor(string? keyId)
     {
-        if (string.IsNullOrEmpty(secret)) return false;
-        var h = Encoding.ASCII.GetBytes(Hash(secret));
-        lock (_gate)
-            return Load().Any(p => CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(p.Hash), h));
+        if (string.IsNullOrEmpty(keyId)) return null;
+        Pairing? p;
+        lock (_gate) p = Load().FirstOrDefault(x => CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(x.KeyId), Encoding.ASCII.GetBytes(keyId)));
+        return p == null ? null : Unprotect(p.ProtectedKey);
     }
 
     public void RevokeAll() { lock (_gate) Save(new List<Pairing>()); }
 
-    private static string Hash(string secret) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
+    private static string Protect(byte[] key) => OperatingSystem.IsWindows()
+        ? "dpapi:" + Convert.ToBase64String(ProtectedData.Protect(key, Entropy, DataProtectionScope.CurrentUser))
+        : "raw:" + Convert.ToBase64String(key); // no DPAPI (Linux/macOS dev hosts): the file is in the user's own profile
+
+    private static byte[]? Unprotect(string stored)
+    {
+        try
+        {
+            if (stored.StartsWith("dpapi:", StringComparison.Ordinal) && OperatingSystem.IsWindows())
+                return ProtectedData.Unprotect(Convert.FromBase64String(stored[6..]), Entropy, DataProtectionScope.CurrentUser);
+            if (stored.StartsWith("raw:", StringComparison.Ordinal)) return Convert.FromBase64String(stored[4..]);
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't read a browser link key", ex); }
+        return null;
+    }
 
     private List<Pairing> Load()
     {
-        try { return File.Exists(_path) ? JsonSerializer.Deserialize<List<Pairing>>(File.ReadAllText(_path)) ?? new() : new(); }
+        try
+        {
+            if (!File.Exists(_path)) return new();
+            // Older (protocol 2) entries have no KeyId: skip them, so those browsers connect again.
+            return (JsonSerializer.Deserialize<List<Pairing>>(File.ReadAllText(_path)) ?? new())
+                .Where(p => !string.IsNullOrEmpty(p.KeyId) && !string.IsNullOrEmpty(p.ProtectedKey)).ToList();
+        }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't read browser pairings", ex); return new(); }
     }
 
