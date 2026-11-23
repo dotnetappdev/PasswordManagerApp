@@ -215,6 +215,14 @@
                             </div>
                         </div>
 
+                        @if (_deviceUnlock != null && _deviceUnlockAvailable && _selectedProfile != null)
+                        {
+                            <label class="device-unlock-optin" style="display:flex; align-items:center; gap:8px; font-size:13px; margin:-4px 0 10px;">
+                                <input type="checkbox" @bind="_rememberWithDevice" />
+                                Unlock with @_deviceUnlock.Name next time
+                            </label>
+                        }
+
                         @if (Dir.ListAccounts && !string.IsNullOrEmpty(storedHint))
                         {
                             <div class="hint-section">
@@ -246,6 +254,12 @@
                                 <span>Continue</span>
                             }
                         </button>
+                        @if (_deviceUnlock != null && _canDeviceUnlock)
+                        {
+                            <button type="button" class="auth-button auth-button-outline" @onclick="UnlockWithDevice" disabled="@isLoading">
+                                <span class="btn-emoji">🔓</span> Unlock with @_deviceUnlock.Name
+                            </button>
+                        }
                         <button type="button" class="auth-button auth-button-outline" @onclick="LoginWithPasskey">
                             <span class="btn-emoji">🔑</span> Sign in with Passkey
                         </button>
@@ -364,6 +378,64 @@
         loginKey = string.Empty;
         loginKeyError = false;
         errorMessage = string.Empty;
+        _ = RefreshDeviceUnlockAsync();
+    }
+
+    // ---- Unlock with Windows Hello (or another device sign-in): see IDeviceUnlock ----
+    private IDeviceUnlock? _deviceUnlock;
+    private bool _deviceUnlockAvailable;
+    private bool _canDeviceUnlock;
+    private bool _rememberWithDevice;
+
+    private async Task RefreshDeviceUnlockAsync()
+    {
+        _deviceUnlock ??= Services.GetService(typeof(IDeviceUnlock)) as IDeviceUnlock;
+        if (_deviceUnlock == null || _selectedProfile == null) { _canDeviceUnlock = false; return; }
+        _deviceUnlockAvailable = await _deviceUnlock.IsAvailableAsync();
+        _canDeviceUnlock = _deviceUnlockAvailable && await MasterKeyCache.HasCachedAsync(_selectedProfile.Id);
+        _rememberWithDevice = _canDeviceUnlock;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UnlockWithDevice()
+    {
+        if (_deviceUnlock == null || _selectedProfile == null) return;
+        errorMessage = string.Empty;
+        try
+        {
+            isLoading = true;
+            if (!await _deviceUnlock.VerifyAsync("Unlock Vault Guard"))
+            {
+                errorMessage = $"{_deviceUnlock.Name} didn't verify. Enter your master key instead.";
+                return;
+            }
+            // Only after the device has verified the user is the saved master key released.
+            var cached = await MasterKeyCache.GetCachedAsync(_selectedProfile.Id);
+            if (string.IsNullOrEmpty(cached) || !await AuthService.LoginAsync(_selectedProfile.Email, cached))
+            {
+                await MasterKeyCache.ForgetAsync(_selectedProfile.Id); // changed master key: the saved one is stale
+                _canDeviceUnlock = false;
+                errorMessage = "Enter your master key once to set up quick unlock again.";
+                return;
+            }
+            Snackbar.Add("Unlocked.", Severity.Success);
+            Navigation.NavigateTo("/");
+        }
+        finally { isLoading = false; }
+    }
+
+    /// <summary>After a master-key unlock: remember (or forget) the key for device unlock, as the user chose.</summary>
+    private async Task ApplyDeviceUnlockChoiceAsync(string userId, string key)
+    {
+        if (_deviceUnlock == null || !_deviceUnlockAvailable) return;
+        if (_rememberWithDevice && !_canDeviceUnlock)
+        {
+            // Confirm with the device once now, so the first quick unlock isn't a surprise.
+            if (await _deviceUnlock.VerifyAsync("Turn on quick unlock for Vault Guard"))
+                await MasterKeyCache.CacheAsync(userId, key);
+        }
+        else if (!_rememberWithDevice && _canDeviceUnlock)
+            await MasterKeyCache.ForgetAsync(userId);
     }
 
     private void SwitchAccount()
@@ -673,6 +745,7 @@
 
             if (success)
             {
+                if (_selectedProfile != null) await ApplyDeviceUnlockChoiceAsync(_selectedProfile.Id, loginKey);
                 // If this account has 2FA enabled, collect the authenticator code before completing login.
                 // (TwoFactorEnabled is the flag TwoFactorService actually sets on setup — IsTwoFactorEnabled
                 // is a separate, unrelated flag used only by the API's SMS-based 2FA controller.)

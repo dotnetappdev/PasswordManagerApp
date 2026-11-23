@@ -123,6 +123,10 @@ public static class MauiProgram
 		builder.Services.AddScoped<ICollectionService, CollectionService>();
 		builder.Services.AddScoped<IAuthService, IdentityAuthService>();
 		builder.Services.AddScoped<IPasswordRevealService, PasswordRevealService>();
+		// Security Center: vault health and the Have I Been Pwned breach check (as in WPF and Web).
+		builder.Services.AddSingleton<IPasswordStrengthService, VaultGuard.Services.Services.PasswordStrengthService>();
+		builder.Services.AddSingleton<ISecurityAuditService, VaultGuard.Services.Services.SecurityAuditService>();
+		builder.Services.AddSingleton<IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 		// Copies vault values and wipes them after the "Clear clipboard after" setting.
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.SecureClipboard>();
 		// Lets platform code (device lock, app backgrounded) lock the vault UI.
@@ -163,6 +167,10 @@ public static class MauiProgram
 		// "Remember this device" master-key cache (platform SecureStorage) so a 2FA-enabled
 		// account can sign in code-only on a trusted device.
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.IMasterKeyCacheService, VaultGuard.App.Services.MauiMasterKeyCacheService>();
+#if WINDOWS
+		// Unlock with Windows Hello (as in the WPF app); the master key stays in DPAPI-backed SecureStorage.
+		builder.Services.AddSingleton<VaultGuard.Components.Shared.Services.IDeviceUnlock, VaultGuard.App.Services.WindowsHelloUnlock>();
+#endif
 		// Fido2 (WebAuthn) — required by PasskeyService. MAUI runs as a Blazor hybrid WebView, so
 		// the "origin" is the WebView's local origin; full platform WebAuthn in a hybrid WebView is
 		// limited, but registering this keeps the DI graph valid so IPasskeyService resolves (vault/

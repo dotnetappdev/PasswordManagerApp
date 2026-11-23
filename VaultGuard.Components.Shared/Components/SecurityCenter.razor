@@ -1,0 +1,299 @@
+@* Security Center (Web and MAUI): vault health (weak, reused, old passwords) and the Have I Been Pwned breach
+   check. Passwords are stored encrypted, so items are decrypted first; otherwise every check would see empty
+   passwords and wrongly report a clean vault. *@
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Models
+@using MudBlazor
+@using Microsoft.JSInterop
+@using VaultGuard.Components.Shared.Services
+@inject IPasswordItemService PasswordItemService
+@inject ISecurityAuditService AuditService
+@inject IBreachCheckService BreachService
+@inject IPasswordRevealService RevealService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5">
+    <MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" Style="font-size:2.2rem; color:var(--mud-palette-primary);" />
+    <div>
+        <MudText Typo="Typo.h4" Style="font-weight:700; line-height:1.1;">Security Center</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">A health check of every credential in your vault</MudText>
+    </div>
+    <MudSpacer />
+    <MudButton StartIcon="@Icons.Material.Filled.Shield" Variant="Variant.Filled" Color="Color.Error"
+               OnClick="@ScanBreachesAsync" Disabled="@(_loading || _breachScanning)" Class="mr-2">
+        @(_breachScanning ? "Checking…" : "Check for breaches")
+    </MudButton>
+    <MudButton StartIcon="@Icons.Material.Filled.Refresh" Variant="Variant.Outlined" Color="Color.Primary"
+               OnClick="@LoadAsync" Disabled="@_loading">Re-scan</MudButton>
+</MudStack>
+
+@if (_loading)
+{
+    <div class="d-flex justify-center pa-10"><MudProgressCircular Indeterminate="true" /></div>
+}
+else if (_report is not null)
+{
+    <!-- Score banner -->
+    <MudPaper Class="pa-6 rounded-lg mb-4" Elevation="2">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="6" Wrap="Wrap.Wrap">
+            <div style="position:relative; width:140px; height:140px;">
+                <MudProgressCircular Value="@_report.Score" Min="0" Max="100"
+                                     Style="@($"width:140px; height:140px; color:{_report.ColorHex};")" StrokeWidth="5" />
+                <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                    <MudText Typo="Typo.h3" Style="@($"font-weight:800; color:{_report.ColorHex}; line-height:1;")">@_report.Score</MudText>
+                    <MudText Typo="Typo.caption" Style="@($"font-weight:700; color:{_report.ColorHex};")">@_report.Rating</MudText>
+                </div>
+            </div>
+            <div style="flex:1; min-width:220px;">
+                <MudText Typo="Typo.h6" Style="font-weight:700;">Vault health score</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
+                    @_report.TotalCredentials credentials analysed
+                </MudText>
+                @if (_report.TotalIssues == 0)
+                {
+                    <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.VerifiedUser"
+                             Text="No issues found" />
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Warning" Icon="@Icons.Material.Filled.Warning"
+                             Text="@($"{_report.TotalIssues} item(s) need attention")" />
+                }
+            </div>
+        </MudStack>
+    </MudPaper>
+
+    <!-- Concern summary tiles -->
+    <div class="d-flex mb-2" style="gap:12px; flex-wrap:wrap;">
+        <div style="flex:1 1 140px;">@SummaryTile("Weak", _report.WeakCount, Icons.Material.Filled.Warning, "#EA580C")</div>
+        <div style="flex:1 1 140px;">@SummaryTile("Reused", _report.ReusedCount, Icons.Material.Filled.ContentCopy, "#D97706")</div>
+        <div style="flex:1 1 140px;">@SummaryTile("Unsecured", _report.UnsecuredCount, Icons.Material.Filled.LockOpen, "#DC2626")</div>
+        <div style="flex:1 1 140px;">@SummaryTile("No 2FA", _report.MissingTwoFactorCount, Icons.Material.Filled.Smartphone, "#71717A")</div>
+        <div style="flex:1 1 140px;">@SummaryTile("Old", _report.OldCount, Icons.Material.Filled.HistoryToggleOff, "#0891B2")</div>
+        @if (_breachScanned)
+        {
+            <div style="flex:1 1 140px;">@SummaryTile("Compromised", _breached.Count, Icons.Material.Filled.GppBad, "#DC2626")</div>
+        }
+    </div>
+
+    @if (_unreadable > 0)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+            @_unreadable item(s) couldn't be decrypted, so they weren't checked. Unlock Vault Guard and scan again.
+        </MudAlert>
+    }
+    @if (_breachFailed)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mt-2" Icon="@Icons.Material.Filled.CloudOff">
+            Some passwords couldn't be checked (the breach service was unreachable). Try again when you're online.
+        </MudAlert>
+    }
+    @if (_breachScanned && _breached.Count > 0)
+    {
+        <MudExpansionPanels Elevation="1" Class="mt-2">
+            <MudExpansionPanel Expanded="true">
+                <TitleContent>@PanelTitle("Compromised passwords", _breached.Count, "#DC2626", Icons.Material.Filled.GppBad)</TitleContent>
+                <ChildContent>
+                    <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
+                        These passwords appear in known data breaches (via Have I Been Pwned — only a partial hash was
+                        ever sent). Change them as soon as possible.
+                    </MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var b in _breached)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.GppBad" OnClick="@(() => GoToItem(b.Id))">
+                                @b.Title
+                                <MudText Typo="Typo.caption" Class="ml-2 mud-text-secondary" Style="display:inline;">
+                                    — seen @b.TimesSeen.ToString("N0") time(s) in breaches
+                                </MudText>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
+    else if (_breachScanned)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-2" Icon="@Icons.Material.Filled.VerifiedUser">
+            None of your passwords were found in known data breaches.
+        </MudAlert>
+    }
+
+    @if (_report.TotalIssues == 0)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-4" Icon="@Icons.Material.Filled.VerifiedUser">
+            Everything looks great — no weak, reused, unsecured or old passwords, and every login has 2FA.
+        </MudAlert>
+    }
+    else
+    {
+        <!-- Concern detail panels (Watchtower-style accordion) -->
+        <MudExpansionPanels MultiExpansion="true" Elevation="1" Class="mt-2">
+            @if (_report.WeakCount > 0)
+            {
+                @ConcernPanel("Weak passwords", "These are easy to guess — replace them with stronger ones.",
+                    "#EA580C", Icons.Material.Filled.Warning, _report.WeakPasswords)
+            }
+            @if (_report.ReusedPasswords.Count > 0)
+            {
+                <MudExpansionPanel>
+                    <TitleContent>@PanelTitle("Reused passwords", _report.ReusedCount, "#D97706", Icons.Material.Filled.ContentCopy)</TitleContent>
+                    <ChildContent>
+                        <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">
+                            The same password is used on multiple items — a breach on one exposes them all.
+                        </MudText>
+                        @foreach (var group in _report.ReusedPasswords)
+                        {
+                            <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary">Shared by @group.Count items:</MudText>
+                            <MudList T="string" Dense="true">
+                                @foreach (var entry in group.Items)
+                                {
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Link" OnClick="@(() => GoToItem(entry.ItemId))">@entry.Title</MudListItem>
+                                }
+                            </MudList>
+                        }
+                    </ChildContent>
+                </MudExpansionPanel>
+            }
+            @if (_report.UnsecuredCount > 0)
+            {
+                @ConcernPanel("Unsecured websites", "These logins use an unencrypted http:// address — credentials can be intercepted. Switch them to https://.",
+                    "#DC2626", Icons.Material.Filled.LockOpen, _report.UnsecuredWebsites)
+            }
+            @if (_report.MissingTwoFactorCount > 0)
+            {
+                @ConcernPanel("Logins without 2FA", "These sites have a login but no authenticator code stored — add one for stronger protection.",
+                    "#71717A", Icons.Material.Filled.Smartphone, _report.MissingTwoFactor)
+            }
+            @if (_report.OldCount > 0)
+            {
+                @ConcernPanel("Old passwords", "Not changed in over a year — consider rotating them.",
+                    "#0891B2", Icons.Material.Filled.HistoryToggleOff, _report.OldPasswords)
+            }
+        </MudExpansionPanels>
+    }
+}
+
+@code {
+    bool _loading = true;
+    VaultHealthReport? _report;
+
+    // Breach monitoring (Have I Been Pwned, k-anonymity) — run on demand since it's a network call.
+    List<PasswordItem> _items = new();
+    List<(string Title, int Id, int TimesSeen)> _breached = new();
+    bool _breachScanning;
+    bool _breachScanned;
+    bool _breachFailed;
+
+    int _unreadable;
+
+    // The vault session id comes from the browser (JS interop), so load after the first render.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    async Task LoadAsync()
+    {
+        _loading = true;
+        // A fresh vault scan invalidates any earlier breach results.
+        _breachScanned = false;
+        _breachFailed = false;
+        _breached.Clear();
+        try
+        {
+            var items = await PasswordItemService.GetAllAsync();
+            _items = items?.ToList() ?? new List<PasswordItem>();
+            _unreadable = 0;
+            foreach (var item in _items)
+                if (!await LoginPasswordCrypto.DecryptIntoAsync(item, RevealService, JS)) _unreadable++;
+            _report = AuditService.Analyze(_items);
+        }
+        catch
+        {
+            _items = new List<PasswordItem>();
+            _report = AuditService.Analyze(Array.Empty<PasswordItem>());
+        }
+        finally { _loading = false; }
+    }
+
+    async Task ScanBreachesAsync()
+    {
+        _breachScanning = true;
+        _breachFailed = false;
+        var found = new List<(string Title, int Id, int TimesSeen)>();
+        try
+        {
+            // Cache by password so identical/reused passwords are only checked once.
+            var seen = new Dictionary<string, BreachCheckResult>(StringComparer.Ordinal);
+            foreach (var item in _items)
+            {
+                var pwd = item.LoginItem?.Password ?? item.Password;
+                if (string.IsNullOrEmpty(pwd)) continue;
+
+                if (!seen.TryGetValue(pwd, out var result))
+                {
+                    result = await BreachService.CheckPasswordAsync(pwd);
+                    seen[pwd] = result;
+                }
+
+                if (result.CheckFailed) _breachFailed = true;
+                else if (result.IsBreached) found.Add((item.Title ?? "(untitled)", item.Id, result.TimesSeen));
+            }
+            _breached = found.OrderByDescending(b => b.TimesSeen).ToList();
+            _breachScanned = true;
+        }
+        finally { _breachScanning = false; }
+    }
+
+    void GoToItem(int id) => Navigation.NavigateTo("/passwords");
+
+    RenderFragment SummaryTile(string label, int count, string icon, string color) => __builder =>
+    {
+        var active = count > 0;
+        <MudPaper Class="pa-3 rounded-lg d-flex flex-column align-center" Elevation="1"
+                  Style="@($"height:100%; border-top:3px solid {(active ? color : "var(--mud-palette-success)")};")">
+            <MudIcon Icon="@(active ? icon : Icons.Material.Filled.CheckCircle)"
+                     Style="@($"color:{(active ? color : "var(--mud-palette-success)")};")" />
+            <MudText Typo="Typo.h5" Style="@($"font-weight:800; color:{(active ? color : "inherit")};")">@count</MudText>
+            <MudText Typo="Typo.caption" Align="Align.Center" Class="mud-text-secondary">@label</MudText>
+        </MudPaper>
+    };
+
+    RenderFragment PanelTitle(string title, int count, string color, string icon) => __builder =>
+    {
+        <div class="d-flex align-center">
+            <MudIcon Icon="@icon" Style="@($"color:{color};")" Class="mr-2" />
+            <MudText Style="font-weight:600;">@title</MudText>
+            <MudChip T="string" Size="Size.Small" Class="ml-2"
+                     Style="@($"background:{color}; color:#fff;")" Text="@count.ToString()" />
+        </div>
+    };
+
+    RenderFragment ConcernPanel(string title, string subtitle, string color, string icon,
+        IReadOnlyList<SecurityAuditEntry> entries) => __builder =>
+    {
+        <MudExpansionPanel>
+            <TitleContent>@PanelTitle(title, entries.Count, color, icon)</TitleContent>
+            <ChildContent>
+                <MudText Typo="Typo.body2" Class="mb-2 mud-text-secondary">@subtitle</MudText>
+                <MudList T="string" Dense="true">
+                    @foreach (var entry in entries)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.ChevronRight" OnClick="@(() => GoToItem(entry.ItemId))">
+                            @entry.Title
+                            @if (!string.IsNullOrEmpty(entry.Detail))
+                            {
+                                <MudText Typo="Typo.caption" Class="ml-2 mud-text-secondary" Style="display:inline;">— @entry.Detail</MudText>
+                            }
+                        </MudListItem>
+                    }
+                </MudList>
+            </ChildContent>
+        </MudExpansionPanel>
+    };
+}

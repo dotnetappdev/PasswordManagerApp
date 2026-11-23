@@ -23,6 +23,24 @@ public sealed partial class SecurityPage : Page
     private VaultHealthReport? _report;
     private List<SecurityAuditEntry> _breachedEntries = new();
     private bool _breachScanned;
+    private int _unreadable;
+
+    /// <summary>Decrypts every item's secrets into memory for the checks; returns how many couldn't be read.</summary>
+    private async Task<int> OpenAllAsync(List<PasswordItem> items)
+    {
+        var reveal = _serviceProvider?.GetService<IPasswordRevealService>();
+        var storage = _serviceProvider?.GetService<ISecureStorageService>();
+        if (reveal == null) return items.Count;
+        var sessionId = storage != null ? await storage.GetAsync("sessionId") ?? string.Empty : string.Empty;
+        var failed = 0;
+        foreach (var item in items)
+            if (!reveal.OpenItem(item, sessionId)) failed++;
+        if (failed > 0)
+            VaultGuard.WPF.Services.ToastService.Instance.Show(
+                $"{failed} item(s) couldn't be decrypted, so they weren't checked. Unlock Vault Guard and scan again.",
+                VaultGuard.WPF.Services.ToastType.Warning);
+        return failed;
+    }
 
     // Lightweight view model for the issue-section template.
     private sealed class IssueSection
@@ -62,6 +80,9 @@ public sealed partial class SecurityPage : Page
         {
             var items = await _passwordItemService.GetAllAsync();
             _items = items?.ToList() ?? new List<PasswordItem>();
+            // Passwords are stored encrypted: decrypt them first, or every check (weak, reused, breached) sees
+            // empty passwords and wrongly reports a clean vault.
+            _unreadable = await OpenAllAsync(_items);
             _report = _auditService.Analyze(_items);
             Render(_report);
             RenderExpiry(_items);
