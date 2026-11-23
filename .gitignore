@@ -436,3 +436,6 @@ allure-report/
 
 # Browser extension packages built by package-extension.sh/.bat
 VaultGuard.BrowserExtension/dist/
+
+# Server data (e.g. secure shares)
+App_Data/

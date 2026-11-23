@@ -426,6 +426,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Secure sharing: encrypted, expiring links (see VaultGuard.API/Sharing/SecureShareEndpoints.cs).
+var shareStore = new VaultGuard.Services.Sharing.FileShareStore(
+    builder.Configuration["Sharing:StoreDir"] ?? Path.Combine(app.Environment.ContentRootPath, "App_Data", "shares"));
+VaultGuard.Sharing.SecureShareEndpoints.MapSecureShares(app, shareStore, allowCreate: true);
+
 // Map .NET 9 Identity API endpoints (login/register/refresh) behind the stricter "auth" rate limit.
 var identityEndpoints = app.MapIdentityApi<ApplicationUser>();
 if (rateLimitingEnabled)

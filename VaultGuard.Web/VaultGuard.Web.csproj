@@ -80,4 +80,8 @@
     </ItemGroup>
   </Target>
 
+  <ItemGroup>
+    <!-- Secure-share endpoints and viewer page, shared with the API. -->
+    <Compile Include="..\VaultGuard.API\Sharing\SecureShareEndpoints.cs" Link="Sharing\SecureShareEndpoints.cs" />
+  </ItemGroup>
 </Project>

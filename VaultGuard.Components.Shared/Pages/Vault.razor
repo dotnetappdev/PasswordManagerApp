@@ -235,6 +235,7 @@
                         </div>
                     </div>
 
+                    <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" Title="Share securely" OnClick="@(() => ShareItem(selectedItem))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Title="Edit" OnClick="@(() => EditItem(selectedItem))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Title="Delete" OnClick="@(() => DeleteItem(selectedItem))" />
                 </div>
@@ -1175,5 +1176,16 @@
     {
         if (!revealedFields.Remove(key))
             revealedFields.Add(key);
+    }
+
+    // Secure sharing: an encrypted link that expires (see ShareItemDialog).
+    private async Task ShareItem(PasswordItem item)
+    {
+        var parameters = new DialogParameters<VaultGuard.Components.Shared.Components.ShareItemDialog>
+        {
+            { d => d.Content, VaultGuard.Components.Shared.Services.ISecureShareService.ContentOf(item) }
+        };
+        await DialogService.ShowAsync<VaultGuard.Components.Shared.Components.ShareItemDialog>("Share securely", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
     }
 }

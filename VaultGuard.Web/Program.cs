@@ -303,6 +303,11 @@ builder.Services.AddHttpClient("VaultGuardAPI", client =>
 // Add API service for external API communication if needed
 builder.Services.AddScoped<IAppSyncService, VaultGuard.Services.Services.AppSyncService>();
 
+// Secure sharing: the Web app creates shares for signed-in users and serves the viewer (/s/{id}).
+builder.Services.AddScoped<VaultGuard.Components.Shared.Services.ISecureShareService, VaultGuard.Web.Services.WebSecureShareService>();
+builder.Services.AddSingleton(sp => new VaultGuard.Services.Sharing.FileShareStore(
+    builder.Configuration["Sharing:StoreDir"] ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "shares")));
+
 var app = builder.Build();
 
 // Route the AppLogger facade through the configured logging pipeline (console, Sentry, file).
@@ -326,6 +331,9 @@ app.UseTenantResolution();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+VaultGuard.Sharing.SecureShareEndpoints.MapSecureShares(app,
+    app.Services.GetRequiredService<VaultGuard.Services.Sharing.FileShareStore>(), allowCreate: false);
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

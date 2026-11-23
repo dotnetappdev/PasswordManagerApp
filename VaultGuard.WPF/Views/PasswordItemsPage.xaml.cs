@@ -646,6 +646,33 @@ public sealed partial class PasswordItemsPage : System.Windows.Controls.Page
         return decrypted;
     }
 
+    /// <summary>Share securely: an encrypted, expiring link created on the Vault Guard server (Settings → Sync).</summary>
+    private async void ShareDetailButton_Click(object sender, RoutedEventArgs e)
+    {
+        var item = _selectedItem;
+        if (item == null || _serviceProvider == null) return;
+        try
+        {
+            // Decrypt what might be shared (only into memory, for this item).
+            _serviceProvider.GetService<IPasswordRevealService>()?.OpenItem(item, await GetSessionIdAsync() ?? string.Empty);
+            if (item.LoginItem != null && string.IsNullOrEmpty(item.LoginItem.Password))
+                item.LoginItem.Password = await GetDecryptedSelectedPasswordAsync();
+            var settings = _serviceProvider.GetService<IAppSettingsService>();
+            var content = VaultGuard.Services.Sharing.ShareContentFactory.From(item);
+            var window = new VaultGuard.WPF.Dialogs.ShareItemWindow(content, (c, o) =>
+                VaultGuard.Services.Sharing.SecureShareClient.CreateAsync(ShareHttp, settings?.Get("ApiBaseUrl") ?? "", settings?.Get("ApiKey"), c, o))
+            { Owner = Window.GetWindow(this) };
+            window.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            VaultGuard.Services.Logging.AppLogger.Error("Couldn't share the item", ex);
+            ToastService.Instance.Show($"Couldn't share: {ex.Message}", ToastType.Error);
+        }
+    }
+
+    private static readonly System.Net.Http.HttpClient ShareHttp = new() { Timeout = TimeSpan.FromSeconds(20) };
+
     private void ClearDecryptedPasswordCache()
     {
         _decryptedPasswordItemId = null;

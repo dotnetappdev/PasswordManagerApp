@@ -1,0 +1,97 @@
+@* "Share securely": an encrypted link that expires after a time and a number of views (Web and MAUI). *@
+@using MudBlazor
+@using VaultGuard.Services.Sharing
+@using VaultGuard.Components.Shared.Services
+@inject ISecureShareService Shares
+@inject SecureClipboard Clipboard
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Share "@Content.Title" securely</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_link == null)
+        {
+            <MudText Typo="Typo.body2" Class="mb-3 mud-text-secondary">
+                Anyone with the link can see what you share here, until it expires or runs out of views. It's encrypted
+                on this device; the server can't read it.
+            </MudText>
+            <MudCheckBox T="bool" @bind-Value="_includeUsername" Label="Username" Disabled="@string.IsNullOrEmpty(Content.Username)" Dense="true" />
+            <MudCheckBox T="bool" @bind-Value="_includePassword" Label="Password" Disabled="@string.IsNullOrEmpty(Content.Password)" Dense="true" />
+            <MudCheckBox T="bool" @bind-Value="_includeUrl" Label="Website" Disabled="@string.IsNullOrEmpty(Content.Url)" Dense="true" />
+            <MudCheckBox T="bool" @bind-Value="_includeNotes" Label="Notes" Disabled="@string.IsNullOrEmpty(Content.Notes)" Dense="true" />
+            <div class="d-flex gap-3 mt-3 flex-wrap">
+                <MudSelect T="int" @bind-Value="_expiryMinutes" Label="Expires after" Dense="true" Style="min-width:160px;">
+                    <MudSelectItem Value="60">1 hour</MudSelectItem>
+                    <MudSelectItem Value="1440">1 day</MudSelectItem>
+                    <MudSelectItem Value="10080">7 days</MudSelectItem>
+                    <MudSelectItem Value="43200">30 days</MudSelectItem>
+                </MudSelect>
+                <MudSelect T="int" @bind-Value="_views" Label="Can be opened" Dense="true" Style="min-width:160px;">
+                    <MudSelectItem Value="1">Once</MudSelectItem>
+                    <MudSelectItem Value="3">3 times</MudSelectItem>
+                    <MudSelectItem Value="10">10 times</MudSelectItem>
+                    <MudSelectItem Value="0">Until it expires</MudSelectItem>
+                </MudSelect>
+            </div>
+            <MudTextField T="string" @bind-Value="_passphrase" Label="Passphrase (optional)" InputType="InputType.Password" Class="mt-3"
+                          HelperText="Send it separately (e.g. by phone). The link alone won't open it." />
+            @if (_error != null) { <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">@_error</MudAlert> }
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-2">Here's your link. Send it to the person you're sharing with.</MudText>
+            <MudTextField T="string" Value="@_link" ReadOnly="true" Variant="Variant.Outlined" Lines="3" />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Expires @(_expires?.ToLocalTime().ToString("g")) · @(_views == 0 ? "can be opened until then" : _views == 1 ? "can be opened once" : $"can be opened {_views} times")
+                @(string.IsNullOrEmpty(_passphrase) ? "" : " · needs the passphrase")
+            </MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (_link == null)
+        {
+            <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="_busy">@(_busy ? "Creating…" : "Create link")</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="CopyAsync" StartIcon="@Icons.Material.Filled.ContentCopy">@(_copied ? "Copied" : "Copy link")</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => MudDialog.Close())">Done</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ShareContent Content { get; set; } = default!;
+
+    private bool _includeUsername = true, _includePassword = true, _includeUrl = true, _includeNotes;
+    private int _expiryMinutes = 1440, _views = 1;
+    private string? _passphrase, _link, _error;
+    private DateTime? _expires;
+    private bool _busy, _copied;
+
+    private async Task CreateAsync()
+    {
+        _busy = true; _error = null;
+        try
+        {
+            var content = new ShareContent(Content.Title,
+                _includeUsername ? Content.Username : null, _includePassword ? Content.Password : null,
+                _includeUrl ? Content.Url : null, _includeNotes ? Content.Notes : null);
+            var r = await Shares.CreateAsync(content, new ShareOptions(TimeSpan.FromMinutes(_expiryMinutes), _views == 0 ? null : _views,
+                string.IsNullOrWhiteSpace(_passphrase) ? null : _passphrase));
+            if (r.Success) { _link = r.Link; _expires = r.ExpiresUtc; }
+            else _error = r.Error;
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private async Task CopyAsync()
+    {
+        try { var m = await Clipboard.ModuleAsync(); await m.InvokeAsync<bool>("copyText", _link); _copied = true; }
+        catch { _copied = false; }
+    }
+}

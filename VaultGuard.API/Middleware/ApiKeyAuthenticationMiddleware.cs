@@ -50,7 +50,11 @@ namespace VaultGuard.API.Middleware
                 // by a device that, by definition, has no API key/session yet either.
                 context.Request.Path.StartsWithSegments("/api/auth/qr/generate-anonymous") ||
                 context.Request.Path.StartsWithSegments("/api/auth/qr/submit-handoff") ||
-                context.Request.Path.StartsWithSegments("/api/auth/qr/handoff"))
+                context.Request.Path.StartsWithSegments("/api/auth/qr/handoff") ||
+                // Secure sharing: the recipient has no account. Opening a share (GET) and its viewer page are
+                // anonymous; the content is encrypted with a key that's only in the link. Creating one is not.
+                context.Request.Path.StartsWithSegments("/s") ||
+                (HttpMethods.IsGet(context.Request.Method) && context.Request.Path.StartsWithSegments("/api/shares")))
             {
                 await _next(context);
                 return;
