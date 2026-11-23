@@ -3,12 +3,12 @@
 Vault Guard can be your SSH agent: `ssh`, `git` and other SSH tools use the SSH keys in your vault, so private keys
 don't have to sit in files on your computer.
 
-## Setting it up (Windows app)
+## Setting it up (Windows: the desktop app or the Vault Guard app)
 
 1. Save each key as an **SSH Key** item, with the private key in **Private Key**. Paste it without a passphrase
    (`ssh-keygen -p -f yourkey` removes one); the vault encrypts it. Ed25519, RSA and ECDSA keys work, in OpenSSH or
    PEM format.
-2. **Settings → SSH Agent → Use Vault Guard as my SSH agent.**
+2. **Settings → SSH Agent → Use Vault Guard as my SSH agent.** (Same switch in the WPF desktop app and the MAUI app on Windows; it isn't offered on phones.)
 3. Use `ssh` or `git` as usual. Vault Guard asks **"Use an SSH key?"** before each use; **Allow** covers that key for
    one minute (a `git push` signs more than once).
 

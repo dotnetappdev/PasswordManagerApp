@@ -1,0 +1,38 @@
+@* Answers SSH agent signing requests (SshAgentHost) with an Allow / Deny dialog. Lives in MainLayout; renders nothing. *@
+@using MudBlazor
+@using VaultGuard.Components.Shared.Services
+@implements IDisposable
+@inject IServiceProvider Services
+@inject IDialogService DialogService
+
+@code {
+    private SshAgentHost? _host;
+    private readonly SemaphoreSlim _one = new(1, 1);
+
+    protected override void OnInitialized()
+    {
+        _host = Services.GetService(typeof(SshAgentHost)) as SshAgentHost;
+        if (_host != null) _host.ApprovalRequested += OnApproval;
+    }
+
+    private void OnApproval(SshAgentHost.Approval a) => _ = InvokeAsync(async () =>
+    {
+        await _one.WaitAsync();
+        try
+        {
+            if (a.Answer.Task.IsCompleted) return;
+            var ok = await DialogService.ShowMessageBox("Use an SSH key?",
+                $"An app on this computer (for example ssh or git) wants to sign in with your SSH key \"{a.KeyTitle}\". " +
+                "Allow it only if you just started something that uses SSH. Allowing covers this key for one minute.",
+                yesText: "Allow", cancelText: "Deny");
+            a.Answer.TrySetResult(ok == true);
+        }
+        catch { a.Answer.TrySetResult(false); }
+        finally { _one.Release(); }
+    });
+
+    public void Dispose()
+    {
+        if (_host != null) _host.ApprovalRequested -= OnApproval;
+    }
+}

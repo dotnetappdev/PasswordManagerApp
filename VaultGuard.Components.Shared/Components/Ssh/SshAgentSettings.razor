@@ -1,0 +1,49 @@
+@* Settings → SSH agent: only shown where the host registers SshAgentHost (MAUI on Windows). *@
+@using MudBlazor
+@using VaultGuard.Components.Shared.Services
+@inject IServiceProvider Services
+
+@if (_host != null)
+{
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Style="margin-bottom: 8px;">SSH agent</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+            Let ssh and git use the SSH keys in your vault, so private keys never sit in files on disk. Vault Guard asks
+            before each use, and only while the vault is unlocked. Store keys without a passphrase (the vault protects them).
+        </MudText>
+        <MudSwitch T="bool" Value="_on" ValueChanged="Toggle" Color="Color.Primary" Label="Use Vault Guard as my SSH agent" Disabled="_busy" />
+        @if (_on)
+        {
+            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="display:block; margin-top: 6px;">@Status()</MudText>
+        }
+    </MudPaper>
+}
+
+@code {
+    private SshAgentHost? _host;
+    private bool _on, _busy;
+
+    protected override void OnInitialized()
+    {
+        _host = Services.GetService(typeof(SshAgentHost)) as SshAgentHost;
+        _on = _host?.IsEnabled == true;
+    }
+
+    private async Task Toggle(bool on)
+    {
+        if (_host == null) return;
+        _busy = true; _on = on;
+        try { await _host.SetEnabledAsync(on); }
+        finally { _busy = false; }
+    }
+
+    private string Status()
+    {
+        if (_host is not { IsRunning: true }) return "The SSH agent couldn't start. See the log for details.";
+        var path = _host.SocketPath;
+        return path == @"\\.\pipe\openssh-ssh-agent"
+            ? "Running. Windows' ssh and git use it automatically."
+            : $"Running at {path}. Windows' own \"OpenSSH Authentication Agent\" service is using the standard address: stop that " +
+              $"service (Services → OpenSSH Authentication Agent → Disabled) and restart Vault Guard, or set SSH_AUTH_SOCK to {path}.";
+    }
+}

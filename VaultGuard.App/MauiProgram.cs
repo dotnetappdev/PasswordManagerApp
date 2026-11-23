@@ -174,6 +174,8 @@ public static class MauiProgram
 #if WINDOWS
 		// Unlock with Windows Hello (as in the WPF app); the master key stays in DPAPI-backed SecureStorage.
 		builder.Services.AddSingleton<VaultGuard.Components.Shared.Services.IDeviceUnlock, VaultGuard.App.Services.WindowsHelloUnlock>();
+		// SSH agent (Settings → SSH agent), as in the WPF app: serves vault SSH keys to ssh / git on the openssh-ssh-agent pipe.
+		builder.Services.AddSingleton<VaultGuard.Components.Shared.Services.SshAgentHost>();
 #endif
 		// Fido2 (WebAuthn) — required by PasskeyService. MAUI runs as a Blazor hybrid WebView, so
 		// the "origin" is the WebView's local origin; full platform WebAuthn in a hybrid WebView is
@@ -225,6 +227,9 @@ public static class MauiProgram
 
 		// Browser extension link (Windows): registered with the browsers on every start, so updates keep it current.
 		VaultGuard.App.Services.MauiBrowserLink.Start(app.Services);
+#if WINDOWS
+		_ = app.Services.GetRequiredService<VaultGuard.Components.Shared.Services.SshAgentHost>().ApplyAsync();
+#endif
 		// Lock when Windows locks / the PC sleeps, or (phones) when the app goes to the background.
 		VaultGuard.App.Services.MauiDeviceLock.Start(app.Services);
 
