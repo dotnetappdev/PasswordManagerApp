@@ -18,7 +18,7 @@ public static class LocalSettingsProtector
     private static readonly HashSet<string> SecretKeys = new(StringComparer.OrdinalIgnoreCase)
     {
         "ApiKey", "ApiClientSecret", "FtpPassword", "NasPassword", "GDriveClientSecret",
-        "OnePasswordConnectToken", "dbpassword", "DatabaseConnectionString",
+        "OnePasswordConnectToken", "dbpassword", "DatabaseConnectionString", "EmailAliasToken",
     };
 
     public static bool IsSecret(string key) => SecretKeys.Contains(key);

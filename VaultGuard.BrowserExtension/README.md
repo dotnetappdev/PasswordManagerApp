@@ -55,6 +55,9 @@ you're on.
   including username-then-password sign-ins. It holds back when the form has a captcha or another required field.
   Turn it off in Settings → **Sign in after filling**.
 - **Open & fill.** In the popup, a login for another site opens that site and signs you in.
+- **Email aliases.** On sign-up forms, "Use a new email alias" creates a unique address for the site with your
+  SimpleLogin or addy.io account and fills it in. Connect the account in the Vault Guard app: Settings → Email
+  aliases. The app talks to the alias service; the extension only gets the new address.
 - **Toolbar badge.** The Vault Guard button shows how many logins you have for the site you're on.
 - **Keyboard shortcuts.** **Ctrl + Shift + L** fills this site's login and signs in (or shows the menu when you
   have several). **Ctrl + Shift + G** fills a strong new password in the selected field. **Ctrl + Shift + Y**

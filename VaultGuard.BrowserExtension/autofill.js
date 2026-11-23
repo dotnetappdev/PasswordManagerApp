@@ -172,6 +172,18 @@
       } else {
         creds.forEach(c => rows.push({ title: c.title || HOST, sub: c.username || '(no username)', initial: c.title || HOST, run: () => fillLogin(field, c) }));
       }
+      // Sign-up form: offer a fresh email alias (SimpleLogin / addy.io, set up in the app) for the email field.
+      const signUp = sameScope(field, ['new-password']).length > 0;
+      if (st.kind === 'username' && status.aliases && (signUp || (field.type === 'email' && !creds.length))) {
+        rows.unshift({
+          title: 'Use a new email alias', sub: `A unique address for ${HOST} that forwards to your inbox`, suggest: true,
+          run: async () => {
+            const r = await send({ action: 'createEmailAlias' });
+            if (r?.success && r.email) { setValue(field, r.email); toast(`Alias ${r.email} created`); }
+            else toast(r?.error || "Couldn't create an alias");
+          }
+        });
+      }
       if (st.kind === 'new-password' || st.kind === 'password') {
         const g = await send({ action: 'generatePassword', options: { length: 20, includeUppercase: true, includeLowercase: true, includeNumbers: true, includeSymbols: true } });
         const pw = g?.password;
@@ -296,7 +308,8 @@
     const filledPw = !!(pws[0] && c.password && setValue(pws[0], c.password));
     toast(`Filled ${c.title || 'login'}`);
     copyTotpAfterFill(c);
-    if (filledPw) submitAfterFill(pws[0]);
+    // Sign in for the user only on a sign-in form: never submit a sign-up or change-password form for them.
+    if (filledPw && fields.get(pws[0])?.kind === 'password') submitAfterFill(pws[0]);
     else if (filledUser && !pws.length) {
       // Username first, password on the next step: carry this login on to it, then press "Next".
       send({ action: 'startPendingFill', itemId: c.id });

@@ -281,6 +281,7 @@ public sealed partial class SettingsPage : Page
             _viewModel = new SettingsViewModel(serviceProvider);
             DataContext = _viewModel;
             StartOneDriveStatusTimer();
+            LoadAliasSettings();
 
             // Theme loads asynchronously in the view model's constructor, so reflect the tile
             // selection both now (in case it's already loaded) and whenever it changes.
@@ -3141,5 +3142,42 @@ public sealed partial class SettingsPage : Page
         foreach (var (type, _) in ToastRowDefs) RefreshToastChip(type);
         VaultGuard.WPF.Services.ToastService.Instance.Info(
             "Toast colours reset to defaults.", "Reset");
+    }
+
+    // ---------- Email aliases (SimpleLogin / addy.io) ----------
+    private VaultGuard.Services.Interfaces.IAppSettingsService? AliasSettings =>
+        _serviceProvider?.GetService<VaultGuard.Services.Interfaces.IAppSettingsService>();
+
+    private void LoadAliasSettings()
+    {
+        if (AliasSettings is not { } st) return;
+        var provider = new VaultGuard.Services.Aliases.EmailAliasService(st).Provider.ToString();
+        foreach (ComboBoxItem item in AliasProviderCombo.Items)
+            if ((string)item.Tag == provider) AliasProviderCombo.SelectedItem = item;
+        if (AliasProviderCombo.SelectedItem == null) AliasProviderCombo.SelectedIndex = 0;
+        AliasTokenBox.Password = st.Get("EmailAliasToken");
+        AliasServerBox.Text = st.Get("EmailAlias:ServerUrl");
+    }
+
+    private void SaveAliasesButton_Click(object sender, RoutedEventArgs e) => SaveAliases(showToast: true);
+
+    private void SaveAliases(bool showToast)
+    {
+        if (AliasSettings is not { } st) return;
+        var provider = (AliasProviderCombo.SelectedItem as ComboBoxItem)?.Tag as string ?? "None";
+        st.Set("EmailAlias:Provider", provider);
+        st.Set("EmailAliasToken", provider == "None" ? "" : AliasTokenBox.Password);
+        st.Set("EmailAlias:ServerUrl", AliasServerBox.Text?.Trim() ?? "");
+        if (showToast) VaultGuard.WPF.Services.ToastService.Instance.Success(provider == "None" ? "Email aliases turned off." : "Email aliases saved.");
+    }
+
+    private async void TestAliasButton_Click(object sender, RoutedEventArgs e)
+    {
+        SaveAliases(showToast: false);
+        if (AliasSettings is not { } st) return;
+        var svc = new VaultGuard.Services.Aliases.EmailAliasService(st);
+        var r = await svc.CreateAsync("vault-guard-test");
+        if (r.Success) VaultGuard.WPF.Services.ToastService.Instance.Success($"Created {r.Email}. You can delete it in {VaultGuard.Services.Aliases.EmailAliasService.Name(svc.Provider)}.");
+        else VaultGuard.WPF.Services.ToastService.Instance.Show(r.Error ?? "Couldn't create an alias.", VaultGuard.WPF.Services.ToastType.Error);
     }
 }

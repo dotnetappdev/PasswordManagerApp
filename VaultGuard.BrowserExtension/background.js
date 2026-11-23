@@ -155,6 +155,13 @@ class VaultGuardBackground {
         case 'captureLogin':
           sendResponse(await this.captureLogin(request, sender));
           break;
+        case 'createEmailAlias': {
+          // The site is the tab's real site; the app creates the alias with your SimpleLogin / addy.io account.
+          const site = this.senderSite(sender);
+          if (!site || !(await this.hasAccess())) { sendResponse({ success: false, error: 'Unlock Vault Guard first.' }); break; }
+          sendResponse(await this.sendNativeMessage({ action: 'createEmailAlias', site: site.host }));
+          break;
+        }
         case 'openAndFill':
           sendResponse(await this.openAndFill(request));
           break;
@@ -215,7 +222,7 @@ class VaultGuardBackground {
   // When this browser is approved, the extension and the app agree on a key with an ECDH P-256 exchange (only
   // public keys are sent). Every request to the app and every answer is then AES-256-GCM encrypted with it, so the
   // browser helper and the named pipe only ever carry ciphertext. Must match BrowserLinkCrypto in the app.
-  static ENCRYPTED_ACTIONS = new Set(['hello', 'getCredentials', 'getCreditCards', 'saveTotpSecret', 'getTotpCode', 'saveLogin', 'checkPasswordReuse', 'passkeyCreate', 'passkeyGet']);
+  static ENCRYPTED_ACTIONS = new Set(['hello', 'getCredentials', 'getCreditCards', 'saveTotpSecret', 'getTotpCode', 'saveLogin', 'checkPasswordReuse', 'passkeyCreate', 'passkeyGet', 'createEmailAlias']);
   static LINK_INFO = 'VaultGuard browser link v3';
 
   b64u(bytes) { return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -640,6 +647,7 @@ class VaultGuardBackground {
         appVersion: response?.appVersion || null,
         protocol: response?.protocol || null,
         needsUpdate: !!response?.protocol && response.protocol < 3, // 3: encrypted link
+        aliases: !!response?.aliases,
         error: response?.error || null
       };
     } catch (error) {

@@ -117,7 +117,9 @@ public sealed class BrowserLinkServer : IAsyncDisposable
             return new
             {
                 success = true, linked = true, app = _appName, appVersion = _appVersion,
-                protocol = BrowserLinkProtocol.Version, unlocked, paired
+                protocol = BrowserLinkProtocol.Version, unlocked, paired,
+                // Lets the extension offer "Use a new email alias" on sign-up forms (no details, just whether it's set up).
+                aliases = paired && _services.GetService<IAppSettingsService>() is { } st && new VaultGuard.Services.Aliases.EmailAliasService(st).IsConfigured
             };
 
         if (!paired)
@@ -141,6 +143,9 @@ public sealed class BrowserLinkServer : IAsyncDisposable
             "getTotpCode" => await GetTotpCodeAsync(db, userId, cipher, fields, ct),
             "saveLogin" => await SaveLoginAsync(db, userId, cipher, fields, ct),
             "checkPasswordReuse" => await CheckPasswordReuseAsync(db, userId, cipher, fields, ct),
+            "createEmailAlias" => _services.GetService<IAppSettingsService>() is { } aliasSettings
+                ? await CreateAliasAsync(aliasSettings, fields.Utf8("site"))
+                : new { success = false, error = "Email aliases aren't available in this app." },
             "passkeyCreate" => await PasskeyAsync(scope.ServiceProvider, sessions, sessionId!, userId, fields, create: true),
             "passkeyGet" => await PasskeyAsync(scope.ServiceProvider, sessions, sessionId!, userId, fields, create: false),
             _ => new { success = false, code = "UNSUPPORTED", error = $"Unknown action '{action}'." }
@@ -208,6 +213,13 @@ public sealed class BrowserLinkServer : IAsyncDisposable
                    (origin.StartsWith("https://", StringComparison.Ordinal) || SiteMatcher.Host(origin) == "localhost");
         }
         catch { return false; }
+    }
+
+    /// <summary>A new SimpleLogin / addy.io alias for the tab's site (set by the extension's background, not the page).</summary>
+    private static async Task<object> CreateAliasAsync(IAppSettingsService settings, string site)
+    {
+        var r = await new VaultGuard.Services.Aliases.EmailAliasService(settings).CreateAsync(SiteMatcher.Host(site));
+        return new { success = r.Success, email = r.Email, error = r.Error };
     }
 
     private async Task<object> PairAsync(JsonElement req, CancellationToken ct)

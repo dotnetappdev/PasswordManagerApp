@@ -247,6 +247,40 @@
                 </StackPanel>
             </Border>
 
+            <!-- Email aliases (SimpleLogin / addy.io) -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="#2563EB" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE715;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Email Aliases" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Margin="16">
+                        <TextBlock Text="Give every site its own email address that forwards to your inbox, so a leak or spam can be traced and switched off. Connect your SimpleLogin or addy.io account (both have free plans); on sign-up forms the browser extension then offers &quot;Use a new email alias&quot;."
+                                   Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+                        <ComboBox x:Name="AliasProviderCombo" Margin="8" Width="220" HorizontalAlignment="Left">
+                            <ComboBoxItem Content="Off" Tag="None"/>
+                            <ComboBoxItem Content="SimpleLogin" Tag="SimpleLogin"/>
+                            <ComboBoxItem Content="addy.io" Tag="Addy"/>
+                        </ComboBox>
+                        <TextBlock Text="API key (SimpleLogin or addy.io → Settings → API Keys)" Style="{StaticResource ModernCaptionStyle}" Margin="8,8,8,0"/>
+                        <PasswordBox x:Name="AliasTokenBox" Margin="8" Style="{StaticResource ModernPasswordBoxStyle}"/>
+                        <TextBlock Text="Server (only if you host it yourself)" Style="{StaticResource ModernCaptionStyle}" Margin="8,8,8,0"/>
+                        <TextBox x:Name="AliasServerBox" Margin="8" Style="{StaticResource ModernTextBoxStyle}"/>
+                        <StackPanel Orientation="Horizontal" Margin="8">
+                            <Button Style="{StaticResource ModernPrimaryButtonStyle}" Click="SaveAliasesButton_Click">
+                                <TextBlock Text="Save" Margin="8"/>
+                            </Button>
+                            <Button Style="{StaticResource ModernSecondaryButtonStyle}" Margin="8,0,0,0" Click="TestAliasButton_Click">
+                                <TextBlock Text="Create a test alias" Margin="8"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Password Generator -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">
