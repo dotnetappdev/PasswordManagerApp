@@ -1437,9 +1437,8 @@ function showNotification(message) {
   }
 
   try {
-    ext.storage.sync.get({ interceptPasskeys: true }, (res) => {
-      injectHook(res && res.interceptPasskeys !== false);
-    });
+    ext.storage.sync.get({ interceptPasskeys: true })
+      .then((res) => injectHook(res && res.interceptPasskeys !== false), () => injectHook(true));
   } catch (e) {
     // storage unavailable → default to intercepting (previous behaviour).
     injectHook(true);
@@ -1462,18 +1461,32 @@ function showNotification(message) {
     if (event.source !== window || !event.data || event.data.type !== REQUEST) return;
 
     const { id, kind, request } = event.data;
-    const action = kind === 'create' ? 'passkeyCreate' : 'passkeyGet';
-
     const reply = (payload) => window.postMessage({ type: RESPONSE, id, payload }, window.location.origin);
+    // Anything we can't or won't do → the page falls back to the browser's own passkey handling.
+    const fallback = (error) => reply({ success: false, error, fallback: true });
+    const send = (msg) => ext.runtime.sendMessage(msg).catch((e) => ({ success: false, error: e?.message || String(e), fallback: true }));
+    // The page's script asked; the user decides, in Vault Guard's own isolated card (autofill.js).
+    const confirm = (opts) => (window.__vaultGuardConfirm ? window.__vaultGuardConfirm(opts) : Promise.resolve(false));
+    const site = request?.rpId || location.hostname;
 
-    try {
-      ext.runtime.sendMessage({ action, ...request }).then(
-        (response) => reply(response || { success: false, error: 'No response', fallback: true }),
-        // Background/native host unreachable → let the page fall back to the platform authenticator.
-        (e) => reply({ success: false, error: e?.message || String(e), fallback: true }));
-    } catch (e) {
-      reply({ success: false, error: e.message, fallback: true });
-    }
+    (async () => {
+      if (kind === 'create') {
+        const who = request?.userName ? ` for ${request.userName}` : '';
+        const ok = await confirm({ title: 'Save a passkey in Vault Guard?', text: `${site} wants to create a passkey${who}. Vault Guard can keep it in your vault, so it works in every browser you connect.`, ok: 'Save in Vault Guard', cancel: 'Use another device' });
+        if (!ok) return fallback('Declined');
+        const r = await send({ action: 'passkeyCreate', ...request });
+        reply(r || { success: false, fallback: true });
+        return;
+      }
+      // Sign-in: only offer Vault Guard when the vault has a passkey for this site.
+      const probe = await send({ action: 'passkeyGet', ...request, check: true });
+      if (!probe?.available) return fallback('No Vault Guard passkey for this site');
+      const as = probe.userName ? ` as ${probe.userName}` : '';
+      const ok = await confirm({ title: 'Sign in with a passkey?', text: `Sign in to ${site}${as} with your Vault Guard passkey.`, ok: 'Sign in', cancel: 'Use another device' });
+      if (!ok) return fallback('Declined');
+      const r = await send({ action: 'passkeyGet', ...request });
+      reply(r || { success: false, fallback: true });
+    })().catch((e) => fallback(e?.message || String(e)));
   });
 })();
 

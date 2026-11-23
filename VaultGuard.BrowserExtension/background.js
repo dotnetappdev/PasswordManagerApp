@@ -197,7 +197,7 @@ class VaultGuardBackground {
           break;
         case 'passkeyCreate':
         case 'passkeyGet':
-          await this.handlePasskey(request, sendResponse);
+          await this.handlePasskey(request, sender, sendResponse);
           break;
         case 'saveTotpSecret':
           await this.saveTotpSecret(request, sendResponse);
@@ -215,7 +215,7 @@ class VaultGuardBackground {
   // When this browser is approved, the extension and the app agree on a key with an ECDH P-256 exchange (only
   // public keys are sent). Every request to the app and every answer is then AES-256-GCM encrypted with it, so the
   // browser helper and the named pipe only ever carry ciphertext. Must match BrowserLinkCrypto in the app.
-  static ENCRYPTED_ACTIONS = new Set(['hello', 'getCredentials', 'getCreditCards', 'saveTotpSecret', 'getTotpCode', 'saveLogin', 'checkPasswordReuse']);
+  static ENCRYPTED_ACTIONS = new Set(['hello', 'getCredentials', 'getCreditCards', 'saveTotpSecret', 'getTotpCode', 'saveLogin', 'checkPasswordReuse', 'passkeyCreate', 'passkeyGet']);
   static LINK_INFO = 'VaultGuard browser link v3';
 
   b64u(bytes) { return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -871,26 +871,33 @@ class VaultGuardBackground {
     }
   }
 
-  async handlePasskey(request, sendResponse) {
-    // Passkey signing/registration needs the unlocked vault (master key) held by the
-    // native host session, so a valid token is required.
-    if (!this.authToken) {
-      sendResponse({ success: false, error: 'Vault is locked. Sign in to the extension first.', fallback: true });
-      return;
-    }
-
+  /**
+   * Website passkeys, kept in the vault by the Vault Guard app (over the encrypted link). The site is the tab's
+   * real site, from the browser, never from the page; the app only creates or signs for that site. content.js
+   * has already asked the user. fallback:true lets the page use the browser's own passkeys instead.
+   */
+  async handlePasskey(request, sender, sendResponse) {
     try {
+      const site = this.senderSite(sender);
+      if (!site) { sendResponse({ success: false, error: 'Not a website', fallback: true }); return; }
       const { action, ...fields } = request;
-      // Route to whichever backend is configured. In API mode this hits the server's
-      // vault-passkey endpoints; in Local mode it hits the native host + SQLite.
-      const response = await this.sendMessageWithFallback(action, {
-        token: this.authToken,
-        ...fields
-      });
-      sendResponse(response || { success: false, error: 'No response from backend', fallback: true });
+      const mode = await this.connectionMode();
+      if (mode !== 'api') {
+        const link = await this.refreshLink();
+        if (!link?.linked || !link.paired || !link.unlocked) {
+          sendResponse({ success: false, error: 'Vault Guard is locked or not connected', fallback: true });
+          return;
+        }
+        const r = await this.sendNativeMessage({ action, ...fields, site: site.host });
+        sendResponse(r || { success: false, error: 'No response from Vault Guard', fallback: true });
+        return;
+      }
+      // API server mode
+      if (!this.authToken) { sendResponse({ success: false, error: 'Sign in first', fallback: true }); return; }
+      const r = await this.sendWebApiMessage(action, { token: this.authToken, ...fields, site: site.host });
+      sendResponse(r || { success: false, error: 'No response from the server', fallback: true });
     } catch (error) {
       console.error('Vault Guard: Passkey request failed:', error);
-      // fallback:true lets the page use the platform authenticator if our backend is unavailable.
       sendResponse({ success: false, error: error.message, fallback: true });
     }
   }

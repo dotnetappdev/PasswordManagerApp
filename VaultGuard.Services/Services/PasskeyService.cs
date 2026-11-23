@@ -599,7 +599,26 @@ public class PasskeyService : IPasskeyService
                 return new VaultPasskeyCreateResponseDto { Success = false, Error = "Invalid master password" };
 
             var masterKey = _passwordCryptoService.DeriveMasterKey(request.MasterPassword, Convert.FromBase64String(user.UserSalt));
-            try
+            try { return await CreateVaultPasskeyWithKeyAsync(userId, request, masterKey); }
+            finally { Array.Clear(masterKey, 0, masterKey.Length); }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating vault passkey for {UserId}", userId);
+            return new VaultPasskeyCreateResponseDto { Success = false, Error = "Passkey creation failed" };
+        }
+    }
+
+    /// <summary>
+    /// Creates a vault passkey with a vault key the caller already holds (the desktop app's unlocked session, for
+    /// the browser extension). The caller has checked the site; the key isn't cleared here.
+    /// </summary>
+    public async Task<VaultPasskeyCreateResponseDto> CreateVaultPasskeyWithKeyAsync(string userId, VaultPasskeyCreateRequestDto request, byte[] masterKey)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.RpId))
+                return new VaultPasskeyCreateResponseDto { Success = false, Error = "rpId is required" };
             {
                 var cred = WebAuthnSoftwareAuthenticator.CreateCredential(request.RpId);
 
@@ -642,10 +661,6 @@ public class PasskeyService : IPasskeyService
                     PublicKeyCose = Convert.ToBase64String(cred.CosePublicKey)
                 };
             }
-            finally
-            {
-                Array.Clear(masterKey, 0, masterKey.Length);
-            }
         }
         catch (Exception ex)
         {
@@ -669,7 +684,27 @@ public class PasskeyService : IPasskeyService
                 return new VaultPasskeyAssertResponseDto { Success = false, Error = "Invalid master password" };
 
             var masterKey = _passwordCryptoService.DeriveMasterKey(request.MasterPassword, Convert.FromBase64String(user.UserSalt));
-            try
+            try { return await AssertVaultPasskeyWithKeyAsync(userId, request, masterKey); }
+            finally { Array.Clear(masterKey, 0, masterKey.Length); }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error asserting vault passkey for {UserId}", userId);
+            return new VaultPasskeyAssertResponseDto { Success = false, Error = "Passkey authentication failed" };
+        }
+    }
+
+    /// <summary>
+    /// Signs a WebAuthn assertion with a vault key the caller already holds (the desktop app's unlocked session).
+    /// With <paramref name="checkOnly"/> it only reports whether a passkey for the site exists (and its user name),
+    /// so the extension can ask the user before signing. The caller has checked the site; the key isn't cleared here.
+    /// </summary>
+    public async Task<VaultPasskeyAssertResponseDto> AssertVaultPasskeyWithKeyAsync(string userId, VaultPasskeyAssertRequestDto request, byte[] masterKey, bool checkOnly = false)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.RpId) || (!checkOnly && string.IsNullOrEmpty(request.ClientDataJSON)))
+                return new VaultPasskeyAssertResponseDto { Success = false, Error = "rpId and clientDataJSON are required" };
             {
                 var candidates = await _context.UserPasskeys
                     .Where(p => p.UserId == userId && p.IsActive && p.DeviceType == VaultPasskeyDeviceType)
@@ -701,6 +736,12 @@ public class PasskeyService : IPasskeyService
                 if (match == null || secret == null)
                     return new VaultPasskeyAssertResponseDto { Success = false, Error = "No matching passkey for this site" };
 
+                // Every candidate must belong to the site, even one named in allowCredentials.
+                if (!string.Equals(secret.RpId, request.RpId, StringComparison.OrdinalIgnoreCase))
+                    return new VaultPasskeyAssertResponseDto { Success = false, Error = "No matching passkey for this site" };
+                if (checkOnly)
+                    return new VaultPasskeyAssertResponseDto { Success = true, UserName = secret.UserName };
+
                 var pkcs8 = Convert.FromBase64String(secret.PrivateKeyPkcs8);
                 try
                 {
@@ -725,10 +766,6 @@ public class PasskeyService : IPasskeyService
                 {
                     Array.Clear(pkcs8, 0, pkcs8.Length);
                 }
-            }
-            finally
-            {
-                Array.Clear(masterKey, 0, masterKey.Length);
             }
         }
         catch (Exception ex)

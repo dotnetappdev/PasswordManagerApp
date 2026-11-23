@@ -25,6 +25,7 @@ public class BrowserLinkEncryptionTests
     private string _dir = null!;
     private ServiceProvider _sp = null!;
     private BrowserLinkServer _server = null!;
+    private string _sid = null!;
 
     private sealed class Approve : IBrowserLinkApprover
     {
@@ -39,10 +40,14 @@ public class BrowserLinkEncryptionTests
         var s = new ServiceCollection();
         s.AddLogging(); s.AddCryptographyServices(); s.AddSingleton<IVaultSessionService, VaultSessionService>();
         s.AddDbContext<VaultGuardDbContext>(o => o.UseSqlite($"Data Source={Path.Combine(_dir, "v.db")};Pooling=False"));
+        s.AddScoped<VaultGuard.DAL.Interfaces.IVaultGuardDbContext>(p => p.GetRequiredService<VaultGuardDbContext>());
+        s.AddScoped<IPasswordEncryptionService, PasswordEncryptionService>();
+        s.AddScoped<Fido2NetLib.IFido2>(_ => new Fido2NetLib.Fido2(new Fido2NetLib.Fido2Configuration { ServerDomain = "localhost", ServerName = "t", Origins = new HashSet<string> { "https://localhost" } }));
+        s.AddScoped<IPasskeyService, PasskeyService>();
         _sp = s.BuildServiceProvider();
         var crypto = _sp.GetRequiredService<IPasswordCryptoService>();
         var sessions = _sp.GetRequiredService<IVaultSessionService>();
-        var sid = sessions.InitializeSession("me", crypto.DeriveMasterKey("pw", crypto.GenerateUserSalt()));
+        var sid = _sid = sessions.InitializeSession("me", crypto.DeriveMasterKey("pw", crypto.GenerateUserSalt()));
         using (var scope = _sp.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<VaultGuardDbContext>();
@@ -151,5 +156,45 @@ public class BrowserLinkEncryptionTests
             Assert.That(File.ReadAllText(file), Does.Contain("dpapi:").And.Not.Contain(Convert.ToBase64String(key)));
         pairings.RevokeAll();
         Assert.That(pairings.KeyFor(id), Is.Null);
+    }
+
+    private async Task<JsonElement> CallAsync(string keyId, byte[] key, string action, object fields)
+    {
+        var (raw, iv) = await SendAsync(keyId, key, action, fields);
+        var e = J(raw);
+        if (!e.TryGetProperty("enc", out var env)) return e;
+        using var doc = BrowserLinkCrypto.OpenResponse(key, action, keyId, iv, env.GetProperty("iv").GetString()!, env.GetProperty("ct").GetString()!);
+        return doc.RootElement.Clone();
+    }
+
+    [Test]
+    public async Task Passkeys_CreateAndSign_OnlyForTheTabsSite_AndKeepTheSessionKey()
+    {
+        var (keyId, key) = await PairAsync();
+        long Now() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var sessions = _sp.GetRequiredService<IVaultSessionService>();
+        var before = (byte[])sessions.GetMasterKey(_sid)!.Clone();
+
+        var created = await CallAsync(keyId, key, "passkeyCreate", new { rpId = "example.com", site = "login.example.com", userName = "alice", userHandle = "dTE", ts = Now() });
+        Assert.That(created.GetProperty("success").GetBoolean(), Is.True, created.ToString());
+        Assert.That(sessions.GetMasterKey(_sid), Is.EqualTo(before), "using a passkey must not wipe the unlocked session's key");
+
+        var check = await CallAsync(keyId, key, "passkeyGet", new { rpId = "example.com", site = "example.com", check = true, ts = Now() });
+        Assert.That(check.GetProperty("available").GetBoolean(), Is.True);
+        Assert.That(check.GetProperty("userName").GetString(), Is.EqualTo("alice"));
+
+        string ClientData(string origin) => BrowserLinkCrypto.ToB64(Encoding.UTF8.GetBytes($"{{\"type\":\"webauthn.get\",\"challenge\":\"AAAA\",\"origin\":\"{origin}\"}}"));
+        var signed = await CallAsync(keyId, key, "passkeyGet", new { rpId = "example.com", site = "example.com", clientDataJSON = ClientData("https://example.com"), ts = Now() });
+        Assert.That(signed.GetProperty("success").GetBoolean(), Is.True, signed.ToString());
+        Assert.That(signed.GetProperty("signature").GetString(), Is.Not.Empty);
+
+        // A look-alike site asking for example.com's passkey, a page whose signed origin is elsewhere, and a
+        // passkey for a public suffix: all refused.
+        var evil = await CallAsync(keyId, key, "passkeyGet", new { rpId = "example.com", site = "example.com.evil.net", clientDataJSON = ClientData("https://example.com.evil.net"), ts = Now() });
+        Assert.That(evil.GetProperty("success").GetBoolean(), Is.False);
+        var wrongOrigin = await CallAsync(keyId, key, "passkeyGet", new { rpId = "example.com", site = "example.com", clientDataJSON = ClientData("https://evil.net"), ts = Now() });
+        Assert.That(wrongOrigin.GetProperty("success").GetBoolean(), Is.False);
+        var suffix = await CallAsync(keyId, key, "passkeyCreate", new { rpId = "co.uk", site = "bank.co.uk", ts = Now() });
+        Assert.That(suffix.GetProperty("success").GetBoolean(), Is.False);
     }
 }

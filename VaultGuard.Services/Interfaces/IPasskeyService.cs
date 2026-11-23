@@ -120,6 +120,12 @@ public interface IPasskeyService
     /// </summary>
     Task<VaultPasskeyAssertResponseDto> AssertVaultPasskeyAsync(string userId, VaultPasskeyAssertRequestDto request);
 
+    /// <summary>Creates a vault passkey with a vault key the caller already holds (the app's unlocked session).</summary>
+    Task<VaultPasskeyCreateResponseDto> CreateVaultPasskeyWithKeyAsync(string userId, VaultPasskeyCreateRequestDto request, byte[] masterKey);
+
+    /// <summary>Signs with a vault passkey using a vault key the caller holds; <paramref name="checkOnly"/> only looks one up.</summary>
+    Task<VaultPasskeyAssertResponseDto> AssertVaultPasskeyWithKeyAsync(string userId, VaultPasskeyAssertRequestDto request, byte[] masterKey, bool checkOnly = false);
+
     /// <summary>
     /// Generates a new WebAuthn challenge
     /// </summary>

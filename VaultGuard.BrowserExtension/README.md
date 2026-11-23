@@ -50,7 +50,7 @@ you're on.
 - **Cards** at checkout: number, name, expiry and CVC.
 - **Authenticator QR detection.** When a site shows a 2FA setup QR code, the extension offers to
   save it to the matching login.
-- **Passkeys bridge** (see PASSKEYS_SETUP.md).
+- **Passkeys in your vault.** Sites that support passkeys can save them in Vault Guard, and you sign in with them from any connected browser. Vault Guard asks first, in its own card, and only signs for the site the passkey belongs to (see PASSKEYS_SETUP.md).
 - **Sign in after filling.** After you pick a login, the extension presses the site's sign-in button for you,
   including username-then-password sign-ins. It holds back when the form has a captcha or another required field.
   Turn it off in Settings → **Sign in after filling**.

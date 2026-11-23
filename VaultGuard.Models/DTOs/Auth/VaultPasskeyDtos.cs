@@ -37,6 +37,8 @@ public class VaultPasskeyAssertRequestDto
 
 public class VaultPasskeyAssertResponseDto
 {
+    /// <summary>The account name the passkey was saved for (filled for a "check" request).</summary>
+    public string? UserName { get; set; }
     public bool Success { get; set; }
     public string? Error { get; set; }
     public string CredentialId { get; set; } = string.Empty;       // base64url

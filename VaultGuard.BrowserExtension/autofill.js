@@ -709,6 +709,35 @@
     warnCard = el;
   }
 
+  // ---------- confirmation card (passkeys) ----------
+  // content.js asks before a passkey is created or used. The card sits in our closed shadow layer, so the page
+  // can't read it or click it for the user (only trusted clicks count). Exposed on the extension's own isolated
+  // window, which the page can't reach.
+  let confirmCard = null;
+  window.__vaultGuardConfirm = ({ title, text, ok = 'OK', cancel = 'Cancel' } = {}) => new Promise((resolve) => {
+    if (confirmCard) { confirmCard.remove(); confirmCard = null; }
+    const el = document.createElement('div');
+    el.className = 'save-card';
+    el.setAttribute('role', 'alertdialog');
+    el.setAttribute('aria-label', title || 'Vault Guard');
+    el.innerHTML = `<div class="head">${logoSvg(18)}<span class="brand">${esc(title || 'Vault Guard')}</span><button class="close" type="button" aria-label="Close">✕</button></div>
+      <div class="save-body"><div class="save-text">${esc(text || '')}</div>
+      <div class="save-actions"><button class="btn primary" data-act="ok" type="button">${esc(ok)}</button>
+      <button class="btn ghost" data-act="cancel" type="button">${esc(cancel)}</button></div></div>`;
+    let timer = 0;
+    const done = (v) => { clearTimeout(timer); el.remove(); if (confirmCard === el) confirmCard = null; resolve(v); };
+    el.addEventListener('click', (e) => {
+      if (!e.isTrusted) return;
+      const b = e.target.closest('button'); if (!b) return;
+      done(b.dataset.act === 'ok');
+    });
+    el.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape' && e.isTrusted) done(false); });
+    timer = setTimeout(() => done(false), 120000); // unanswered: the site falls back to the browser's own passkeys
+    layer.appendChild(el);
+    confirmCard = el;
+    el.querySelector('[data-act="ok"]').focus();
+  });
+
   // ---------- lifecycle ----------
   scan();
   new MutationObserver(() => { clearTimeout(scan.t); scan.t = setTimeout(scan, 150); })

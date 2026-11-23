@@ -1,3 +1,4 @@
+using VaultGuard.Models.DTOs.Auth;
 using System.IO.Pipes;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -140,9 +141,73 @@ public sealed class BrowserLinkServer : IAsyncDisposable
             "getTotpCode" => await GetTotpCodeAsync(db, userId, cipher, fields, ct),
             "saveLogin" => await SaveLoginAsync(db, userId, cipher, fields, ct),
             "checkPasswordReuse" => await CheckPasswordReuseAsync(db, userId, cipher, fields, ct),
+            "passkeyCreate" => await PasskeyAsync(scope.ServiceProvider, sessions, sessionId!, userId, fields, create: true),
+            "passkeyGet" => await PasskeyAsync(scope.ServiceProvider, sessions, sessionId!, userId, fields, create: false),
             _ => new { success = false, code = "UNSUPPORTED", error = $"Unknown action '{action}'." }
         };
         return BrowserLinkCrypto.SealResponse(key!, action, keyId, iv, result);
+    }
+
+    /// <summary>
+    /// Passkeys for websites, kept in the vault (a software authenticator, like 1Password's). "site" is the tab's
+    /// real site, set by the extension's background script (never by the page); the passkey's rpId must be that
+    /// site or a parent domain of it, and for sign-in the page's signed client data must name the same origin.
+    /// "check" only reports whether a passkey exists, so the extension can ask the user before signing.
+    /// </summary>
+    private static async Task<object> PasskeyAsync(IServiceProvider sp, IVaultSessionService sessions, string sessionId, string userId,
+        JsonElement fields, bool create)
+    {
+        var passkeys = sp.GetService<IPasskeyService>();
+        if (passkeys == null) return new { success = false, error = "Passkeys aren't available in this app.", fallback = true };
+        var site = SiteMatcher.Host(fields.Utf8("site"));
+        var rpId = (fields.Utf8("rpId") ?? "").Trim().ToLowerInvariant();
+        if (site == null || rpId.Length == 0 || !SiteMatcher.Matches(rpId, site))
+            return new { success = false, error = "This passkey doesn't belong to this site.", fallback = true };
+
+        // GetMasterKey returns the session's own key: work on a copy, and wipe only the copy.
+        var key = sessions.GetMasterKey(sessionId)?.Clone() as byte[];
+        if (key == null) return new { success = false, code = "LOCKED", error = "Unlock Vault Guard to use passkeys.", fallback = true };
+        try
+        {
+            if (create)
+            {
+                var r = await passkeys.CreateVaultPasskeyWithKeyAsync(userId, new VaultPasskeyCreateRequestDto
+                {
+                    RpId = rpId, RpName = fields.Utf8("rpName"), UserHandle = fields.Utf8("userHandle"),
+                    UserName = fields.Utf8("userName"), UserDisplayName = fields.Utf8("userDisplayName")
+                }, key);
+                return new { success = r.Success, error = r.Error, credentialId = r.CredentialId, attestationObject = r.AttestationObject, publicKeyCose = r.PublicKeyCose, fallback = !r.Success };
+            }
+
+            var check = fields.TryGetProperty("check", out var c) && c.ValueKind == JsonValueKind.True;
+            var clientData = fields.Utf8("clientDataJSON");
+            if (!check && !ClientDataMatches(clientData, site))
+                return new { success = false, error = "The sign-in request doesn't match this site.", fallback = true };
+            var allow = fields.TryGetProperty("allowCredentialIds", out var a) && a.ValueKind == JsonValueKind.Array
+                ? a.EnumerateArray().Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString()!).ToList() : new List<string>();
+            var g = await passkeys.AssertVaultPasskeyWithKeyAsync(userId, new VaultPasskeyAssertRequestDto
+            {
+                RpId = rpId, ClientDataJSON = clientData, AllowCredentialIds = allow
+            }, key, checkOnly: check);
+            return check
+                ? new { success = g.Success, available = g.Success, userName = g.UserName, fallback = !g.Success }
+                : new { success = g.Success, error = g.Error, credentialId = g.CredentialId, authenticatorData = g.AuthenticatorData, signature = g.Signature, userHandle = g.UserHandle, fallback = !g.Success };
+        }
+        finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(key); }
+    }
+
+    /// <summary>The page's WebAuthn client data must be a "webauthn.get" for this site's own origin.</summary>
+    internal static bool ClientDataMatches(string clientDataB64Url, string site)
+    {
+        try
+        {
+            var json = BrowserLinkCrypto.FromB64(clientDataB64Url);
+            using var doc = JsonDocument.Parse(json);
+            var origin = doc.RootElement.Utf8("origin");
+            return doc.RootElement.Utf8("type") == "webauthn.get" && SiteMatcher.Host(origin) == site &&
+                   (origin.StartsWith("https://", StringComparison.Ordinal) || SiteMatcher.Host(origin) == "localhost");
+        }
+        catch { return false; }
     }
 
     private async Task<object> PairAsync(JsonElement req, CancellationToken ct)
