@@ -305,6 +305,11 @@ builder.Services.AddScoped<IAppSyncService, VaultGuard.Services.Services.AppSync
 
 // Secure sharing: the Web app creates shares for signed-in users and serves the viewer (/s/{id}).
 builder.Services.AddScoped<VaultGuard.Components.Shared.Services.ISecureShareService, VaultGuard.Web.Services.WebSecureShareService>();
+// Emergency access: trusted contacts (VaultGuard.Services/Emergency), records under App_Data/emergency.
+builder.Services.AddSingleton(sp => new VaultGuard.Services.Emergency.EmergencyAccessService(
+    builder.Configuration["EmergencyAccess:StoreDir"] ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "emergency"),
+    sp.GetRequiredService<VaultGuard.Crypto.Interfaces.IPasswordCryptoService>()));
+builder.Services.AddScoped<VaultGuard.Web.Services.EmergencySession>();
 builder.Services.AddSingleton(sp => new VaultGuard.Services.Sharing.FileShareStore(
     builder.Configuration["Sharing:StoreDir"] ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "shares")));
 

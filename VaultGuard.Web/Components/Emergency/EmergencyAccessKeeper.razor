@@ -1,0 +1,39 @@
+@* After unlocking: keep emergency access current (key pair, re-wrapped vault key for trusted contacts) and tell
+   the user when a trusted contact has asked for access. Renders nothing. *@
+@using VaultGuard.Services.Emergency
+@using VaultGuard.Web.Services
+@inject EmergencyAccessService Emergency
+@inject EmergencySession Session
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@code {
+    private string? _doneFor;
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnNavigated;
+    private void OnNavigated(object? s, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => _ = InvokeAsync(CheckAsync);
+    public void Dispose() => Navigation.LocationChanged -= OnNavigated;
+
+    protected override Task OnAfterRenderAsync(bool firstRender) => firstRender ? CheckAsync() : Task.CompletedTask;
+
+    // After each navigation (cheap once done): the user may only just have unlocked.
+    private async Task CheckAsync()
+    {
+        if (!await Session.LoadAsync()) return;
+        var userId = Session.UserId!;
+        if (_doneFor == userId) return;
+        var key = await Session.VaultKeyCopyAsync();
+        if (key == null) return;
+        _doneFor = userId;
+        try
+        {
+            await Task.Run(() => Emergency.OnUnlocked(userId, key));
+            foreach (var r in Emergency.PendingRequestsFor(userId))
+                Snackbar.Add($"{r.GranteeEmail} asked for emergency access to your vault. It opens on {r.AvailableUtc?.ToLocalTime():f} unless you decline.",
+                    Severity.Warning, o => { o.RequireInteraction = true; o.Action = "Review"; o.OnClick = _ => { Navigation.NavigateTo("/emergency"); return Task.CompletedTask; }; });
+        }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Emergency access refresh failed", ex); }
+        finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(key); }
+    }
+}

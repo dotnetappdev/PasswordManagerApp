@@ -272,10 +272,13 @@ public class AuthService : IAuthService
             if (isSessionValid && !string.IsNullOrEmpty(sessionId) && _vaultSessionService.IsVaultUnlocked(sessionId))
             {
                 _isAuthenticated = true;
-                // Restore current user if not already set
-                if (_currentUser == null)
+                // Restore the user this vault session belongs to. (It used to restore the first account in the
+                // database, so after a page reload on a multi-user server everyone looked like that account.)
+                var sessionUserId = _vaultSessionService.GetSessionUserId(sessionId);
+                if (_currentUser == null || _currentUser.Id != sessionUserId)
                 {
-                    _currentUser = await _dbContext.Users.FirstOrDefaultAsync();
+                    _currentUser = sessionUserId == null ? null
+                        : await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == sessionUserId);
                 }
                 return true;
             }
@@ -698,11 +701,11 @@ public class AuthService : IAuthService
                 return currentUserId;
             }
 
-            // If authenticated but no specific user ID, get the first user (for backward compatibility)
+            // Authenticated but no user recorded: the vault session knows whose it is.
             if (_isAuthenticated)
             {
-                var user = await _dbContext.Users.FirstOrDefaultAsync();
-                return user?.Id;
+                var sid = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "sessionId");
+                return string.IsNullOrEmpty(sid) ? null : _vaultSessionService.GetSessionUserId(sid);
             }
 
             return null;
