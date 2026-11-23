@@ -247,6 +247,26 @@
                 </StackPanel>
             </Border>
 
+            <!-- SSH agent -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="#475569" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE756;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="SSH Agent" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Margin="16">
+                        <TextBlock Text="Let ssh, git and other SSH tools use the SSH keys in your vault, so private keys never sit in files on this computer. Save each key as an SSH Key item (private key without a passphrase; the vault encrypts it). Vault Guard asks you before every use, and offers nothing while it's locked."
+                                   Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+                        <CheckBox x:Name="SshAgentCheck" Content="Use Vault Guard as my SSH agent" Margin="8"
+                                  Foreground="{DynamicResource ModernTextPrimaryBrush}" Click="SshAgentCheck_Click"/>
+                        <TextBlock x:Name="SshAgentStatusText" Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Travel mode -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">

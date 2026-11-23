@@ -283,6 +283,7 @@ public sealed partial class SettingsPage : Page
             StartOneDriveStatusTimer();
             LoadAliasSettings();
             await LoadTravelModeAsync();
+            RenderSshAgent();
 
             // Theme loads asynchronously in the view model's constructor, so reflect the tile
             // selection both now (in case it's already loaded) and whenever it changes.
@@ -3245,5 +3246,30 @@ public sealed partial class SettingsPage : Page
             VaultGuard.WPF.Services.ToastService.Instance.Success("Travel mode is off: all your vaults are back.");
         }
         RenderTravelMode();
+    }
+
+    // ---------- SSH agent ----------
+    private void RenderSshAgent()
+    {
+        SshAgentCheck.IsChecked = AliasSettings?.GetBool("SshAgent:Enabled") == true;
+        if (!VaultGuard.WPF.Services.WpfSshAgent.IsRunning)
+        {
+            SshAgentStatusText.Text = SshAgentCheck.IsChecked == true ? "The SSH agent couldn't start. See the log for details." : "";
+            return;
+        }
+        var path = VaultGuard.WPF.Services.WpfSshAgent.SocketPath;
+        SshAgentStatusText.Text = path == @"\\.\pipe\openssh-ssh-agent"
+            ? "Running. Windows' ssh and git use it automatically."
+            : $"Running at {path}. Windows' own \"OpenSSH Authentication Agent\" service is using the standard address: stop that service " +
+              $"(Services → OpenSSH Authentication Agent → Disabled) and restart Vault Guard, or set the environment variable SSH_AUTH_SOCK to {path}.";
+    }
+
+    private async void SshAgentCheck_Click(object sender, RoutedEventArgs e)
+    {
+        if (AliasSettings is not { } settings || _serviceProvider == null) return;
+        settings.Set("SshAgent:Enabled", SshAgentCheck.IsChecked == true);
+        settings.Save();
+        await VaultGuard.WPF.Services.WpfSshAgent.ApplyAsync(_serviceProvider, () => Window.GetWindow(this));
+        RenderSshAgent();
     }
 }

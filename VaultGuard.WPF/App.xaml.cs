@@ -243,6 +243,8 @@ public partial class App : Application
 
                 // Browser link (extension ↔ this app), registered with the browsers on every start.
                 VaultGuard.WPF.Services.WpfBrowserLink.Start(_host.Services, () => m_window);
+                // SSH agent from the vault, when turned on in Settings.
+                await VaultGuard.WPF.Services.WpfSshAgent.ApplyAsync(_host.Services, () => m_window);
 
                 // Check if this is first run and show database configuration dialog
                 await ShowDatabaseConfigurationIfNeededAsync();
