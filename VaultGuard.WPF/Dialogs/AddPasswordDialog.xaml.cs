@@ -62,6 +62,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         _serviceProvider = serviceProvider;
         _editingItem = editingItem;
         _isReadOnly = isReadOnly;
+        NewAliasButton.Visibility = !isReadOnly && AliasService()?.IsConfigured == true ? Visibility.Visible : Visibility.Collapsed;
 
         Title = editingItem == null ? "Add Password Item" : "Edit Password Item";
         PrimaryButtonText = editingItem == null ? "Add" : "Save";
@@ -176,6 +177,7 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
         // Username
         UsernameTextBox.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
         GenerateUsernameButton.Visibility = readOnly ? Visibility.Collapsed : Visibility.Visible;
+        NewAliasButton.Visibility = !readOnly && AliasService()?.IsConfigured == true ? Visibility.Visible : Visibility.Collapsed;
         UsernameTextDisplay.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
         if (readOnly) UsernameTextDisplay.Text = UsernameTextBox.Text;
 
@@ -527,6 +529,29 @@ public sealed partial class AddPasswordDialog : ModernWpf.Controls.ContentDialog
             }
         }
         catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Error("Failed to decrypt passkey notes", ex); }
+    }
+
+    private VaultGuard.Services.Aliases.EmailAliasService? AliasService() =>
+        _serviceProvider.GetService(typeof(VaultGuard.Services.Interfaces.IAppSettingsService)) is VaultGuard.Services.Interfaces.IAppSettingsService st
+            ? new VaultGuard.Services.Aliases.EmailAliasService(st) : null;
+
+    /// <summary>Fills the username with a fresh SimpleLogin / addy.io alias, noted with this item's site.</summary>
+    private async void NewAliasButton_Click(object sender, RoutedEventArgs e)
+    {
+        var svc = AliasService();
+        if (svc == null) return;
+        string? site = UrlTextBox.Text?.Trim();
+        if (!string.IsNullOrEmpty(site))
+            site = Uri.TryCreate(site.Contains("://") ? site : "https://" + site, UriKind.Absolute, out var u) ? u.Host : site;
+        if (string.IsNullOrEmpty(site)) site = TitleTextBox.Text?.Trim();
+        NewAliasButton.IsEnabled = false;
+        try
+        {
+            var r = await svc.CreateAsync(string.IsNullOrEmpty(site) ? null : site);
+            if (r.Success) UsernameTextBox.Text = r.Email;
+            else MessageBox.Show(r.Error ?? "Couldn't create an alias.", "Email alias", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally { NewAliasButton.IsEnabled = true; }
     }
 
     private void GenerateUsernameButton_Click(object sender, RoutedEventArgs e)
