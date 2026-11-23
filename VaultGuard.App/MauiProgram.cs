@@ -168,6 +168,10 @@ public static class MauiProgram
 		// "Remember this device" master-key cache (platform SecureStorage) so a 2FA-enabled
 		// account can sign in code-only on a trusted device.
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.IMasterKeyCacheService, VaultGuard.App.Services.MauiMasterKeyCacheService>();
+		// Emergency access between accounts in this app's database (records next to it, under AppData/emergency).
+		builder.Services.AddSingleton(sp => new VaultGuard.Services.Emergency.EmergencyAccessService(
+			Path.Combine(appDataDir, "emergency"), sp.GetRequiredService<VaultGuard.Crypto.Interfaces.IPasswordCryptoService>()));
+		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.EmergencySession>();
 		// Secure sharing: links are created on the Vault Guard server set in Settings → Sync (with the app's API key).
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.ISecureShareService>(sp =>
 			new VaultGuard.Components.Shared.Services.ApiSecureShareService(sp.GetRequiredService<IAppSettingsService>(), new HttpClient()));

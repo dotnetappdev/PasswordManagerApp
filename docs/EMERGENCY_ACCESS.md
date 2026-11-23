@@ -3,7 +3,14 @@
 Let someone you trust ask for read-only access to your vault, for example if something happens to you. They get it
 after a waiting period you choose, unless you decline, so you stay in control while you can.
 
-Both of you need a Vault Guard account on the same Vault Guard server (the Web app).
+It's in all three apps: Web, the Windows desktop app (WPF) and the Vault Guard app (MAUI), under **Emergency Access**.
+Both of you need an account in the same place:
+
+- **Web:** accounts on the same Vault Guard server. This is the one to use for people on different devices.
+- **Desktop and MAUI apps:** accounts in that app's own database, i.e. people who sign in on the same computer or
+  device (a family PC), or who point the app at the same shared database. Records stay next to the app's data
+  (`%LocalAppData%\VaultGuard\emergency` on Windows, the app data folder in MAUI), so a contact set up in one app
+  isn't seen by another.
 
 ## Using it
 
@@ -29,6 +36,7 @@ the page shows **Decline** and **Allow now**. If you do nothing, access opens wh
   password carries over. If they change theirs, they get a new key pair and it's re-wrapped on your next unlock.
 - **Read-only:** they can view your items; nothing is copied into their vault.
 
-Code: `VaultGuard.Services/Emergency/EmergencyAccessService.cs`; Web: `Components/Pages/EmergencyAccess.razor` and
-`Components/Emergency/EmergencyAccessKeeper.razor`. Records are stored as files under `App_Data/emergency`
+Code: `VaultGuard.Services/Emergency/EmergencyAccessService.cs`; Web and MAUI share
+`VaultGuard.Components.Shared/Components/Emergency/` (the page body and the after-unlock keeper); desktop:
+`VaultGuard.WPF/Views/EmergencyAccessPage.cs` and `Services/WpfEmergency.cs`. On the server, records are stored as files under `App_Data/emergency`
 (setting `EmergencyAccess:StoreDir`).

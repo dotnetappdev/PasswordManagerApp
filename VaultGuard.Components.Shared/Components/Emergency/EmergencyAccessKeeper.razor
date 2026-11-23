@@ -1,7 +1,8 @@
 @* After unlocking: keep emergency access current (key pair, re-wrapped vault key for trusted contacts) and tell
    the user when a trusted contact has asked for access. Renders nothing. *@
 @using VaultGuard.Services.Emergency
-@using VaultGuard.Web.Services
+@using VaultGuard.Components.Shared.Services
+@using MudBlazor
 @inject EmergencyAccessService Emergency
 @inject EmergencySession Session
 @inject ISnackbar Snackbar

@@ -14,6 +14,7 @@
 <MudPopoverProvider />
 <MudDialogProvider />
 <VaultGuard.Components.Shared.Components.Ssh.SshApprovalPrompt />
+<VaultGuard.Components.Shared.Components.Emergency.EmergencyAccessKeeper />
 <MudSnackbarProvider />
 
 <MudLayout>
@@ -55,6 +56,7 @@
             <MudNavLink Href="/passwords" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Lock">All Items</MudNavLink>
             <MudNavLink Href="/passwords?fav=true" Icon="@Icons.Material.Filled.Star">Favourites</MudNavLink>
             <MudNavLink Href="/security" Icon="@Icons.Material.Filled.HealthAndSafety">Security Center</MudNavLink>
+            <MudNavLink Href="/emergency" Icon="@Icons.Material.Filled.ContactEmergency">Emergency Access</MudNavLink>
 
             <MudText Typo="Typo.caption" Class="px-4 pt-3 pb-1" Style="color:var(--mud-palette-text-secondary); font-weight:600; letter-spacing:0.5px;">CATEGORIES</MudText>
             <MudNavLink Href="/passwords?type=Login" Icon="@Icons.Material.Filled.Login">Logins</MudNavLink>

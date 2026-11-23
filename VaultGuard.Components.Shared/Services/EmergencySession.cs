@@ -1,7 +1,7 @@
 using Microsoft.JSInterop;
 using VaultGuard.Services.Interfaces;
 
-namespace VaultGuard.Web.Services;
+namespace VaultGuard.Components.Shared.Services;
 
 /// <summary>The signed-in user's vault key for emergency access (a copy; the caller wipes it).</summary>
 public sealed class EmergencySession

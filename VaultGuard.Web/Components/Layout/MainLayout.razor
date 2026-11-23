@@ -22,7 +22,7 @@ else
 <MudThemeProvider Theme="_theme" IsDarkMode="@ThemeService.IsDarkMode" />
 @* Locks the vault after the "Auto-lock after" setting's worth of inactivity. *@
 <VaultGuard.Components.Shared.Components.VaultAutoLock LockRoute="/login" />
-<VaultGuard.Web.Components.Emergency.EmergencyAccessKeeper />
+<VaultGuard.Components.Shared.Components.Emergency.EmergencyAccessKeeper />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />

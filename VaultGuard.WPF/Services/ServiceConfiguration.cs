@@ -233,6 +233,10 @@ public static class ServiceConfiguration
         services.AddSingleton<IQrCodeService, QrCodeService>();
         services.AddSingleton<ISecurityAuditService, SecurityAuditService>();
         services.AddSingleton<ISiteSecurityDirectory>(_ => new SiteSecurityDirectory());
+        // Emergency access between accounts in this app's database (records in %LocalAppData%\VaultGuard\emergency).
+        services.AddSingleton(sp => new VaultGuard.Services.Emergency.EmergencyAccessService(
+            System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultGuard", "emergency"),
+            sp.GetRequiredService<VaultGuard.Crypto.Interfaces.IPasswordCryptoService>()));
         services.AddSingleton<IPassphraseGenerator, PassphraseGenerator>();
         services.AddSingleton<VaultGuard.Services.Interfaces.IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 

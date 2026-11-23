@@ -1,0 +1,8 @@
+@page "/emergency"
+@* MAUI app route (Web has its own page for the same view). The app's database holds the accounts, so trusted contacts
+   are people who sign in to Vault Guard on this device (or on the same shared database). *@
+
+<PageTitle>Emergency access - VaultGuard</PageTitle>
+
+<VaultGuard.Components.Shared.Components.Emergency.EmergencyAccessView
+    NeedsAccount="They need their own Vault Guard account in this app (on this device, or on the same shared database)." />

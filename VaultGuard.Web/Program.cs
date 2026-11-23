@@ -310,7 +310,7 @@ builder.Services.AddScoped<VaultGuard.Components.Shared.Services.ISecureShareSer
 builder.Services.AddSingleton(sp => new VaultGuard.Services.Emergency.EmergencyAccessService(
     builder.Configuration["EmergencyAccess:StoreDir"] ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "emergency"),
     sp.GetRequiredService<VaultGuard.Crypto.Interfaces.IPasswordCryptoService>()));
-builder.Services.AddScoped<VaultGuard.Web.Services.EmergencySession>();
+builder.Services.AddScoped<VaultGuard.Components.Shared.Services.EmergencySession>();
 builder.Services.AddSingleton(sp => new VaultGuard.Services.Sharing.FileShareStore(
     builder.Configuration["Sharing:StoreDir"] ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "shares")));
 

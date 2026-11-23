@@ -491,6 +491,7 @@ public sealed partial class MainWindow : Window
                 "ManageItems"       => new Views.ManageItemsPage(),
                 "SecurityDashboard" => new Views.DashboardPage(),
                 "Security"          => new Views.SecurityPage(),
+                "EmergencyAccess"   => new Views.EmergencyAccessPage(),
                 "Import"            => new Views.ImportPage(),
                 "Settings"          => new Views.SettingsPage(),
                 "Home"              => new Views.DashboardPage(),
@@ -787,6 +788,7 @@ public sealed partial class MainWindow : Window
             case Views.VaultsPage p:         p.OnNavigatedTo(e);      break;
             case Views.PasskeysPage p:       p.OnNavigatedTo(e);      break;
             case Views.SecurityPage p:       p.OnNavigatedTo(e);      break;
+            case Views.EmergencyAccessPage p: p.OnNavigatedTo(e);     break;
         }
     }
 
@@ -822,6 +824,7 @@ public sealed partial class MainWindow : Window
 
         SetAuthenticationState(true);
         _ = RemindAboutExpiriesAsync();
+        _ = Services.WpfEmergency.AfterUnlockAsync(_serviceProvider);
 
         try
         {

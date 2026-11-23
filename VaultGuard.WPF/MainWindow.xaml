@@ -439,6 +439,13 @@
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
+                <ui:NavigationViewItem Content="Emergency Access" Tag="EmergencyAccess"
+                                       MouseRightButtonUp="NavigationItem_RightTapped">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:FontIcon Glyph="&#xE716;" FontSize="{DynamicResource MenuIconSize}"/>
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+
                 <!-- ── Manage ── -->
                 <ui:NavigationViewItemSeparator Background="{DynamicResource ModernBorderBrush}"/>
                 <ui:NavigationViewItemHeader Foreground="{DynamicResource ModernTextTertiaryBrush}" Content="Manage"/>
