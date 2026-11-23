@@ -220,6 +220,9 @@ public static class MauiProgram
 		// there's no shared desktop database to fall back to.
 		SeedDatabaseAsync(app.Services).GetAwaiter().GetResult();
 
+		// Travel mode: hide vaults not marked safe for travel (see VaultGuard.Services/Security/TravelMode).
+		VaultGuard.Services.Security.TravelMode.Load(app.Services.GetRequiredService<IAppSettingsService>());
+
 		// Browser extension link (Windows): registered with the browsers on every start, so updates keep it current.
 		VaultGuard.App.Services.MauiBrowserLink.Start(app.Services);
 		// Lock when Windows locks / the PC sleeps, or (phones) when the app goes to the background.

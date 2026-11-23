@@ -237,6 +237,10 @@ public partial class App : Application
             {
                 await _host.StartAsync();
 
+                // Travel mode: hide vaults not marked safe for travel (see VaultGuard.Services/Security/TravelMode).
+                if (_host.Services.GetService(typeof(VaultGuard.Services.Interfaces.IAppSettingsService)) is VaultGuard.Services.Interfaces.IAppSettingsService travelSettings)
+                    VaultGuard.Services.Security.TravelMode.Load(travelSettings);
+
                 // Browser link (extension ↔ this app), registered with the browsers on every start.
                 VaultGuard.WPF.Services.WpfBrowserLink.Start(_host.Services, () => m_window);
 

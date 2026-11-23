@@ -25,11 +25,12 @@ public class PasswordItemService : IPasswordItemService
     /// <summary>The items the caller may see: their own, or none if nobody is signed in.</summary>
     private async Task<IQueryable<PasswordItem>> OwnedAsync()
     {
-        if (_currentUser == null) return _context.PasswordItems;
+        if (_currentUser == null) return VaultGuard.Services.Security.TravelMode.Apply(_context.PasswordItems, _context);
         var userId = await _currentUser.GetUserIdAsync();
         return userId == null
             ? _context.PasswordItems.Where(_ => false)
-            : _context.PasswordItems.Where(p => p.UserId == userId);
+            // Travel mode: only vaults marked safe for travel (no change when it's off).
+            : VaultGuard.Services.Security.TravelMode.Apply(_context.PasswordItems.Where(p => p.UserId == userId), _context);
     }
 
     private async Task<PasswordItem?> FindOwnedAsync(int id)

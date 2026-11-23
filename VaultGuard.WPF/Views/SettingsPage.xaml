@@ -247,6 +247,31 @@
                 </StackPanel>
             </Border>
 
+            <!-- Travel mode -->
+            <Border Style="{StaticResource SettingsSectionStyle}">
+                <StackPanel Margin="20">
+                    <StackPanel Orientation="Horizontal" Margin="12">
+                        <Border Background="#D97706" Width="24" Height="24" CornerRadius="6" Margin="0,0,10,0">
+                            <TextBlock Text="&#xE709;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Travel Mode" Style="{StaticResource ModernHeading3Style}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Margin="16">
+                        <TextBlock x:Name="TravelStatusText" Style="{StaticResource ModernCaptionStyle}" TextWrapping="Wrap" Margin="8,0,8,8"/>
+                        <StackPanel x:Name="TravelVaultsPanel" Margin="8,0,8,0"/>
+                        <StackPanel x:Name="TravelOffPanel" Visibility="Collapsed" Margin="8,0,8,0">
+                            <TextBlock Text="Master password" Style="{StaticResource ModernCaptionStyle}" Margin="0,4,0,0"/>
+                            <PasswordBox x:Name="TravelPasswordBox" Margin="0,4,0,0" Style="{StaticResource ModernPasswordBoxStyle}"/>
+                        </StackPanel>
+                        <Button x:Name="TravelToggleButton" Style="{StaticResource ModernPrimaryButtonStyle}" Margin="8,10,8,0"
+                                HorizontalAlignment="Left" Click="TravelToggleButton_Click">
+                            <TextBlock x:Name="TravelToggleText" Text="Turn on travel mode" Margin="8"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Email aliases (SimpleLogin / addy.io) -->
             <Border Style="{StaticResource SettingsSectionStyle}">
                 <StackPanel Margin="20">

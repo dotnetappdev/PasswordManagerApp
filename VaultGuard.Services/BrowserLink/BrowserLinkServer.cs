@@ -262,7 +262,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
 
     private static async Task<object> GetCredentialsAsync(VaultGuardDbContext db, string userId, VaultCipher cipher, string domain, CancellationToken ct)
     {
-        var items = await db.PasswordItems.AsNoTracking()
+        var items = await TravelMode.Apply(db.PasswordItems.AsNoTracking(), db)
             .Where(p => p.UserId == userId && !p.IsDeleted && p.LoginItem != null)
             .Include(p => p.LoginItem).Include(p => p.CustomFields)
             .ToListAsync(ct);
@@ -301,7 +301,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
 
     private static async Task<object> GetCreditCardsAsync(VaultGuardDbContext db, string userId, VaultCipher cipher, CancellationToken ct)
     {
-        var items = await db.PasswordItems.AsNoTracking()
+        var items = await TravelMode.Apply(db.PasswordItems.AsNoTracking(), db)
             .Where(p => p.UserId == userId && !p.IsDeleted && p.CreditCardItem != null)
             .Include(p => p.CreditCardItem)
             .ToListAsync(ct);
@@ -329,7 +329,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         var host = req.Utf8("hostname");
         if (string.IsNullOrWhiteSpace(uri)) return new { success = false, error = "otpauthUri is required" };
 
-        var candidates = await db.PasswordItems
+        var candidates = await TravelMode.Apply(db.PasswordItems, db)
             .Where(p => p.UserId == userId && !p.IsDeleted && p.LoginItem != null)
             .Include(p => p.LoginItem).Include(p => p.CustomFields)
             .ToListAsync(ct);
@@ -365,7 +365,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         if (string.IsNullOrWhiteSpace(domain) || typed.Length < 6 || typed.Length > 4096)
             return new { success = true, matches = Array.Empty<object>() };
 
-        var logins = await db.PasswordItems.AsNoTracking()
+        var logins = await TravelMode.Apply(db.PasswordItems.AsNoTracking(), db)
             .Where(p => p.UserId == userId && !p.IsDeleted && p.LoginItem != null && p.LoginItem.EncryptedPassword != null)
             .Include(p => p.LoginItem)
             .ToListAsync(ct);
@@ -414,7 +414,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
 
         if (req.TryGetProperty("itemId", out var idEl) && idEl.ValueKind == JsonValueKind.Number && idEl.TryGetInt32(out var itemId))
         {
-            var item = await db.PasswordItems
+            var item = await TravelMode.Apply(db.PasswordItems, db)
                 .Include(p => p.LoginItem).Include(p => p.CustomFields)
                 .FirstOrDefaultAsync(p => p.Id == itemId && p.UserId == userId && !p.IsDeleted, ct);
             if (item?.LoginItem == null || !SiteMatcher.Matches(item.LoginItem.WebsiteUrl ?? item.LoginItem.Website ?? item.Website ?? "", domain))
@@ -466,7 +466,7 @@ public sealed class BrowserLinkServer : IAsyncDisposable
         var domain = req.Utf8("domain");
         if (!req.TryGetProperty("itemId", out var idEl) || !idEl.TryGetInt32(out var itemId) || string.IsNullOrWhiteSpace(domain))
             return new { success = false, error = "itemId and domain are required" };
-        var item = await db.PasswordItems.AsNoTracking()
+        var item = await TravelMode.Apply(db.PasswordItems.AsNoTracking(), db)
             .Include(p => p.LoginItem).Include(p => p.CustomFields)
             .FirstOrDefaultAsync(p => p.Id == itemId && p.UserId == userId && !p.IsDeleted, ct);
         if (item?.LoginItem == null || !SiteMatcher.Matches(item.LoginItem.WebsiteUrl ?? item.LoginItem.Website ?? item.Website ?? "", domain))

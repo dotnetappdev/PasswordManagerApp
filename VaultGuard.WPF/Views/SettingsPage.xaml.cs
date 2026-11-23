@@ -282,6 +282,7 @@ public sealed partial class SettingsPage : Page
             DataContext = _viewModel;
             StartOneDriveStatusTimer();
             LoadAliasSettings();
+            await LoadTravelModeAsync();
 
             // Theme loads asynchronously in the view model's constructor, so reflect the tile
             // selection both now (in case it's already loaded) and whenever it changes.
@@ -3179,5 +3180,70 @@ public sealed partial class SettingsPage : Page
         var r = await svc.CreateAsync("vault-guard-test");
         if (r.Success) VaultGuard.WPF.Services.ToastService.Instance.Success($"Created {r.Email}. You can delete it in {VaultGuard.Services.Aliases.EmailAliasService.Name(svc.Provider)}.");
         else VaultGuard.WPF.Services.ToastService.Instance.Show(r.Error ?? "Couldn't create an alias.", VaultGuard.WPF.Services.ToastType.Error);
+    }
+
+    // ---------- Travel mode ----------
+    private readonly HashSet<int> _travelSafe = new();
+    private List<VaultGuard.Models.Vault> _travelVaults = new();
+
+    private async Task LoadTravelModeAsync()
+    {
+        try { _travelVaults = await (_serviceProvider?.GetService<IVaultService>()?.GetAllAsync() ?? Task.FromResult(new List<VaultGuard.Models.Vault>())); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't load vaults for travel mode", ex); }
+        _travelSafe.Clear();
+        foreach (var id in VaultGuard.Services.Security.TravelMode.SafeVaultIds) _travelSafe.Add(id);
+        if (_travelSafe.Count == 0) foreach (var v in _travelVaults.Where(v => v.IsDefault)) _travelSafe.Add(v.Id);
+        RenderTravelMode();
+    }
+
+    private void RenderTravelMode()
+    {
+        var on = VaultGuard.Services.Security.TravelMode.IsOn;
+        TravelVaultsPanel.Children.Clear();
+        if (on)
+        {
+            var names = _travelVaults.Where(v => VaultGuard.Services.Security.TravelMode.SafeVaultIds.Contains(v.Id)).Select(v => v.Name).ToList();
+            TravelStatusText.Text = $"Travel mode is on. Shown on this computer: {(names.Count == 0 ? "no vaults" : string.Join(", ", names))}. Enter your master password to turn it off.";
+        }
+        else
+        {
+            TravelStatusText.Text = "Crossing a border? Tick the vaults that are safe to travel with and turn travel mode on: everything else disappears from Vault Guard on this computer (lists, search, Quick Access, the browser extension) until you turn it off with your master password. Items that aren't in a vault are hidden too.";
+            foreach (var v in _travelVaults)
+            {
+                var id = v.Id;
+                var box = new CheckBox { Content = $"{v.Name} is safe for travel", IsChecked = _travelSafe.Contains(id), Margin = new Thickness(0, 3, 0, 3) };
+                if (TryFindResource("ModernTextPrimaryBrush") is System.Windows.Media.Brush fg) box.Foreground = fg;
+                box.Checked += (_, _) => _travelSafe.Add(id);
+                box.Unchecked += (_, _) => _travelSafe.Remove(id);
+                TravelVaultsPanel.Children.Add(box);
+            }
+        }
+        TravelOffPanel.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        TravelToggleText.Text = on ? "Turn off travel mode" : "Turn on travel mode";
+    }
+
+    private void TravelToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (AliasSettings is not { } settings) return;
+        if (!VaultGuard.Services.Security.TravelMode.IsOn)
+        {
+            VaultGuard.Services.Security.TravelMode.TurnOn(settings, _travelSafe);
+            VaultGuard.WPF.Services.ToastService.Instance.Show("Travel mode is on.", VaultGuard.WPF.Services.ToastType.Warning);
+        }
+        else
+        {
+            var user = _authService?.CurrentUser;
+            var crypto = _serviceProvider?.GetService<VaultGuard.Crypto.Interfaces.IPasswordCryptoService>();
+            if (user?.MasterPasswordHash == null || user.UserSalt == null || crypto == null ||
+                !crypto.VerifyMasterPassword(TravelPasswordBox.Password, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt)))
+            {
+                VaultGuard.WPF.Services.ToastService.Instance.Show("That isn't your master password.", VaultGuard.WPF.Services.ToastType.Error);
+                return;
+            }
+            TravelPasswordBox.Clear();
+            VaultGuard.Services.Security.TravelMode.TurnOff(settings);
+            VaultGuard.WPF.Services.ToastService.Instance.Success("Travel mode is off: all your vaults are back.");
+        }
+        RenderTravelMode();
     }
 }

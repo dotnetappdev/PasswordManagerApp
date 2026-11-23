@@ -1,0 +1,79 @@
+@* Settings → Travel mode (MAUI): show only vaults marked safe for travel until travel mode is turned off. *@
+@using MudBlazor
+@using VaultGuard.Models
+@using VaultGuard.Services.Interfaces
+@using VaultGuard.Services.Security
+@inject IAppSettingsService AppSettings
+@inject IVaultService Vaults
+@inject IAuthService Auth
+@inject VaultGuard.Crypto.Interfaces.IPasswordCryptoService Crypto
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6" Style="margin-bottom: 8px;">Travel mode</MudText>
+    @if (TravelMode.IsOn)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+            Travel mode is on. Shown on this device: @SafeNames.
+        </MudAlert>
+        <MudTextField T="string" @bind-Value="_password" Label="Master password" InputType="InputType.Password" Variant="Variant.Outlined" />
+        <MudButton Class="mt-2" Variant="Variant.Filled" Color="Color.Primary" OnClick="TurnOff">Turn off travel mode</MudButton>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+            Crossing a border? Mark the vaults that are safe to travel with and turn travel mode on: everything else
+            disappears from this app (lists, search, the browser extension) until you turn it off with your master
+            password. Items that aren't in a vault are hidden too.
+        </MudText>
+        @foreach (var v in _vaults)
+        {
+            <MudCheckBox T="bool" Value="@_safe.Contains(v.Id)" ValueChanged="@(on => Toggle(v.Id, on))" Label="@($"{v.Name} is safe for travel")" Dense="true" />
+        }
+        <MudButton Class="mt-2" Variant="Variant.Filled" Color="Color.Warning" OnClick="TurnOn">Turn on travel mode</MudButton>
+    }
+</MudPaper>
+
+@code {
+    private List<VaultGuard.Models.Vault> _vaults = new();
+    private readonly HashSet<int> _safe = new();
+    private string? _password;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _vaults = await Vaults.GetAllAsync(); } catch { _vaults = new(); }
+        foreach (var id in TravelMode.SafeVaultIds) _safe.Add(id);
+        if (_safe.Count == 0) foreach (var v in _vaults.Where(v => v.IsDefault)) _safe.Add(v.Id);
+    }
+
+    private string SafeNames
+    {
+        get
+        {
+            var names = _vaults.Where(v => TravelMode.SafeVaultIds.Contains(v.Id)).Select(v => v.Name).ToList();
+            return names.Count == 0 ? "no vaults" : string.Join(", ", names);
+        }
+    }
+
+    private void Toggle(int id, bool on) { if (on) _safe.Add(id); else _safe.Remove(id); }
+
+    private void TurnOn()
+    {
+        TravelMode.TurnOn(AppSettings, _safe);
+        Snackbar.Add(_safe.Count == 0 ? "Travel mode is on: no vaults are shown." : "Travel mode is on.", Severity.Warning);
+    }
+
+    private void TurnOff()
+    {
+        var user = Auth.CurrentUser;
+        if (user?.MasterPasswordHash == null || user.UserSalt == null || string.IsNullOrEmpty(_password) ||
+            !Crypto.VerifyMasterPassword(_password, user.MasterPasswordHash, Convert.FromBase64String(user.UserSalt)))
+        {
+            Snackbar.Add("That isn't your master password.", Severity.Error);
+            return;
+        }
+        _password = null;
+        TravelMode.TurnOff(AppSettings);
+        Snackbar.Add("Travel mode is off: all your vaults are back.", Severity.Success);
+    }
+}
