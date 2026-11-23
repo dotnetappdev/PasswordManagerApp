@@ -175,6 +175,7 @@ builder.Services.AddSingleton<IPasswordStrengthService, VaultGuard.Services.Serv
 builder.Services.AddSingleton<ITotpService, VaultGuard.Services.Services.TotpService>();
 builder.Services.AddSingleton<IQrCodeService, VaultGuard.Services.Services.QrCodeService>();
 builder.Services.AddSingleton<ISecurityAuditService, VaultGuard.Services.Services.SecurityAuditService>();
+builder.Services.AddSingleton<VaultGuard.Services.Services.ISiteSecurityDirectory>(_ => new VaultGuard.Services.Services.SiteSecurityDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "cache")));
 builder.Services.AddSingleton<IPassphraseGenerator, VaultGuard.Services.Services.PassphraseGenerator>();
 builder.Services.AddSingleton<VaultGuard.Services.Interfaces.IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 builder.Services.AddScoped<ICollectionService, VaultGuard.Services.Services.CollectionService>();

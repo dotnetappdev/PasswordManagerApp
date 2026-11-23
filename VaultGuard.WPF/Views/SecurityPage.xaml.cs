@@ -8,6 +8,7 @@ using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using VaultGuard.Models;
 using VaultGuard.Services.Interfaces;
+using VaultGuard.Services.Services;
 
 namespace VaultGuard.WPF.Views;
 
@@ -68,6 +69,14 @@ public sealed partial class SecurityPage : Page
 
     private async void RescanButton_Click(object sender, RoutedEventArgs e) => await LoadAsync();
 
+    /// <summary>Opens a fix-it link (the site's change-password page or its 2FA / passkey instructions) in the browser.</summary>
+    private void EntryLink_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not string url || !url.StartsWith("https://", StringComparison.Ordinal)) return;
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch (Exception ex) { VaultGuard.Services.Logging.AppLogger.Warning("Couldn't open link", ex); }
+    }
+
     private async Task LoadAsync()
     {
         if (_passwordItemService == null || _auditService == null) return;
@@ -83,7 +92,10 @@ public sealed partial class SecurityPage : Page
             // Passwords are stored encrypted: decrypt them first, or every check (weak, reused, breached) sees
             // empty passwords and wrongly reports a clean vault.
             _unreadable = await OpenAllAsync(_items);
-            _report = _auditService.Analyze(_items);
+            // What each site supports (2fa.directory, cached on this computer): sharper 2FA and passkey advice.
+            var directory = _serviceProvider?.GetService<ISiteSecurityDirectory>();
+            if (directory != null) await directory.EnsureLoadedAsync();
+            _report = _auditService.Analyze(_items, directory);
             Render(_report);
             RenderExpiry(_items);
         }
@@ -141,7 +153,9 @@ public sealed partial class SecurityPage : Page
                     {
                         ItemId = item.Id,
                         Title = item.Title ?? "(untitled)",
-                        Detail = $"seen {result.TimesSeen:N0} time(s) in breaches"
+                        Detail = $"seen {result.TimesSeen:N0} time(s) in breaches",
+                        Link = SiteSecurityDirectory.ChangePasswordUrl(item.LoginItem?.WebsiteUrl ?? item.WebsiteUrl ?? item.LoginItem?.Website),
+                        LinkText = "Change password"
                     });
             }
 
@@ -219,7 +233,9 @@ public sealed partial class SecurityPage : Page
                     {
                         ItemId = i.ItemId,
                         Title = i.Title,
-                        Detail = $"shared by {g.Count}"
+                        Detail = $"shared by {g.Count}",
+                        Link = i.Link,
+                        LinkText = i.LinkText
                     }))
                     .ToList()
             });
@@ -247,8 +263,19 @@ public sealed partial class SecurityPage : Page
             {
                 Icon = "", Color = ParseBrush("#7C3AED"),
                 Heading = $"Logins without 2FA ({report.MissingTwoFactorCount})",
-                Subtitle = "These sites have a login but no authenticator code — add one for stronger protection.",
+                Subtitle = report.TwoFactorFromDirectory
+                    ? "These sites offer authenticator codes, but none is saved here. Turn on 2FA at the site, then add the code to the login."
+                    : "These sites have a login but no authenticator code — add one for stronger protection.",
                 Entries = report.MissingTwoFactor.ToList()
+            });
+
+        if (report.PasskeysAvailable.Count > 0)
+            sections.Add(new IssueSection
+            {
+                Icon = "\uE8D7", Color = ParseBrush("#2563EB"),
+                Heading = $"Passkeys available ({report.PasskeysAvailable.Count})",
+                Subtitle = "These sites let you sign in with a passkey instead of a password: faster, and it can't be phished. Vault Guard can keep the passkey for you.",
+                Entries = report.PasskeysAvailable.ToList()
             });
 
         IssueSectionsList.ItemsSource = sections;

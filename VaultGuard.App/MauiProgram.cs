@@ -126,6 +126,7 @@ public static class MauiProgram
 		// Security Center: vault health and the Have I Been Pwned breach check (as in WPF and Web).
 		builder.Services.AddSingleton<IPasswordStrengthService, VaultGuard.Services.Services.PasswordStrengthService>();
 		builder.Services.AddSingleton<ISecurityAuditService, VaultGuard.Services.Services.SecurityAuditService>();
+		builder.Services.AddSingleton<VaultGuard.Services.Services.ISiteSecurityDirectory>(_ => new VaultGuard.Services.Services.SiteSecurityDirectory(Path.Combine(FileSystem.CacheDirectory, "VaultGuard")));
 		builder.Services.AddSingleton<IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 		// Copies vault values and wipes them after the "Clear clipboard after" setting.
 		builder.Services.AddScoped<VaultGuard.Components.Shared.Services.SecureClipboard>();

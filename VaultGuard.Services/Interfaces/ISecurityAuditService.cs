@@ -10,6 +10,9 @@ public sealed class SecurityAuditEntry
     public int ItemId { get; init; }
     public string Title { get; init; } = "";
     public string? Detail { get; init; }
+    /// <summary>Where to fix it, e.g. the site's change-password page or its 2FA set-up instructions.</summary>
+    public string? Link { get; init; }
+    public string? LinkText { get; init; }
 }
 
 /// <summary>
@@ -37,6 +40,12 @@ public sealed class VaultHealthReport
     public IReadOnlyList<SecurityAuditEntry> OldPasswords { get; init; } = System.Array.Empty<SecurityAuditEntry>();
     public IReadOnlyList<SecurityAuditEntry> MissingTwoFactor { get; init; } = System.Array.Empty<SecurityAuditEntry>();
 
+    /// <summary>Saved sites that offer passkey sign-in (a suggestion; not counted as an issue).</summary>
+    public IReadOnlyList<SecurityAuditEntry> PasskeysAvailable { get; init; } = System.Array.Empty<SecurityAuditEntry>();
+
+    /// <summary>True when "missing 2FA" is based on which sites actually offer it (2fa.directory).</summary>
+    public bool TwoFactorFromDirectory { get; init; }
+
     /// <summary>Logins whose website uses an insecure http:// URL (Watchtower "Unsecured Websites").</summary>
     public IReadOnlyList<SecurityAuditEntry> UnsecuredWebsites { get; init; } = System.Array.Empty<SecurityAuditEntry>();
 
@@ -56,4 +65,12 @@ public interface ISecurityAuditService
     /// Analyses a set of items for weak / reused / old passwords and logins missing 2FA.
     /// </summary>
     VaultHealthReport Analyze(IEnumerable<PasswordItem> items, int oldPasswordDays = 365);
+
+    /// <summary>
+    /// As <see cref="Analyze(IEnumerable{PasswordItem}, int)"/>, but with what each site supports: "missing 2FA" then
+    /// only lists sites that offer authenticator codes (with a link to set it up), passkey-capable sites are listed,
+    /// and weak/reused logins get a link to the site's change-password page.
+    /// </summary>
+    VaultHealthReport Analyze(IEnumerable<PasswordItem> items, VaultGuard.Services.Services.ISiteSecurityDirectory? directory, int oldPasswordDays = 365)
+        => Analyze(items, oldPasswordDays);
 }

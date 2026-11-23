@@ -9,6 +9,7 @@
 @inject IPasswordItemService PasswordItemService
 @inject ISecurityAuditService AuditService
 @inject IBreachCheckService BreachService
+@inject VaultGuard.Services.Services.ISiteSecurityDirectory SiteDirectory
 @inject IPasswordRevealService RevealService
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
@@ -107,6 +108,10 @@ else if (_report is not null)
                                 <MudText Typo="Typo.caption" Class="ml-2 mud-text-secondary" Style="display:inline;">
                                     — seen @b.TimesSeen.ToString("N0") time(s) in breaches
                                 </MudText>
+                                @if (ChangeUrl(b.Id) is { } change)
+                                {
+                                    <MudLink Href="@change" Target="_blank" Typo="Typo.caption" Class="ml-2" rel="noopener noreferrer" @onclick:stopPropagation="true">Change password</MudLink>
+                                }
                             </MudListItem>
                         }
                     </MudList>
@@ -150,7 +155,13 @@ else if (_report is not null)
                             <MudList T="string" Dense="true">
                                 @foreach (var entry in group.Items)
                                 {
-                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Link" OnClick="@(() => GoToItem(entry.ItemId))">@entry.Title</MudListItem>
+                                    <MudListItem T="string" Icon="@Icons.Material.Filled.Link" OnClick="@(() => GoToItem(entry.ItemId))">
+                                        @entry.Title
+                                        @if (entry.Link != null)
+                                        {
+                                            <MudLink Href="@entry.Link" Target="_blank" Typo="Typo.caption" Class="ml-2" rel="noopener noreferrer" @onclick:stopPropagation="true">@entry.LinkText</MudLink>
+                                        }
+                                    </MudListItem>
                                 }
                             </MudList>
                         }
@@ -164,7 +175,9 @@ else if (_report is not null)
             }
             @if (_report.MissingTwoFactorCount > 0)
             {
-                @ConcernPanel("Logins without 2FA", "These sites have a login but no authenticator code stored — add one for stronger protection.",
+                @ConcernPanel("Logins without 2FA", _report.TwoFactorFromDirectory
+                        ? "These sites offer authenticator codes, but none is saved here. Turn on 2FA at the site, then add the code to the login."
+                        : "These sites have a login but no authenticator code stored — add one for stronger protection.",
                     "#71717A", Icons.Material.Filled.Smartphone, _report.MissingTwoFactor)
             }
             @if (_report.OldCount > 0)
@@ -172,6 +185,14 @@ else if (_report is not null)
                 @ConcernPanel("Old passwords", "Not changed in over a year — consider rotating them.",
                     "#0891B2", Icons.Material.Filled.HistoryToggleOff, _report.OldPasswords)
             }
+        </MudExpansionPanels>
+    }
+
+    @if (_report.PasskeysAvailable.Count > 0)
+    {
+        <MudExpansionPanels Elevation="1" Class="mt-2">
+            @ConcernPanel("Passkeys available", "These sites let you sign in with a passkey instead of a password: faster, and it can't be phished. Vault Guard can keep the passkey for you.",
+                "#2563EB", Icons.Material.Filled.Key, _report.PasskeysAvailable)
         </MudExpansionPanels>
     }
 }
@@ -211,7 +232,9 @@ else if (_report is not null)
             _unreadable = 0;
             foreach (var item in _items)
                 if (!await LoginPasswordCrypto.DecryptIntoAsync(item, RevealService, JS)) _unreadable++;
-            _report = AuditService.Analyze(_items);
+            // What each site supports (2fa.directory, cached on this device): sharper 2FA and passkey advice.
+            await SiteDirectory.EnsureLoadedAsync();
+            _report = AuditService.Analyze(_items, SiteDirectory);
         }
         catch
         {
@@ -252,6 +275,12 @@ else if (_report is not null)
 
     void GoToItem(int id) => Navigation.NavigateTo("/passwords");
 
+    string? ChangeUrl(int id)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == id);
+        return VaultGuard.Services.Services.SiteSecurityDirectory.ChangePasswordUrl(item?.LoginItem?.WebsiteUrl ?? item?.WebsiteUrl ?? item?.LoginItem?.Website);
+    }
+
     RenderFragment SummaryTile(string label, int count, string icon, string color) => __builder =>
     {
         var active = count > 0;
@@ -289,6 +318,10 @@ else if (_report is not null)
                             @if (!string.IsNullOrEmpty(entry.Detail))
                             {
                                 <MudText Typo="Typo.caption" Class="ml-2 mud-text-secondary" Style="display:inline;">— @entry.Detail</MudText>
+                            }
+                            @if (entry.Link != null)
+                            {
+                                <MudLink Href="@entry.Link" Target="_blank" Typo="Typo.caption" Class="ml-2" rel="noopener noreferrer" @onclick:stopPropagation="true">@entry.LinkText</MudLink>
                             }
                         </MudListItem>
                     }

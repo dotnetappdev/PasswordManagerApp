@@ -232,6 +232,7 @@ public static class ServiceConfiguration
         services.AddSingleton<ITotpService, TotpService>();
         services.AddSingleton<IQrCodeService, QrCodeService>();
         services.AddSingleton<ISecurityAuditService, SecurityAuditService>();
+        services.AddSingleton<ISiteSecurityDirectory>(_ => new SiteSecurityDirectory());
         services.AddSingleton<IPassphraseGenerator, PassphraseGenerator>();
         services.AddSingleton<VaultGuard.Services.Interfaces.IBreachCheckService, VaultGuard.Services.Services.HibpBreachCheckService>();
 

@@ -15,7 +15,9 @@ public sealed class SecurityAuditService : ISecurityAuditService
 
     public SecurityAuditService(IPasswordStrengthService strength) => _strength = strength;
 
-    public VaultHealthReport Analyze(IEnumerable<PasswordItem> items, int oldPasswordDays = 365)
+    public VaultHealthReport Analyze(IEnumerable<PasswordItem> items, int oldPasswordDays = 365) => Analyze(items, null, oldPasswordDays);
+
+    public VaultHealthReport Analyze(IEnumerable<PasswordItem> items, ISiteSecurityDirectory? directory, int oldPasswordDays = 365)
     {
         var list = (items ?? Enumerable.Empty<PasswordItem>()).Where(i => i != null).ToList();
         var now = DateTime.UtcNow;
@@ -24,6 +26,12 @@ public sealed class SecurityAuditService : ISecurityAuditService
         var old = new List<SecurityAuditEntry>();
         var missing2fa = new List<SecurityAuditEntry>();
         var unsecured = new List<SecurityAuditEntry>();
+        var passkeys = new List<SecurityAuditEntry>();
+        var passkeySites = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var useDirectory = directory?.IsLoaded == true;
+        // Sites that already have a saved passkey don't need the suggestion.
+        foreach (var pk in list.Where(i => i.PasskeyItem != null))
+            if (BrowserLink.SiteMatcher.Host(pk.PasskeyItem!.WebsiteUrl ?? pk.PasskeyItem.Website ?? "") is { } h) passkeySites.Add(h);
 
         // Map password -> items that use it (for reuse detection). Only credentials with a password.
         var byPassword = new Dictionary<string, List<SecurityAuditEntry>>(StringComparer.Ordinal);
@@ -38,9 +46,13 @@ public sealed class SecurityAuditService : ISecurityAuditService
             var entry = new SecurityAuditEntry { ItemId = item.Id, Title = string.IsNullOrWhiteSpace(item.Title) ? "(untitled)" : item.Title };
 
             // Weak
+            var website = GetWebsite(item);
+            var changeUrl = SiteSecurityDirectory.ChangePasswordUrl(website);
+            entry = new SecurityAuditEntry { ItemId = item.Id, Title = entry.Title, Link = changeUrl, LinkText = changeUrl == null ? null : "Change password" };
+
             var strength = _strength.Evaluate(password);
             if (strength.Score <= 1)
-                weak.Add(new SecurityAuditEntry { ItemId = item.Id, Title = entry.Title, Detail = strength.Label });
+                weak.Add(new SecurityAuditEntry { ItemId = item.Id, Title = entry.Title, Detail = strength.Label, Link = changeUrl, LinkText = entry.LinkText });
 
             // Reused
             if (!byPassword.TryGetValue(password!, out var bucket))
@@ -55,10 +67,26 @@ public sealed class SecurityAuditService : ISecurityAuditService
             if (age.TotalDays > oldPasswordDays)
                 old.Add(new SecurityAuditEntry { ItemId = item.Id, Title = entry.Title, Detail = $"{(int)age.TotalDays} days old" });
 
-            // Missing 2FA — a login with a website but no stored authenticator secret.
-            var website = GetWebsite(item);
-            if (item.Type == ItemType.Login && !string.IsNullOrWhiteSpace(website) && !TotpHelper.HasSecret(item))
-                missing2fa.Add(new SecurityAuditEntry { ItemId = item.Id, Title = entry.Title });
+            // Missing 2FA — a login with a website but no stored authenticator secret. With the 2fa.directory lists,
+            // only sites that actually offer authenticator codes are listed, with their set-up instructions.
+            var site = useDirectory ? directory!.Lookup(website) : null;
+            if (item.Type == ItemType.Login && !string.IsNullOrWhiteSpace(website) && !TotpHelper.HasSecret(item) &&
+                (!useDirectory || site?.SupportsAuthenticatorCodes == true))
+                missing2fa.Add(new SecurityAuditEntry
+                {
+                    ItemId = item.Id, Title = entry.Title,
+                    Detail = site != null ? $"{site.Domain} offers authenticator codes" : null,
+                    Link = site?.TwoFactorHelpUrl, LinkText = site?.TwoFactorHelpUrl == null ? null : "Set up 2FA"
+                });
+
+            // Passkeys: the site offers passkey sign-in and no passkey is saved for it yet.
+            if (site?.SupportsPasskeySignIn == true && BrowserLink.SiteMatcher.Host(website ?? "") is { } host &&
+                !passkeySites.Any(p => p == host || host.EndsWith("." + p) || p.EndsWith("." + host)))
+                passkeys.Add(new SecurityAuditEntry
+                {
+                    ItemId = item.Id, Title = entry.Title, Detail = $"{site.Domain} supports passkeys",
+                    Link = site.PasskeyHelpUrl, LinkText = site.PasskeyHelpUrl == null ? null : "Set up a passkey"
+                });
 
             // Unsecured website — the stored URL uses plain http:// instead of https://.
             if (IsUnsecuredUrl(website))
@@ -104,7 +132,9 @@ public sealed class SecurityAuditService : ISecurityAuditService
             ReusedPasswords = reused,
             OldPasswords = old,
             MissingTwoFactor = missing2fa,
-            UnsecuredWebsites = unsecured
+            UnsecuredWebsites = unsecured,
+            PasskeysAvailable = passkeys,
+            TwoFactorFromDirectory = useDirectory
         };
     }
 

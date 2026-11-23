@@ -173,12 +173,17 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="13"
                                                            Foreground="{DynamicResource ModernTextPrimaryBrush}"
                                                            TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding Detail}" FontSize="12"
                                                            Foreground="{DynamicResource ModernTextSecondaryBrush}"/>
+                                                <Button Grid.Column="2" Content="{Binding LinkText}" Tag="{Binding Link}" Click="EntryLink_Click"
+                                                        Margin="10,0,0,0" Padding="8,1" FontSize="12" Cursor="Hand"
+                                                        Background="Transparent" BorderThickness="0" Foreground="#60A5FA"
+                                                        Visibility="{Binding Link, Converter={StaticResource StringToVisibilityConverter}}"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
