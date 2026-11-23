@@ -180,6 +180,12 @@ public static class MauiProgram
 		builder.Services.AddSingleton<VaultGuard.Components.Shared.Services.IDeviceUnlock, VaultGuard.App.Services.WindowsHelloUnlock>();
 		// SSH agent (Settings → SSH agent), as in the WPF app: serves vault SSH keys to ssh / git on the openssh-ssh-agent pipe.
 		builder.Services.AddSingleton<VaultGuard.Components.Shared.Services.SshAgentHost>();
+#elif ANDROID
+		// Unlock with fingerprint / face (BiometricPrompt); the master key stays in Keystore-backed SecureStorage.
+		builder.Services.AddSingleton<VaultGuard.Components.Shared.Services.IDeviceUnlock, VaultGuard.App.Services.AndroidBiometricUnlock>();
+#elif IOS
+		// Unlock with Face ID / Touch ID (LocalAuthentication); the master key stays in Keychain-backed SecureStorage.
+		builder.Services.AddSingleton<VaultGuard.Components.Shared.Services.IDeviceUnlock, VaultGuard.App.Services.AppleBiometricUnlock>();
 #endif
 		// Fido2 (WebAuthn) — required by PasskeyService. MAUI runs as a Blazor hybrid WebView, so
 		// the "origin" is the WebView's local origin; full platform WebAuthn in a hybrid WebView is

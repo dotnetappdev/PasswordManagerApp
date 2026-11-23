@@ -1,8 +1,8 @@
 namespace VaultGuard.Components.Shared.Services;
 
 /// <summary>
-/// Quick unlock with the device's own sign-in (Windows Hello today; Face ID / fingerprint can implement the same
-/// interface). It only proves the person at the device: the vault key still comes from the master key kept in the
+/// Quick unlock with the device's own sign-in (Windows Hello; Face ID / Touch ID on iOS; fingerprint / face on Android).
+/// It only proves the person at the device: the vault key still comes from the master key kept in the
 /// platform's secure storage (IMasterKeyCacheService), released only after this check succeeds. Hosts without it
 /// simply don't register an implementation.
 /// </summary>

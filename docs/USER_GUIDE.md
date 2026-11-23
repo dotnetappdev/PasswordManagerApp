@@ -268,10 +268,12 @@ Apply multiple colored tags for flexible organization:
 - **iOS**: Native iOS app with Touch ID/Face ID
 - **Android**: Native Android app with biometric authentication
 - **Windows**: Native Windows app with Windows Hello
-- **macOS**: Native macOS app with Touch ID
+- **macOS**: Native macOS app (sign in with your master password; Touch ID isn't wired up on the Mac yet)
 
 ### Mobile-Specific Features
-- **Biometric Authentication**: Use fingerprint or face recognition
+- **Biometric Authentication**: Use fingerprint or face recognition. Sign in once with your master password and tick
+  **"Unlock with Face ID / fingerprint next time"**; after that the sign-in screen offers **Unlock with …**. The
+  master password stays in the phone's Keychain / Keystore and is only used after the check succeeds.
 - **Auto-Fill**: Integrate with system password auto-fill
 - **Offline Access**: Full functionality without internet
 - **Push Notifications**: Sync completion notifications

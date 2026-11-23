@@ -30,5 +30,7 @@
     <string>Assets.xcassets/appicon.appiconset</string>
     <key>NSCameraUsageDescription</key>
     <string>Vault Guard uses the camera to scan sign-in QR codes shown on your other devices.</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Vault Guard uses Face ID to unlock your vault without typing your master password.</string>
 </dict>
 </plist>

@@ -381,7 +381,7 @@
         _ = RefreshDeviceUnlockAsync();
     }
 
-    // ---- Unlock with Windows Hello (or another device sign-in): see IDeviceUnlock ----
+    // ---- Unlock with Windows Hello, Face ID / Touch ID or fingerprint: see IDeviceUnlock ----
     private IDeviceUnlock? _deviceUnlock;
     private bool _deviceUnlockAvailable;
     private bool _canDeviceUnlock;
@@ -406,7 +406,7 @@
             isLoading = true;
             if (!await _deviceUnlock.VerifyAsync("Unlock Vault Guard"))
             {
-                errorMessage = $"{_deviceUnlock.Name} didn't verify. Enter your master key instead.";
+                errorMessage = $"{char.ToUpper(_deviceUnlock.Name[0])}{_deviceUnlock.Name[1..]} didn't verify. Enter your master key instead.";
                 return;
             }
             // Only after the device has verified the user is the saved master key released.
